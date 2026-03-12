@@ -1,89 +1,70 @@
-# zttato-platform
+# zTTato Platform
 
-A multi-service growth/automation platform with Node.js and Python services, Docker-based infrastructure, Kubernetes manifests, and Cloudflare edge automation scripts.
+AI-powered Affiliate Automation Platform for product discovery, AI content generation, campaign automation, and analytics.
 
-## Repository Overview
+## Features
 
-```text
-.
-├── docker-compose.yml                # Core local stack (postgres, redis, core python APIs)
-├── start-zttato.sh                   # Unified bootstrap script
-├── env.edge                          # Edge-related env sample
-├── cloudflare-devops/                # Cloudflare tunnel + DNS helper toolkit
-├── infrastructure/
-│   ├── ci/                           # Build/deploy helper scripts
-│   ├── k8s/                          # Kubernetes deployments/services/ingress/config
-│   ├── postgres/                     # Postgres config + migrations
-│   ├── scripts/                      # Platform operations scripts
-│   └── start/                        # Env and worker startup scripts
-├── scripts/                          # Additional operational/fix/deploy scripts
-└── services/
-    ├── account-farm/                 # Account automation service (Node)
-    ├── admin-panel/                  # Frontend dashboard (React)
-    ├── ai-video-generator/           # AI video generation pipeline (Node)
-    ├── analytics/                    # Analytics API/metrics (Node)
-    ├── arbitrage-engine/             # Arbitrage API/worker (Python)
-    ├── click-tracker/                # Click/fingerprint tracking (Node)
-    ├── gpu-renderer/                 # Render queue + API (Python)
-    ├── market-crawler/               # Market crawler API/workers (Python)
-    ├── shopee-crawler/               # Shopee crawler (Node)
-    ├── tiktok-farm/                  # TikTok farm scheduler/uploader (Node)
-    ├── tiktok-shop-miner/            # TikTok shop mining service (Node)
-    └── viral-predictor/              # ML prediction API/training (Python)
-```
+- AI viral video prediction
+- Automated AI video generation
+- Distributed GPU rendering
+- Multi-marketplace product crawling
+- Affiliate arbitrage detection
+- Click tracking and campaign analytics
+- Automation farm scheduling
+- Admin dashboard
+- Docker and Kubernetes deployment support
 
-## Current Validation Status
+## Architecture
 
-Validation checks performed in this repository:
+Crawler → AI → Video → Automation → Analytics
 
-- Shell syntax check across all `*.sh` scripts.
-- Python syntax byte-compile for all `*.py` files.
-- JSON parse check for all `package.json` files.
+For details, see:
 
-### Result
+- [docs/system-overview.md](docs/system-overview.md)
+- [docs/architecture.md](docs/architecture.md)
 
-- ✅ Repository is now syntactically valid for shell/python/json checks.
-- 🔧 Fixed one blocking shell syntax issue in:
-  - `scripts/generate-cloudflare-devops-toolkit-v2.sh`
-  - Missing closing quote in `chmod +x "$TOOLKIT/install.sh"`.
-
-## Local Run (quick start)
-
-### 1) Prerequisites
-
-- Docker + Docker Compose
-- Node.js + npm
-- Python 3 + venv
-
-### 2) Bootstrap
+## Quick Start
 
 ```bash
-bash start-zttato.sh
+./start-zttato.sh
 ```
 
-This script:
-- makes scripts executable,
-- installs service dependencies,
-- starts postgres/redis,
-- builds/starts compose services,
-- applies SQL migrations,
-- starts worker scripts,
-- runs basic health checks.
+## Web Dashboard
 
-## Manual Checks
+- Admin panel: http://localhost:5173
+
+## Documentation Index
+
+- [CHANGELOG.md](CHANGELOG.md)
+- [docs/project-structure.md](docs/project-structure.md)
+- [docs/installation.md](docs/installation.md)
+- [docs/quick-start.md](docs/quick-start.md)
+- [docs/configuration.md](docs/configuration.md)
+- [docs/services/](docs/services)
+- [docs/api/](docs/api)
+- [docs/database/](docs/database)
+- [docs/infrastructure/](docs/infrastructure)
+- [docs/development/](docs/development)
+- [docs/operations/](docs/operations)
+
+## Import to GitHub
+
+1. Create an empty GitHub repository.
+2. Add remote:
 
 ```bash
-# Shell syntax
-while IFS= read -r f; do bash -n "$f"; done < <(rg --files -g '*.sh')
-
-# Python syntax
-python -m compileall services
-
-# package.json validity
-while IFS= read -r f; do python -m json.tool "$f" >/dev/null; done < <(rg --files -g 'package.json')
+git remote add origin git@github.com:<org-or-user>/zttato-platform.git
 ```
 
-## Notes
+3. Push current branch:
 
-- Docker runtime checks (such as `docker compose config`) require Docker CLI in the environment.
-- Cloudflare scripts require a valid API token/account/zone configuration.
+```bash
+git push -u origin "$(git branch --show-current)"
+```
+
+If `origin` already exists, update it:
+
+```bash
+git remote set-url origin git@github.com:<org-or-user>/zttato-platform.git
+git push -u origin "$(git branch --show-current)"
+```
