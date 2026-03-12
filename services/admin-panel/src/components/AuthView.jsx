@@ -22,8 +22,9 @@ export default function AuthView({ onLogin }) {
   return (
     <div className="auth-shell">
       <form className="panel auth-card" onSubmit={handleSubmit}>
-        <h1>zTTato Auth</h1>
-        <p>Sign in to access dashboards and control panels.</p>
+        <p className="eyebrow">zTTato Platform</p>
+        <h1>Sign in to workspace</h1>
+        <p className="muted-text">Access dashboards, rent workflows, and admin operations in one place.</p>
         <label>
           Email
           <input name="email" type="email" value={credentials.email} onChange={handleChange} required />

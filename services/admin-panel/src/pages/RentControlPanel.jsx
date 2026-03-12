@@ -1,7 +1,8 @@
-import React, { useState } from "react"
+import React, { useMemo, useState } from "react"
 
 export default function RentControlPanel({ rentUnits, onAddRentUnit, onUpdateRentStatus }) {
   const [form, setForm] = useState({ id: "", tenant: "", monthlyRent: 0, dueDate: "", status: "pending" })
+  const [statusFilter, setStatusFilter] = useState("all")
 
   function handleSubmit(event) {
     event.preventDefault()
@@ -9,9 +10,16 @@ export default function RentControlPanel({ rentUnits, onAddRentUnit, onUpdateRen
     setForm({ id: "", tenant: "", monthlyRent: 0, dueDate: "", status: "pending" })
   }
 
+  const visibleUnits = useMemo(() => {
+    return rentUnits.filter((unit) => statusFilter === "all" || unit.status === statusFilter)
+  }, [rentUnits, statusFilter])
+
   return (
     <section className="panel">
-      <h3>Rent Control Panel</h3>
+      <div className="title-row">
+        <h3>Rent Control Panel</h3>
+        <p className="muted-text">Create, monitor, and resolve rental payment statuses quickly.</p>
+      </div>
 
       <form onSubmit={handleSubmit} className="grid-5">
         <input
@@ -43,6 +51,15 @@ export default function RentControlPanel({ rentUnits, onAddRentUnit, onUpdateRen
         <button type="submit">Add Unit</button>
       </form>
 
+      <div className="toolbar">
+        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+          <option value="all">All payment statuses</option>
+          <option value="paid">Paid</option>
+          <option value="pending">Pending</option>
+          <option value="overdue">Overdue</option>
+        </select>
+      </div>
+
       <table>
         <thead>
           <tr>
@@ -55,16 +72,18 @@ export default function RentControlPanel({ rentUnits, onAddRentUnit, onUpdateRen
           </tr>
         </thead>
         <tbody>
-          {rentUnits.map((unit) => (
+          {visibleUnits.map((unit) => (
             <tr key={unit.id}>
               <td>{unit.id}</td>
               <td>{unit.tenant}</td>
               <td>${unit.monthlyRent}</td>
               <td>{unit.dueDate}</td>
-              <td>{unit.status}</td>
+              <td>
+                <span className={`pill ${unit.status}`}>{unit.status}</span>
+              </td>
               <td className="button-group">
-                {['paid', 'pending', 'overdue'].map((status) => (
-                  <button type="button" key={status} onClick={() => onUpdateRentStatus(unit.id, status)}>
+                {["paid", "pending", "overdue"].map((status) => (
+                  <button type="button" className="ghost" key={status} onClick={() => onUpdateRentStatus(unit.id, status)}>
                     {status}
                   </button>
                 ))}
