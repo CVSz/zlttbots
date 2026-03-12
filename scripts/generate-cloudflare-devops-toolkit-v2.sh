@@ -281,7 +281,7 @@ EOF
 ########################################
 
 chmod +x "$TOOLKIT"/api/*.sh
-chmod +x "$TOOLKIT/install.sh
+chmod +x "$TOOLKIT/install.sh"
 
 echo ""
 echo "======================================"
