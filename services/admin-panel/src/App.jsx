@@ -1,25 +1,90 @@
-import React from "react"
+import React, { useMemo, useState } from "react"
 
-import Dashboard from "./pages/Dashboard.jsx"
-import Campaigns from "./pages/Campaigns.jsx"
-import Products from "./pages/Products.jsx"
+import AuthView from "./components/AuthView.jsx"
+import Navigation from "./components/Navigation.jsx"
+import AdminControlPanel from "./pages/AdminControlPanel.jsx"
+import AdminDashboard from "./pages/AdminDashboard.jsx"
+import OverviewDashboard from "./pages/OverviewDashboard.jsx"
+import RentControlPanel from "./pages/RentControlPanel.jsx"
+import UserDashboard from "./pages/UserDashboard.jsx"
+import { authUsers, initialRentUnits, initialSystemSettings, initialUsers } from "./data/mockData.js"
 
-export default function App(){
+export default function App() {
+  const [currentUser, setCurrentUser] = useState(null)
+  const [activePage, setActivePage] = useState("overview")
+  const [users, setUsers] = useState(initialUsers)
+  const [rentUnits, setRentUnits] = useState(initialRentUnits)
+  const [settings, setSettings] = useState(initialSystemSettings)
 
-return(
+  const pageMap = useMemo(
+    () => ({
+      overview: <OverviewDashboard users={users} rentUnits={rentUnits} />,
+      user: <UserDashboard currentUser={currentUser} rentUnits={rentUnits} />,
+      admin: <AdminDashboard users={users} settings={settings} />,
+      "admin-control": (
+        <AdminControlPanel
+          users={users}
+          settings={settings}
+          onUpdateSettings={(key, value) => setSettings((prev) => ({ ...prev, [key]: value }))}
+          onAddUser={(newUser) => {
+            const id = Math.max(...users.map((user) => user.id), 0) + 1
+            setUsers((prev) => [...prev, { ...newUser, id, status: "active" }])
+          }}
+          onToggleUserStatus={(id) => {
+            setUsers((prev) =>
+              prev.map((user) =>
+                user.id === id
+                  ? { ...user, status: user.status === "active" ? "suspended" : "active" }
+                  : user
+              )
+            )
+          }}
+        />
+      ),
+      "rent-control": (
+        <RentControlPanel
+          rentUnits={rentUnits}
+          onAddRentUnit={(newUnit) => setRentUnits((prev) => [...prev, newUnit])}
+          onUpdateRentStatus={(id, status) => {
+            setRentUnits((prev) => prev.map((unit) => (unit.id === id ? { ...unit, status } : unit)))
+          }}
+        />
+      )
+    }),
+    [currentUser, rentUnits, settings, users]
+  )
 
-<div>
+  function handleLogin(credentials) {
+    const matchedUser = authUsers.find(
+      (user) => user.email === credentials.email && user.password === credentials.password
+    )
 
-<h1>zTTato Control Panel</h1>
+    if (!matchedUser) {
+      return false
+    }
 
-<Dashboard/>
+    setCurrentUser(matchedUser)
+    return true
+  }
 
-<Campaigns/>
+  function handleLogout() {
+    setCurrentUser(null)
+    setActivePage("overview")
+  }
 
-<Products/>
+  if (!currentUser) {
+    return <AuthView onLogin={handleLogin} />
+  }
 
-</div>
-
-)
-
+  return (
+    <main className="app-shell">
+      <Navigation
+        activePage={activePage}
+        onNavigate={setActivePage}
+        onLogout={handleLogout}
+        currentUser={currentUser}
+      />
+      {pageMap[activePage]}
+    </main>
+  )
 }
