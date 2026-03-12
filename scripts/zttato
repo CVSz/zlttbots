@@ -1,0 +1,64 @@
+# zttato
+#!/usr/bin/env bash
+
+set -e
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+case "${1:-}" in
+
+up)
+bash "$ROOT/scripts/start-zttato.sh"
+;;
+
+down)
+bash "$ROOT/scripts/stop-zttato.sh"
+;;
+
+restart)
+bash "$ROOT/scripts/stop-zttato.sh"
+sleep 2
+bash "$ROOT/scripts/start-zttato.sh"
+;;
+
+status)
+
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+echo
+echo "API status"
+
+curl -s localhost:9100/docs >/dev/null && echo "viral OK"
+curl -s localhost:9400/docs >/dev/null && echo "crawler OK"
+curl -s localhost:9500/docs >/dev/null && echo "arbitrage OK"
+curl -s localhost:9300/docs >/dev/null && echo "renderer OK"
+;;
+
+logs)
+
+SERVICE="${2:-}"
+
+if [ -z "$SERVICE" ]; then
+ls logs
+else
+tail -f logs/"$SERVICE".log
+fi
+;;
+
+edge)
+
+curl -I https://api.zeaz.dev || true
+curl -I https://gpu.zeaz.dev || true
+;;
+
+*)
+echo "Usage:"
+echo "zttato up"
+echo "zttato down"
+echo "zttato restart"
+echo "zttato status"
+echo "zttato logs [service]"
+echo "zttato edge"
+;;
+
+esac

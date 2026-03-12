@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: click-tracker
+spec:
+  selector:
+    app: click-tracker
+  ports:
+  - port: 80
+    targetPort: 8080

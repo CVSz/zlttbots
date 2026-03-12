@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: click-tracker
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: click-tracker
+  template:
+    metadata:
+      labels:
+        app: click-tracker
+    spec:
+      containers:
+      - name: tracker
+        image: zttato/click-tracker:latest
+        ports:
+        - containerPort: 8080

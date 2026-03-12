@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zttato-config
+data:
+  DB_HOST: postgres
+  DB_NAME: zttato

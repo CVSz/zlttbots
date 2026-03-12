@@ -1,0 +1,17 @@
+{
+"name": "zttato-tiktok-farm",
+"version": "1.0.0",
+"type": "module",
+"scripts": {
+"start": "node src/api/server.js",
+"worker": "node src/workers/worker.js"
+},
+"dependencies": {
+"express": "^4.19.2",
+"playwright": "^1.43.0",
+"pg": "^8.11.0",
+"redis": "^4.6.0",
+"axios": "^1.6.0",
+"uuid": "^9.0.0"
+}
+}

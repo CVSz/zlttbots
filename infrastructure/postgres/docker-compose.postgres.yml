@@ -1,0 +1,23 @@
+
+services:
+
+postgres:
+
+image: postgres:15
+
+environment:
+
+POSTGRES_DB: zttato
+
+POSTGRES_USER: zttato
+
+POSTGRES_PASSWORD: zttato
+
+ports:
+
+- "5432:5432"
+
+volumes:
+
+- ./data:/var/lib/postgresql/data
+

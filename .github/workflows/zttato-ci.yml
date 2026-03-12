@@ -1,0 +1,73 @@
+name: zTTato CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY: docker.io
+  IMAGE_PREFIX: zttato
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Setup Docker
+      uses: docker/setup-buildx-action@v2
+
+    - name: Login DockerHub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USER }}
+        password: ${{ secrets.DOCKER_PASS }}
+
+    - name: Build Images
+      run: |
+
+        docker build -t $REGISTRY/$IMAGE_PREFIX/analytics services/analytics
+        docker build -t $REGISTRY/$IMAGE_PREFIX/click-tracker services/click-tracker
+        docker build -t $REGISTRY/$IMAGE_PREFIX/tiktok-uploader services/tiktok-uploader
+        docker build -t $REGISTRY/$IMAGE_PREFIX/ai-video-generator services/ai-video-generator
+        docker build -t $REGISTRY/$IMAGE_PREFIX/shopee-crawler services/shopee-crawler
+        docker build -t $REGISTRY/$IMAGE_PREFIX/tiktok-shop-miner services/tiktok-shop-miner
+        docker build -t $REGISTRY/$IMAGE_PREFIX/account-farm services/account-farm
+        docker build -t $REGISTRY/$IMAGE_PREFIX/admin-panel services/admin-panel
+
+    - name: Push Images
+      run: |
+
+        docker push $REGISTRY/$IMAGE_PREFIX/analytics
+        docker push $REGISTRY/$IMAGE_PREFIX/click-tracker
+        docker push $REGISTRY/$IMAGE_PREFIX/tiktok-uploader
+        docker push $REGISTRY/$IMAGE_PREFIX/ai-video-generator
+        docker push $REGISTRY/$IMAGE_PREFIX/shopee-crawler
+        docker push $REGISTRY/$IMAGE_PREFIX/tiktok-shop-miner
+        docker push $REGISTRY/$IMAGE_PREFIX/account-farm
+        docker push $REGISTRY/$IMAGE_PREFIX/admin-panel
+
+  deploy:
+
+    needs: build
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+
+    - name: Deploy
+      run: |
+
+        kubectl apply -f infrastructure/k8s

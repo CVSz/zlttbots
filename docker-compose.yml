@@ -1,0 +1,46 @@
+
+services:
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: zttato
+      POSTGRES_USER: zttato
+      POSTGRES_PASSWORD: zttato
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  viral-predictor:
+    build: services/viral-predictor
+    environment:
+      DB_URL: ${DB_URL}
+    ports:
+      - "9100:9100"
+
+  gpu-renderer:
+    build: services/gpu-renderer
+    environment:
+      REDIS_URL: ${REDIS_URL}
+    ports:
+      - "9300:9300"
+
+  market-crawler:
+    build: services/market-crawler
+    environment:
+      DB_URL: ${DB_URL}
+      REDIS_URL: ${REDIS_URL}
+    ports:
+      - "9400:9400"
+
+  arbitrage-engine:
+    build: services/arbitrage-engine
+    environment:
+      DB_URL: ${DB_URL}
+    ports:
+      - "9500:9500"
+

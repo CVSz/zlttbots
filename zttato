@@ -1,0 +1,114 @@
+# zttato
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+SCRIPT_PATH="$(readlink -f "$0")"
+ROOT="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+
+case "${1:-}" in
+
+up)
+bash "$ROOT/scripts/start-zttato.sh"
+;;
+
+down)
+bash "$ROOT/scripts/stop-zttato.sh"
+;;
+
+restart)
+bash "$ROOT/scripts/stop-zttato.sh"
+sleep 2
+bash "$ROOT/scripts/start-zttato.sh"
+;;
+
+status)
+
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+echo
+echo "Service Health"
+
+curl -fs localhost:9100/docs >/dev/null && echo "viral OK"
+curl -fs localhost:9400/docs >/dev/null && echo "crawler OK"
+curl -fs localhost:9500/docs >/dev/null && echo "arbitrage OK"
+curl -fs localhost:9300/docs >/dev/null && echo "renderer OK"
+;;
+
+logs)
+
+SERVICE="${2:-}"
+
+if [ -z "$SERVICE" ]; then
+ls "$ROOT/logs"
+else
+tail -f "$ROOT/logs/$SERVICE.log"
+fi
+;;
+
+monitor)
+
+bash "$ROOT/scripts/zttato-monitor.sh"
+
+;;
+
+heal)
+
+bash "$ROOT/scripts/zttato-docker-recovery.sh"
+bash "$ROOT/scripts/zttato-tunnel-heal.sh"
+
+;;
+
+edge)
+
+curl -I https://api.zeaz.dev || true
+curl -I https://gpu.zeaz.dev || true
+curl -I https://predict.zeaz.dev || true
+;;
+
+doctor)
+
+bash "$ROOT/scripts/zttato-doctor.sh"
+;;
+
+node-install)
+bash scripts/node-install.sh
+;;
+
+node-status)
+ps aux | grep node
+;;
+
+node-restart)
+pkill node
+zttato up
+;;
+
+deploy)
+bash "$ROOT/scripts/deploy-zttato-production.sh"
+;;
+
+*)
+
+echo
+echo "zTTato Platform CLI"
+echo
+echo "Commands:"
+echo "zttato up"
+echo "zttato down"
+echo "zttato restart"
+echo "zttato status"
+echo "zttato logs [service]"
+echo "zttato doctor"
+echo "zttato heal"
+echo "zttato monitor"
+echo "zttato edge"
+echo "zttato deploy"
+echo "node-install"
+echo "node-status"
+echo "node-restart"
+echo
+
+;;
+
+esac

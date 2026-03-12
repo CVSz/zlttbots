@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-panel
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin-panel
+  template:
+    metadata:
+      labels:
+        app: admin-panel
+    spec:
+      containers:
+      - name: admin
+        image: zttato/admin-panel:latest
+        ports:
+        - containerPort: 3000

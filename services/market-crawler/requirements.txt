@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+redis
+psycopg2-binary
+httpx
+beautifulsoup4
+pydantic
