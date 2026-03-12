@@ -1,0 +1,161 @@
+:root {
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: #132035;
+  background: #f3f6fb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.app-shell {
+  display: grid;
+  gap: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.auth-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+}
+
+.panel {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: 0 8px 28px rgba(25, 40, 64, 0.08);
+}
+
+.auth-card {
+  width: min(420px, 92vw);
+  display: grid;
+  gap: 0.75rem;
+}
+
+.top-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+button {
+  background: #1f5fff;
+  border: none;
+  color: white;
+  border-radius: 10px;
+  padding: 0.5rem 0.85rem;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #5e6b84;
+}
+
+button.active {
+  background: #163d9f;
+}
+
+input,
+select {
+  width: 100%;
+  border: 1px solid #c9d2e3;
+  border-radius: 9px;
+  padding: 0.5rem;
+}
+
+label {
+  display: grid;
+  gap: 0.3rem;
+  margin-bottom: 0.5rem;
+}
+
+.grid-2,
+.grid-3,
+.grid-5 {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.grid-5 {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  align-items: end;
+}
+
+.metric-card {
+  background: #f5f8ff;
+  border: 1px solid #d9e3f8;
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border-bottom: 1px solid #e8eef8;
+  text-align: left;
+  padding: 0.6rem;
+}
+
+.stacked-form {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.list-reset {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid #e8eef8;
+  padding: 0.5rem 0;
+}
+
+.button-group {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.error-text {
+  color: #b10032;
+  margin: 0;
+}
