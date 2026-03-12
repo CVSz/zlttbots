@@ -38,6 +38,7 @@ pids/
 *.pem
 *.crt
 *.token
+env.edge
 
 ############################################
 # Cloudflare / DevOps
