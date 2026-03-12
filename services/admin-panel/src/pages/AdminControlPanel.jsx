@@ -84,7 +84,7 @@ export default function AdminControlPanel({ users, settings, onUpdateSettings, o
         {users.map((user) => (
           <li key={user.id} className="row-between">
             <span>
-              {user.name} ({user.role}) - {user.status}
+              {user.name} ({user.role}) <span className={`pill ${user.status}`}>{user.status}</span>
             </span>
             <button type="button" onClick={() => onToggleUserStatus(user.id)}>
               {user.status === "active" ? "Suspend" : "Activate"}
