@@ -1,115 +1,89 @@
 # zttato-platform
 
-A multi-service growth/automation platform with Node.js and Python services, Docker-based infrastructure, and Cloudflare edge automation scripts.
+A multi-service growth/automation platform with Node.js and Python services, Docker-based infrastructure, Kubernetes manifests, and Cloudflare edge automation scripts.
 
-## Import This Project to GitHub
-
-Use this checklist when moving this repository into a GitHub repo (new or existing).
-
-### 1) Prepare local repository metadata
-
-```bash
-# from repository root
-cd /workspace/zttato-platform
-
-# verify this is a git repository
-git rev-parse --is-inside-work-tree
-
-# check current branch and status
-git branch --show-current
-git status
-```
-
-### 2) Review sensitive files before pushing
-
-Confirm secrets are **not** committed:
-
-- API keys, access tokens, or Cloudflare credentials.
-- Real production `.env` files.
-- Private SSH keys and certificates.
-
-Suggested checks:
-
-```bash
-# find likely env and key files
-rg --files -g '*.env*' -g '*.pem' -g '*.key' -g '*.crt'
-
-# quickly inspect gitignored files
-cat .gitignore
-```
-
-If sensitive data is present in commit history, rewrite history before publishing.
-
-### 3) Create GitHub repository
-
-1. Open GitHub and create a new repository.
-2. Choose repository visibility (public/private).
-3. Do **not** initialize with README/license if this repo is already initialized locally.
-
-### 4) Add remote and push
-
-```bash
-# add GitHub remote (replace URL)
-git remote add origin git@github.com:<org-or-user>/zttato-platform.git
-
-# verify remote
-git remote -v
-
-# push current branch and set upstream
-git push -u origin "$(git branch --show-current)"
-```
-
-If `origin` already exists:
-
-```bash
-git remote set-url origin git@github.com:<org-or-user>/zttato-platform.git
-git push -u origin "$(git branch --show-current)"
-```
-
-### 5) Optional: push all branches and tags
-
-```bash
-git push --all origin
-git push --tags origin
-```
-
-## Recommended GitHub Repository Settings
-
-After import, configure:
-
-- **Branch protection** for `main` (PR required, status checks required).
-- **Actions permissions** (least privilege, required secrets only).
-- **Dependabot alerts** and security updates.
-- **CODEOWNERS** for review routing.
-
-## Project Structure
+## Repository Overview
 
 ```text
 .
-├── docker-compose.yml
-├── start-zttato.sh
-├── cloudflare-devops/
+├── docker-compose.yml                # Core local stack (postgres, redis, core python APIs)
+├── start-zttato.sh                   # Unified bootstrap script
+├── env.edge                          # Edge-related env sample
+├── cloudflare-devops/                # Cloudflare tunnel + DNS helper toolkit
 ├── infrastructure/
-├── scripts/
+│   ├── ci/                           # Build/deploy helper scripts
+│   ├── k8s/                          # Kubernetes deployments/services/ingress/config
+│   ├── postgres/                     # Postgres config + migrations
+│   ├── scripts/                      # Platform operations scripts
+│   └── start/                        # Env and worker startup scripts
+├── scripts/                          # Additional operational/fix/deploy scripts
 └── services/
+    ├── account-farm/                 # Account automation service (Node)
+    ├── admin-panel/                  # Frontend dashboard (React)
+    ├── ai-video-generator/           # AI video generation pipeline (Node)
+    ├── analytics/                    # Analytics API/metrics (Node)
+    ├── arbitrage-engine/             # Arbitrage API/worker (Python)
+    ├── click-tracker/                # Click/fingerprint tracking (Node)
+    ├── gpu-renderer/                 # Render queue + API (Python)
+    ├── market-crawler/               # Market crawler API/workers (Python)
+    ├── shopee-crawler/               # Shopee crawler (Node)
+    ├── tiktok-farm/                  # TikTok farm scheduler/uploader (Node)
+    ├── tiktok-shop-miner/            # TikTok shop mining service (Node)
+    └── viral-predictor/              # ML prediction API/training (Python)
 ```
 
-## Local Validation Commands
+## Current Validation Status
+
+Validation checks performed in this repository:
+
+- Shell syntax check across all `*.sh` scripts.
+- Python syntax byte-compile for all `*.py` files.
+- JSON parse check for all `package.json` files.
+
+### Result
+
+- ✅ Repository is now syntactically valid for shell/python/json checks.
+- 🔧 Fixed one blocking shell syntax issue in:
+  - `scripts/generate-cloudflare-devops-toolkit-v2.sh`
+  - Missing closing quote in `chmod +x "$TOOLKIT/install.sh"`.
+
+## Local Run (quick start)
+
+### 1) Prerequisites
+
+- Docker + Docker Compose
+- Node.js + npm
+- Python 3 + venv
+
+### 2) Bootstrap
 
 ```bash
-# shell scripts syntax check
+bash start-zttato.sh
+```
+
+This script:
+- makes scripts executable,
+- installs service dependencies,
+- starts postgres/redis,
+- builds/starts compose services,
+- applies SQL migrations,
+- starts worker scripts,
+- runs basic health checks.
+
+## Manual Checks
+
+```bash
+# Shell syntax
 while IFS= read -r f; do bash -n "$f"; done < <(rg --files -g '*.sh')
 
-# python syntax check
+# Python syntax
 python -m compileall services
 
-# package.json validation
+# package.json validity
 while IFS= read -r f; do python -m json.tool "$f" >/dev/null; done < <(rg --files -g 'package.json')
 ```
 
-## Troubleshooting Import
+## Notes
 
-- `Permission denied (publickey)`: add your SSH key to GitHub or use HTTPS remote.
-- `remote origin already exists`: use `git remote set-url origin ...`.
-- `large file rejected`: use Git LFS and re-commit large assets.
-- `push rejected/non-fast-forward`: run `git pull --rebase origin <branch>` then push again.
+- Docker runtime checks (such as `docker compose config`) require Docker CLI in the environment.
+- Cloudflare scripts require a valid API token/account/zone configuration.
