@@ -1,115 +1,70 @@
-# zttato-platform
+# zTTato Platform
 
-A multi-service growth/automation platform with Node.js and Python services, Docker-based infrastructure, and Cloudflare edge automation scripts.
+AI-powered Affiliate Automation Platform for product discovery, AI content generation, campaign automation, and analytics.
 
-## Import This Project to GitHub
+## Features
 
-Use this checklist when moving this repository into a GitHub repo (new or existing).
+- AI viral video prediction
+- Automated AI video generation
+- Distributed GPU rendering
+- Multi-marketplace product crawling
+- Affiliate arbitrage detection
+- Click tracking and campaign analytics
+- Automation farm scheduling
+- Admin dashboard
+- Docker and Kubernetes deployment support
 
-### 1) Prepare local repository metadata
+## Architecture
+
+Crawler → AI → Video → Automation → Analytics
+
+For details, see:
+
+- [docs/system-overview.md](docs/system-overview.md)
+- [docs/architecture.md](docs/architecture.md)
+
+## Quick Start
 
 ```bash
-# from repository root
-cd /workspace/zttato-platform
-
-# verify this is a git repository
-git rev-parse --is-inside-work-tree
-
-# check current branch and status
-git branch --show-current
-git status
+./start-zttato.sh
 ```
 
-### 2) Review sensitive files before pushing
+## Web Dashboard
 
-Confirm secrets are **not** committed:
+- Admin panel: http://localhost:5173
 
-- API keys, access tokens, or Cloudflare credentials.
-- Real production `.env` files.
-- Private SSH keys and certificates.
+## Documentation Index
 
-Suggested checks:
+- [CHANGELOG.md](CHANGELOG.md)
+- [docs/project-structure.md](docs/project-structure.md)
+- [docs/installation.md](docs/installation.md)
+- [docs/quick-start.md](docs/quick-start.md)
+- [docs/configuration.md](docs/configuration.md)
+- [docs/services/](docs/services)
+- [docs/api/](docs/api)
+- [docs/database/](docs/database)
+- [docs/infrastructure/](docs/infrastructure)
+- [docs/development/](docs/development)
+- [docs/operations/](docs/operations)
 
-```bash
-# find likely env and key files
-rg --files -g '*.env*' -g '*.pem' -g '*.key' -g '*.crt'
+## Import to GitHub
 
-# quickly inspect gitignored files
-cat .gitignore
-```
-
-If sensitive data is present in commit history, rewrite history before publishing.
-
-### 3) Create GitHub repository
-
-1. Open GitHub and create a new repository.
-2. Choose repository visibility (public/private).
-3. Do **not** initialize with README/license if this repo is already initialized locally.
-
-### 4) Add remote and push
+1. Create an empty GitHub repository.
+2. Add remote:
 
 ```bash
-# add GitHub remote (replace URL)
 git remote add origin git@github.com:<org-or-user>/zttato-platform.git
+```
 
-# verify remote
-git remote -v
+3. Push current branch:
 
-# push current branch and set upstream
+```bash
 git push -u origin "$(git branch --show-current)"
 ```
 
-If `origin` already exists:
+If `origin` already exists, update it:
 
 ```bash
 git remote set-url origin git@github.com:<org-or-user>/zttato-platform.git
 git push -u origin "$(git branch --show-current)"
 ```
-
-### 5) Optional: push all branches and tags
-
-```bash
-git push --all origin
-git push --tags origin
-```
-
-## Recommended GitHub Repository Settings
-
-After import, configure:
-
-- **Branch protection** for `main` (PR required, status checks required).
-- **Actions permissions** (least privilege, required secrets only).
-- **Dependabot alerts** and security updates.
-- **CODEOWNERS** for review routing.
-
-## Project Structure
-
-```text
-.
-├── docker-compose.yml
-├── start-zttato.sh
-├── cloudflare-devops/
-├── infrastructure/
-├── scripts/
-└── services/
-```
-
-## Local Validation Commands
-
-```bash
-# shell scripts syntax check
-while IFS= read -r f; do bash -n "$f"; done < <(rg --files -g '*.sh')
-
-# python syntax check
-python -m compileall services
-
-# package.json validation
-while IFS= read -r f; do python -m json.tool "$f" >/dev/null; done < <(rg --files -g 'package.json')
-```
-
-## Troubleshooting Import
-
-- `Permission denied (publickey)`: add your SSH key to GitHub or use HTTPS remote.
-- `remote origin already exists`: use `git remote set-url origin ...`.
-- `large file rejected`: use Git LFS and re-commit large assets.
-- `push rejected/non-fast-forward`: run `git pull --rebase origin <branch>` then push again.
