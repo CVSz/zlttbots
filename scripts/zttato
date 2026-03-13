@@ -1,9 +1,9 @@
-# zttato
 #!/usr/bin/env bash
+# zttato
 
 set -e
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 case "${1:-}" in
 
@@ -39,9 +39,9 @@ logs)
 SERVICE="${2:-}"
 
 if [ -z "$SERVICE" ]; then
-ls logs
+ls "$ROOT/logs"
 else
-tail -f logs/"$SERVICE".log
+tail -f "$ROOT/logs/$SERVICE.log"
 fi
 ;;
 

@@ -1,5 +1,5 @@
-# zttato
 #!/usr/bin/env bash
+# zttato
 
 set -Eeuo pipefail
 
@@ -72,7 +72,7 @@ bash "$ROOT/scripts/zttato-doctor.sh"
 ;;
 
 node-install)
-bash scripts/node-install.sh
+bash "$ROOT/scripts/node-install.sh"
 ;;
 
 node-status)
