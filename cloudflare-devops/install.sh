@@ -2,12 +2,35 @@
 set -Eeuo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
+ENV_FILE="$ROOT/env"
+ENV_TEMPLATE="$ROOT/env.example"
 
-source "$ROOT/env"
+if [[ ! -f "$ENV_FILE" ]]; then
+    if [[ -f "$ENV_TEMPLATE" ]]; then
+        cp "$ENV_TEMPLATE" "$ENV_FILE"
+        echo "Created $ENV_FILE from env.example. Fill required values and rerun."
+    else
+        echo "Missing $ENV_FILE and $ENV_TEMPLATE"
+    fi
+    exit 1
+fi
+
+# shellcheck source=/dev/null
+source "$ENV_FILE"
 
 echo "================================"
 echo "Cloudflare Edge Installer"
 echo "================================"
+
+required_vars=(CF_API_TOKEN CF_ACCOUNT_ID CF_ZONE_ID DOMAIN SUBDOMAIN)
+for var in "${required_vars[@]}"; do
+    if [[ -z "${!var:-}" ]]; then
+        echo "Missing required variable in $(basename "$ENV_FILE"): $var"
+        exit 1
+    fi
+done
+
+echo "Installer configuration check passed. Approved to run."
 
 ########################################
 # dependencies
@@ -19,14 +42,11 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 if ! command -v cloudflared >/dev/null 2>&1; then
-
-echo "Installing cloudflared..."
-
-curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 \
--o /usr/local/bin/cloudflared
-
-chmod +x /usr/local/bin/cloudflared
-
+    echo "Installing cloudflared..."
+    curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 \
+        -o /tmp/cloudflared
+    sudo install -m 0755 /tmp/cloudflared /usr/local/bin/cloudflared
+    rm -f /tmp/cloudflared
 fi
 
 ########################################
@@ -34,10 +54,8 @@ fi
 ########################################
 
 echo "Creating tunnel..."
-
-RESPONSE=$(bash api/create-tunnel.sh)
-
-SUCCESS=$(echo "$RESPONSE" | jq -r '.success')
+RESPONSE="$(bash "$ROOT/api/create-tunnel.sh")"
+SUCCESS="$(echo "$RESPONSE" | jq -r '.success')"
 
 if [[ "$SUCCESS" != "true" ]]; then
     echo "$RESPONSE"
@@ -45,8 +63,8 @@ if [[ "$SUCCESS" != "true" ]]; then
     exit 1
 fi
 
-TUNNEL_ID=$(echo "$RESPONSE" | jq -r '.result.id')
-TOKEN=$(echo "$RESPONSE" | jq -r '.result.token')
+TUNNEL_ID="$(echo "$RESPONSE" | jq -r '.result.id')"
+TOKEN="$(echo "$RESPONSE" | jq -r '.result.token')"
 
 echo "Tunnel ID: $TUNNEL_ID"
 
@@ -54,39 +72,39 @@ echo "Tunnel ID: $TUNNEL_ID"
 # save token
 ########################################
 
-grep -v CF_TUNNEL_TOKEN "$ROOT/env" > "$ROOT/env.tmp" || true
-mv "$ROOT/env.tmp" "$ROOT/env"
-
-echo "CF_TUNNEL_TOKEN=$TOKEN" >> "$ROOT/env"
+grep -v '^CF_TUNNEL_TOKEN=' "$ENV_FILE" > "$ENV_FILE.tmp" || true
+mv "$ENV_FILE.tmp" "$ENV_FILE"
+echo "CF_TUNNEL_TOKEN=$TOKEN" >> "$ENV_FILE"
 
 ########################################
 # create dns
 ########################################
 
 echo "Creating DNS..."
-
-bash api/create-dns.sh "$TUNNEL_ID"
+bash "$ROOT/api/create-dns.sh" "$TUNNEL_ID"
 
 ########################################
 # export env
 ########################################
 
-export $(grep -v '^#' "$ROOT/env" | xargs)
+set -a
+# shellcheck source=/dev/null
+source "$ENV_FILE"
+set +a
 
 ########################################
 # start docker tunnel
 ########################################
 
 docker compose \
--f ../docker-compose.yml \
--f docker/docker-compose.cloudflare.yml \
-up -d
+    -f "$ROOT/../docker-compose.yml" \
+    -f "$ROOT/docker/docker-compose.cloudflare.yml" \
+    up -d
 
 echo ""
 echo "================================"
 echo "Cloudflare Tunnel Running"
 echo "================================"
-
 echo "https://$SUBDOMAIN.$DOMAIN"
 echo "https://admin.$SUBDOMAIN.$DOMAIN"
 echo "https://api.$SUBDOMAIN.$DOMAIN"
