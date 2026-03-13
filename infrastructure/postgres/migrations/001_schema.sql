@@ -51,6 +51,8 @@ rating NUMERIC,
 
 sold INT,
 
+source TEXT,
+
 affiliate_link TEXT,
 
 created_at TIMESTAMP DEFAULT NOW()
