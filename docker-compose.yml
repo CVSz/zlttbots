@@ -1,46 +1,212 @@
+version: "3.9"
+
+name: zttato-platform
 
 services:
-
   postgres:
-    image: postgres:17
+    image: postgres:15.8
+    container_name: zttato-postgres
+    restart: always
     environment:
-      POSTGRES_DB: zttato
-      POSTGRES_USER: zttato
-      POSTGRES_PASSWORD: zttato
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: ${DB_NAME:-zttato}
+      POSTGRES_USER: ${DB_USER:-zttato}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-zttato}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-zttato} -d ${DB_NAME:-zttato}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - zttato-net
 
   redis:
-    image: redis:7.4
-    ports:
-      - "6379:6379"
+    image: redis:7.4.0
+    container_name: zttato-redis
+    restart: always
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - zttato-net
 
   viral-predictor:
-    build: services/viral-predictor
+    build:
+      context: ./services/viral-predictor
+      dockerfile: Dockerfile
+    container_name: zttato-viral-predictor
+    restart: always
+    env_file: .env
     environment:
-      DB_URL: ${DB_URL}
-    ports:
-      - "9100:9100"
-
-  gpu-renderer:
-    build: services/gpu-renderer
-    environment:
-      REDIS_URL: ${REDIS_URL}
-    ports:
-      - "9300:9300"
+      DB_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',9100),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
 
   market-crawler:
-    build: services/market-crawler
+    build:
+      context: ./services/market-crawler
+      dockerfile: Dockerfile
+    container_name: zttato-market-crawler
+    restart: always
+    env_file: .env
     environment:
-      DB_URL: ${DB_URL}
-      REDIS_URL: ${REDIS_URL}
-    ports:
-      - "9400:9400"
+      REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
+      DB_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',9400),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
 
   arbitrage-engine:
-    build: services/arbitrage-engine
+    build:
+      context: ./services/arbitrage-engine
+      dockerfile: Dockerfile
+    container_name: zttato-arbitrage-engine
+    restart: always
+    env_file: .env
     environment:
-      DB_URL: ${DB_URL}
-    ports:
-      - "9500:9500"
+      DB_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',9500),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
 
+  gpu-renderer:
+    build:
+      context: ./services/gpu-renderer
+      dockerfile: Dockerfile
+    container_name: zttato-gpu-renderer
+    restart: always
+    env_file: .env
+    environment:
+      REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',9300),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  crawler-worker:
+    build:
+      context: ./services/market-crawler
+      dockerfile: Dockerfile
+    container_name: zttato-crawler-worker
+    restart: always
+    env_file: .env
+    command: ["python", "src/workers/worker.py"]
+    environment:
+      REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
+      DB_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - zttato-net
+
+  arbitrage-worker:
+    build:
+      context: ./services/arbitrage-engine
+      dockerfile: Dockerfile
+    container_name: zttato-arbitrage-worker
+    restart: always
+    env_file: .env
+    command: ["python", "src/workers/worker.py"]
+    environment:
+      DB_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - zttato-net
+
+  renderer-worker:
+    build:
+      context: ./services/gpu-renderer
+      dockerfile: Dockerfile
+    container_name: zttato-renderer-worker
+    restart: always
+    env_file: .env
+    command: ["python", "src/worker/worker.py"]
+    environment:
+      REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - zttato-net
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: zttato-nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./configs/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      viral-predictor:
+        condition: service_healthy
+      market-crawler:
+        condition: service_healthy
+      arbitrage-engine:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - zttato-net
+
+networks:
+  zttato-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
