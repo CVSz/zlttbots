@@ -90,6 +90,10 @@ echo ""
 echo "Starting infrastructure..."
 docker compose up -d postgres redis
 
+# Ensure compose services get container-resolvable URLs
+export DB_URL="${CONTAINER_DB_URL:-postgresql://zttato:zttato@postgres:5432/zttato}"
+export REDIS_URL="${CONTAINER_REDIS_URL:-redis://redis:6379}"
+
 sleep 6
 
 ################################
@@ -121,7 +125,7 @@ if [ -f "$MIG" ]; then
   CONTAINER=$(docker ps -qf name=postgres | head -n1 || true)
 
   if [ -n "$CONTAINER" ]; then
-    docker exec -i "$CONTAINER" psql -U postgres -f /dev/stdin < "$MIG" || true
+    docker exec -i "$CONTAINER" psql -U zttato -d zttato -f /dev/stdin < "$MIG" || true
   fi
 fi
 
@@ -147,7 +151,7 @@ sleep 5
 
 curl -fs http://localhost:9100/docs || true
 curl -fs http://localhost:9400/docs || true
-curl -fs http://localhost:9500/arbitrage || true
+curl -fs http://localhost:9500/docs || true
 
 ################################
 # Status
