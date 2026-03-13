@@ -1,14 +1,14 @@
 {
-"name": "zttato-click-tracker",
-"version": "1.0.0",
-"type": "module",
-"scripts": {
-"start": "node src/server/server.js"
-},
-"dependencies": {
-"pg": "^8.11.0",
-"uuid": "^9.0.0",
-"geoip-lite": "^1.4.7",
-"dotenv": "^16.4.0"
-}
+  "name": "zttato-click-tracker",
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server/server.js"
+  },
+  "dependencies": {
+    "pg": "^8.11.0",
+    "uuid": "^9.0.0",
+    "geoip-lite": "^1.4.7",
+    "dotenv": "^16.4.0"
+  }
 }

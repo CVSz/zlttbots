@@ -1,15 +1,15 @@
 {
-"name": "zttato-account-farm",
-"version": "1.0.0",
-"type": "module",
-"scripts": {
-"start": "node src/api/server.js"
-},
-"dependencies": {
-"pg": "^8.11.0",
-"express": "^4.19.2",
-"axios": "^1.6.0",
-"dotenv": "^16.4.0",
-"uuid": "^9.0.0"
-}
+  "name": "zttato-account-farm",
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node src/api/server.js"
+  },
+  "dependencies": {
+    "pg": "^8.11.0",
+    "express": "^4.19.2",
+    "axios": "^1.6.0",
+    "dotenv": "^16.4.0",
+    "uuid": "^9.0.0"
+  }
 }
