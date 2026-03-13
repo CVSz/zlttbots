@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [2.0.0] - 2026-03-12
+
+### Changed
+
+- Upgraded all Node.js service package versions to `2.0.0` for a unified final release.
+- Upgraded Node.js runtime images from `node:20` to `node:22` across service Dockerfiles.
+- Upgraded Playwright base images from `v1.43.0-jammy` to `v1.55.0-jammy` for automation services.
+- Upgraded Python service runtime images from `python:3.11` to `python:3.12`.
+- Upgraded CUDA runtime image for GPU renderer to `12.6.3`.
+- Pinned and upgraded Python dependencies to current stable versions for reproducible builds.
+- Upgraded core infrastructure images in compose: PostgreSQL `17`, Redis `7.4`.
+
 ## [1.0.0] - 2026-03-13
 
 ### Added
