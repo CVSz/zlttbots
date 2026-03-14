@@ -90,9 +90,10 @@ echo ""
 echo "Starting infrastructure..."
 docker compose up -d postgres redis
 
-# Ensure compose services get container-resolvable URLs
-export DB_URL="${CONTAINER_DB_URL:-postgresql://zttato:zttato@postgres:5432/zttato}"
-export REDIS_URL="${CONTAINER_REDIS_URL:-redis://redis:6379}"
+# Ensure compose services get container-resolvable URLs without leaking
+# container-only hostnames into locally executed workers.
+COMPOSE_DB_URL="${CONTAINER_DB_URL:-postgresql://zttato:zttato@postgres:5432/zttato}"
+COMPOSE_REDIS_URL="${CONTAINER_REDIS_URL:-redis://redis:6379}"
 
 sleep 6
 
@@ -102,7 +103,7 @@ sleep 6
 
 echo ""
 echo "Building services..."
-docker compose build
+DB_URL="$COMPOSE_DB_URL" REDIS_URL="$COMPOSE_REDIS_URL" docker compose build
 
 ################################
 # Start services
@@ -110,7 +111,7 @@ docker compose build
 
 echo ""
 echo "Starting services..."
-docker compose up -d
+DB_URL="$COMPOSE_DB_URL" REDIS_URL="$COMPOSE_REDIS_URL" docker compose up -d
 
 ################################
 # Run DB migrations
