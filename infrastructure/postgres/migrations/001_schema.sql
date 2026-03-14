@@ -3,7 +3,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 
 
-CREATE TABLE accounts (
+CREATE TABLE IF NOT EXISTS accounts (
 
 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
@@ -21,7 +21,7 @@ created_at TIMESTAMP DEFAULT NOW()
 
 
 
-CREATE TABLE proxies (
+CREATE TABLE IF NOT EXISTS proxies (
 
 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
@@ -39,7 +39,7 @@ active BOOLEAN DEFAULT TRUE
 
 
 
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
 
 id BIGINT PRIMARY KEY,
 
@@ -59,7 +59,7 @@ created_at TIMESTAMP DEFAULT NOW()
 
 );
 
-create table arbitrage_events (
+CREATE TABLE IF NOT EXISTS arbitrage_events (
 
 id serial primary key,
 
@@ -80,7 +80,7 @@ created_at timestamp default now()
 );
 
 
-CREATE TABLE tiktok_products (
+CREATE TABLE IF NOT EXISTS tiktok_products (
 
 id BIGINT PRIMARY KEY,
 
@@ -100,7 +100,7 @@ updated_at TIMESTAMP DEFAULT NOW()
 
 
 
-CREATE TABLE campaigns (
+CREATE TABLE IF NOT EXISTS campaigns (
 
 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
@@ -114,7 +114,7 @@ created_at TIMESTAMP DEFAULT NOW()
 
 
 
-CREATE TABLE videos (
+CREATE TABLE IF NOT EXISTS videos (
 
 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
@@ -132,7 +132,7 @@ created_at TIMESTAMP DEFAULT NOW()
 
 
 
-CREATE TABLE jobs (
+CREATE TABLE IF NOT EXISTS jobs (
 
 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
@@ -146,7 +146,7 @@ created_at TIMESTAMP DEFAULT NOW()
 
 
 
-CREATE TABLE clicks (
+CREATE TABLE IF NOT EXISTS clicks (
 
 id BIGSERIAL PRIMARY KEY,
 
@@ -166,7 +166,7 @@ created_at TIMESTAMP DEFAULT NOW()
 
 
 
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
 
 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
@@ -182,19 +182,19 @@ created_at TIMESTAMP DEFAULT NOW()
 
 
 
-CREATE INDEX idx_click_campaign
+CREATE INDEX IF NOT EXISTS idx_click_campaign
 
 ON clicks(campaign_id);
 
 
 
-CREATE INDEX idx_orders_campaign
+CREATE INDEX IF NOT EXISTS idx_orders_campaign
 
 ON orders(campaign_id);
 
 
 
-CREATE INDEX idx_products_sales
+CREATE INDEX IF NOT EXISTS idx_products_sales
 
 ON products(sold);
 

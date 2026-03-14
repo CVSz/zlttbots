@@ -137,8 +137,13 @@ fi
 echo ""
 echo "Starting background workers..."
 
-if [ -f "$ROOT/infrastructure/start/workers.sh" ]; then
-  bash "$ROOT/infrastructure/start/workers.sh"
+if [ "${START_LOCAL_WORKERS:-false}" = "true" ]; then
+  if [ -f "$ROOT/infrastructure/start/workers.sh" ]; then
+    bash "$ROOT/infrastructure/start/workers.sh"
+  fi
+else
+  echo "Skipping local worker processes (containers already run worker services)."
+  echo "Set START_LOCAL_WORKERS=true to run host-based workers."
 fi
 
 ################################
