@@ -1,0 +1,42 @@
+model = "gpt-5-codex"
+
+[openai]
+api_key = "env:OPENAI_API_KEY"
+
+[environment]
+shell = "/bin/bash"
+sandbox = true
+network_access = true
+auto_install_dependencies = true
+max_parallel_tasks = 10
+
+[features]
+multi_agent = true
+background_jobs = true
+long_running_tasks = true
+
+[[agents]]
+name = "architect"
+role = "architecture"
+
+[[agents]]
+name = "developer"
+role = "implementation"
+
+[[agents]]
+name = "debugger"
+role = "bug-fixing"
+
+[[agents]]
+name = "devops"
+role = "deployment"
+
+[[agents]]
+name = "security"
+role = "security-audit"
+
+[repo]
+root = "."
+default_branch = "main"
+auto_commit = true
+branch_prefix = "codex/"

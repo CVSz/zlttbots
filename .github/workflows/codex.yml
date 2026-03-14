@@ -1,0 +1,28 @@
+name: Codex Automation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  codex-review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Codex
+        run: npm install -g @openai/codex
+
+      - name: Run Codex review
+        run: codex --task "review code and propose improvements"
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
