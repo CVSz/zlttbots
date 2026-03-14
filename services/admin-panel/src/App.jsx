@@ -7,7 +7,13 @@ import AdminDashboard from "./pages/AdminDashboard.jsx"
 import OverviewDashboard from "./pages/OverviewDashboard.jsx"
 import RentControlPanel from "./pages/RentControlPanel.jsx"
 import UserDashboard from "./pages/UserDashboard.jsx"
-import { authUsers, initialRentUnits, initialSystemSettings, initialUsers } from "./data/mockData.js"
+import {
+  authUsers,
+  initialBillingRecords,
+  initialRentUnits,
+  initialSystemSettings,
+  initialUsers
+} from "./data/mockData.js"
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null)
@@ -15,6 +21,7 @@ export default function App() {
   const [users, setUsers] = useState(initialUsers)
   const [rentUnits, setRentUnits] = useState(initialRentUnits)
   const [settings, setSettings] = useState(initialSystemSettings)
+  const [billingRecords, setBillingRecords] = useState(initialBillingRecords)
 
   const pageMap = useMemo(
     () => ({
@@ -30,6 +37,7 @@ export default function App() {
             const id = Math.max(...users.map((user) => user.id), 0) + 1
             setUsers((prev) => [...prev, { ...newUser, id, status: "active" }])
           }}
+          billingRecords={billingRecords}
           onToggleUserStatus={(id) => {
             setUsers((prev) =>
               prev.map((user) =>
@@ -37,6 +45,11 @@ export default function App() {
                   ? { ...user, status: user.status === "active" ? "suspended" : "active" }
                   : user
               )
+            )
+          }}
+          onUpdateBillingStatus={(invoiceId, status) => {
+            setBillingRecords((prev) =>
+              prev.map((record) => (record.id === invoiceId ? { ...record, status } : record))
             )
           }}
         />
@@ -51,7 +64,7 @@ export default function App() {
         />
       )
     }),
-    [currentUser, rentUnits, settings, users]
+    [billingRecords, currentUser, rentUnits, settings, users]
   )
 
   function handleLogin(credentials) {

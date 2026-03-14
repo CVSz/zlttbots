@@ -1,7 +1,28 @@
-import React, { useState } from "react"
+import React, { useMemo, useState } from "react"
 
-export default function AdminControlPanel({ users, settings, onUpdateSettings, onAddUser, onToggleUserStatus }) {
+export default function AdminControlPanel({
+  users,
+  settings,
+  billingRecords,
+  onUpdateSettings,
+  onAddUser,
+  onToggleUserStatus,
+  onUpdateBillingStatus
+}) {
   const [form, setForm] = useState({ name: "", email: "", role: "user" })
+
+  const enrichedBillingRecords = useMemo(
+    () =>
+      billingRecords.map((record) => ({
+        ...record,
+        userName: users.find((user) => user.id === record.userId)?.name ?? "Unknown User"
+      })),
+    [billingRecords, users]
+  )
+
+  const totalDue = enrichedBillingRecords
+    .filter((record) => record.status !== "paid")
+    .reduce((sum, record) => sum + record.amount, 0)
 
   function handleSubmit(event) {
     event.preventDefault()
@@ -92,6 +113,57 @@ export default function AdminControlPanel({ users, settings, onUpdateSettings, o
           </li>
         ))}
       </ul>
+
+      <div className="title-row" style={{ marginTop: "1.2rem" }}>
+        <h4>User Billing & Payments</h4>
+        <p className="muted-text">Outstanding balance: ${totalDue.toFixed(2)}</p>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Invoice</th>
+            <th>User</th>
+            <th>Plan</th>
+            <th>Amount</th>
+            <th>Due Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {enrichedBillingRecords.map((record) => (
+            <tr key={record.id}>
+              <td>{record.id}</td>
+              <td>{record.userName}</td>
+              <td>{record.plan}</td>
+              <td>${record.amount.toFixed(2)}</td>
+              <td>{record.dueDate}</td>
+              <td>
+                <span className={`pill ${record.status}`}>{record.status}</span>
+              </td>
+              <td>
+                <div className="button-group">
+                  <button type="button" onClick={() => onUpdateBillingStatus(record.id, "paid")}>Paid</button>
+                  <button
+                    type="button"
+                    className="ghost"
+                    onClick={() => onUpdateBillingStatus(record.id, "pending")}
+                  >
+                    Pending
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => onUpdateBillingStatus(record.id, "overdue")}
+                  >
+                    Overdue
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </section>
   )
 }
