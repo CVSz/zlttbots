@@ -220,9 +220,19 @@ echo "Starting cloudflared"
 
 docker rm -f zttato-cloudflared >/dev/null 2>&1 || true
 
+NETWORK="zttato-platform_zttato-net"
+if ! docker network inspect "$NETWORK" >/dev/null 2>&1; then
+    NETWORK="zttato-platform_default"
+fi
+
+if ! docker network inspect "$NETWORK" >/dev/null 2>&1; then
+    echo "ERROR: Could not find docker network for stack (checked zttato-platform_zttato-net and zttato-platform_default)"
+    exit 1
+fi
+
 docker run -d \
 --name zttato-cloudflared \
---network zttato-platform_default \
+--network "$NETWORK" \
 --restart unless-stopped \
 cloudflare/cloudflared:latest \
 tunnel --no-autoupdate run --token "$CF_TUNNEL_TOKEN"

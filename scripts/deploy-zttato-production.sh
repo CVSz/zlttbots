@@ -80,7 +80,11 @@ sleep 5
 echo
 echo "Checking docker network"
 
-NETWORK="zttato-platform_default"
+NETWORK="zttato-platform_zttato-net"
+
+if ! docker network inspect "$NETWORK" >/dev/null 2>&1; then
+    NETWORK="zttato-platform_default"
+fi
 
 if ! docker network inspect "$NETWORK" >/dev/null 2>&1; then
     echo "Creating docker network"
