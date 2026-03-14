@@ -1,86 +1,169 @@
-# zTTato Platform — Production Layout
 
-This repository includes a production-ready Docker Compose deployment with isolated services, worker containers, reverse proxy routing, persistent state, and health checks.
+# zTTato Platform
 
-## Production layout
+zTTato Platform is a modular automation and growth infrastructure designed for large-scale social commerce and affiliate operations.
+It combines Node.js services, Python compute services, AI pipelines, and data crawlers with containerized infrastructure,
+orchestration tooling, and edge networking integration.
 
-```text
-zttato-platform
-│
-├─ docker
-│   ├─ postgres
-│   └─ nginx
-│
-├─ services
-│   ├─ viral-predictor
-│   ├─ market-crawler
-│   ├─ gpu-renderer
-│   ├─ arbitrage-engine
-│   ├─ analytics
-│   ├─ click-tracker
-│   └─ admin-panel
-│
-├─ workers
-│   ├─ crawler-worker
-│   ├─ arbitrage-worker
-│   └─ renderer-worker
-│
-├─ infrastructure
-│   ├─ postgres
-│   │   └─ migrations
-│   ├─ monitoring
-│   └─ scripts
-│
-├─ configs
-│   ├─ nginx.conf
-│   └─ env
-│
-├─ docker-compose.yml
-├─ .env
-├─ start.sh
-├─ stop.sh
-└─ README.md
-```
+The platform is designed for:
+- TikTok automation pipelines
+- Social commerce intelligence
+- AI-generated media production
+- Market arbitrage detection
+- Large-scale crawler operations
+- Growth analytics and prediction
 
+Architecture: microservice-oriented with independent services communicating through APIs, queues, and shared infrastructure.
 
-## Project status and recommended next additions
+---
 
-- Thai summary and implementation-ready roadmap: `docs/development/current-status-and-next-steps.md`
-- Health endpoint catalog: `docs/operations/health-checks.md`
-- Integration smoke test script: `scripts/test-integration.sh`
+## Architecture Overview
 
-## Usage
+Layer | Technology | Purpose
+----- | ---------- | -------
+API Services | Node.js | REST APIs and automation logic
+Compute Services | Python | ML, crawling, arbitrage engines
+Queue & Cache | Redis | Worker communication and job queues
+Database | PostgreSQL | Persistent data storage
+Infrastructure | Docker / Kubernetes | Container orchestration
+Edge | Cloudflare | DNS, tunnels, and edge networking
+UI | React | Admin control panel
 
-```bash
+---
+
+## Repository Structure
+
+.
+├── docker-compose.yml
+├── start-zttato.sh
+├── env.edge
+├── cloudflare-devops/
+├── infrastructure/
+│   ├── ci/
+│   ├── k8s/
+│   ├── postgres/
+│   ├── scripts/
+│   └── start/
+├── scripts/
+└── services/
+    ├── account-farm
+    ├── admin-panel
+    ├── ai-video-generator
+    ├── analytics
+    ├── arbitrage-engine
+    ├── click-tracker
+    ├── gpu-renderer
+    ├── market-crawler
+    ├── shopee-crawler
+    ├── tiktok-farm
+    ├── tiktok-shop-miner
+    └── viral-predictor
+
+---
+
+## Quick Start
+
+Prerequisites
+- Docker
+- Docker Compose
+- Node.js
+- Python 3
+- Git
+
+Bootstrap:
+
+bash start-zttato.sh
+
+The bootstrap script:
+- fixes script permissions
+- installs dependencies
+- starts postgres/redis
+- builds containers
+- runs migrations
+- starts workers
+- performs health checks
+
+---
+
+## Manual Validation
+
+Shell syntax check
+
+while IFS= read -r f; do bash -n "$f"; done < <(rg --files -g '*.sh')
+
+Python syntax
+
+python -m compileall services
+
+JSON validation
+
+while IFS= read -r f; do python -m json.tool "$f" >/dev/null; done < <(rg --files -g 'package.json')
+
+---
+
+## Running the Platform
+
+Start
+
 ./start.sh
-```
 
-Health status:
+Check services
 
-```bash
 docker compose ps
-```
 
-Stop the stack:
+Stop
 
-```bash
 ./stop.sh
-```
 
-## Endpoints
+---
 
-- `http://SERVER/predict`
-- `http://SERVER/crawl`
-- `http://SERVER/arbitrage`
+## API Endpoints
 
-## Scale workers
+/predict
+/crawl
+/arbitrage
 
-```bash
+Example:
+
+http://SERVER/predict
+http://SERVER/crawl
+http://SERVER/arbitrage
+
+---
+
+## Worker Scaling
+
 docker compose up -d --scale crawler-worker=5
-```
+
+---
 
 ## Backup
 
-```bash
 pg_dump -U zttato zttato > backup.sql
-```
+
+Restore
+
+psql -U zttato zttato < backup.sql
+
+---
+
+## Documentation
+
+docs/development/current-status-and-next-steps.md
+docs/operations/health-checks.md
+scripts/test-integration.sh
+
+---
+
+## Roadmap
+
+- distributed queue architecture
+- service discovery
+- GPU cluster orchestration
+- CI/CD automation
+- Kubernetes multi-node support
+- observability stack
+
+---
+
+License: Private internal infrastructure project
