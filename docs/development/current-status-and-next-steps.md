@@ -1,124 +1,131 @@
-# สรุปสถานะปัจจุบันและสิ่งที่ควรเพิ่มต่อ (Current Status & Next Steps)
+# Current Project Review and What We Need Next
 
-เอกสารนี้สรุปว่า **ตอนนี้ระบบมีอะไรแล้ว** และเสนอว่า **ควรเพิ่มอะไรต่อเป็นลำดับถัดไป** พร้อมตัวอย่างงานที่เริ่มทำได้ทันที
+This document is a practical review of the current `zttato-platform` repository and a clear execution plan for the next phase.
 
-## 0) สิ่งที่เพิ่มเข้ามาแล้วในรอบนี้
+## 1) Current snapshot (what we already have)
 
-เพื่อให้เริ่มใช้งานได้ทันที มีการเพิ่มพื้นฐานชุดแรกแล้ว:
+### Platform and runtime foundation
+- Central orchestration with `docker-compose.yml` including PostgreSQL, Redis, API services, workers, and NGINX reverse proxy.
+- Service-level health checks are already configured in Compose for critical services.
+- Startup and shutdown scripts exist at repository root (`start.sh`, `stop.sh`) and in `scripts/`.
 
-- เพิ่มเอกสาร health checks: `docs/operations/health-checks.md`
-- เพิ่มสคริปต์ integration smoke test: `scripts/test-integration.sh`
-- เพิ่ม `/healthz` endpoint ใน API services หลัก: `viral-predictor`, `market-crawler`, `arbitrage-engine`, `gpu-renderer`
+### Service landscape
+- Python API services with Uvicorn entrypoints:
+  - `viral-predictor`
+  - `market-crawler`
+  - `arbitrage-engine`
+  - `gpu-renderer`
+- Node.js services present for analytics, tracking, farming, uploader, and crawler/miner workflows.
+- Admin panel service exists with Next.js stack and component structure.
 
-## 1) ตอนนี้เราเขียนอะไรไปแล้วบ้าง
-
-จากโครงสร้างโปรเจกต์และเอกสารปัจจุบัน แพลตฟอร์มมีองค์ประกอบหลักครบระดับ Foundation แล้ว:
-
-- โครงสร้างเป็น Microservices หลายตัว เช่น `viral-predictor`, `market-crawler`, `gpu-renderer`, `arbitrage-engine`, `analytics`, `account-farm`, `tiktok-uploader` และ `ai-video-generator`
-- มี Infrastructure ระดับใช้งานจริง: Docker Compose, PostgreSQL migrations, Kubernetes manifests, CI/deploy scripts
-- มีเอกสารครอบคลุมหลายมุม: สถาปัตยกรรม, การติดตั้ง, การปฏิบัติการ (logging/monitoring/backup), และ API overview
-- มีสคริปต์ช่วย run/repair/deploy จำนวนมากใน `scripts/` และ `infrastructure/scripts/`
-
-> สรุปสั้น: สถานะตอนนี้คือ “ระบบฐานพร้อมใช้งานและขยายต่อได้” แต่ยังขาดส่วน “การบูรณาการและคุณภาพการผลิต (production quality gates)” บางส่วน
-
-## 2) ควรเพิ่มอะไรต่อ (เรียงตามความคุ้มค่า)
-
-## Priority 1: ทำให้ระบบตรวจสอบสุขภาพได้ครบทุก service
-
-**เป้าหมาย:** ทุก service ควรมี endpoint เช่น `/healthz` และมีมาตรฐาน response เดียวกัน
-
-สิ่งที่ต้องเพิ่ม:
-
-1. เพิ่ม health endpoint ที่ตอบสถานะ dependency สำคัญ (DB/queue/external API)
-2. รวม health check เข้ากับ `docker-compose.yml` และถ้ามี k8s ให้ใส่ readiness/liveness probes
-3. สร้างหน้าเอกสารกลางที่บอกว่า endpoint สุขภาพของแต่ละ service คืออะไร
-
-ผลลัพธ์ที่ได้ทันที:
-- ลดเวลาหาสาเหตุตอนระบบล่ม
-- Auto-restart ทำงานได้แม่นยำขึ้น
-
-## Priority 2: เพิ่ม “Integration Test แบบเส้นทางหลัก”
-
-**เป้าหมาย:** ทดสอบ flow สำคัญตั้งแต่รับ request จนถึงบันทึกผลลัพธ์
-
-สิ่งที่ต้องเพิ่ม:
-
-1. เลือก 2-3 เส้นทางหลัก เช่น
-   - `market-crawler -> analytics`
-   - `tiktok-uploader -> analytics`
-   - `ai-video-generator -> gpu-renderer`
-2. ทำ test harness ที่รันด้วย Docker Compose profile test
-3. เพิ่มคำสั่งทดสอบกลาง เช่น `./scripts/test-integration.sh`
-
-ผลลัพธ์ที่ได้ทันที:
-- มั่นใจขึ้นเวลา merge/upgrade dependency
-- ลด incident จาก service contract ที่เปลี่ยนโดยไม่ตั้งใจ
-
-## Priority 3: เพิ่ม API contract และ schema validation
-
-**เป้าหมาย:** ลด bug จาก payload ไม่ตรงรูปแบบ
-
-สิ่งที่ต้องเพิ่ม:
-
-1. กำหนด JSON schema/OpenAPI สำหรับ endpoint หลัก
-2. Validate request/response ฝั่ง API
-3. เพิ่ม contract tests ระหว่าง service ที่คุยกันบ่อย
-
-ผลลัพธ์ที่ได้ทันที:
-- ทีมพัฒนาเชื่อม service กันง่ายขึ้น
-- เอกสาร API อัปเดตตามโค้ดได้จริง
-
-## Priority 4: ทำ Observability ให้ครบ trace + metrics + structured logs
-
-**เป้าหมาย:** รู้ให้ได้ว่า request หนึ่งวิ่งผ่าน service ไหนบ้างและช้าเพราะอะไร
-
-สิ่งที่ต้องเพิ่ม:
-
-1. Correlation ID กลางในทุก service
-2. Structured logging รูปแบบเดียวกัน (JSON + fields มาตรฐาน)
-3. Metrics dashboard ชุดเดียวสำหรับ latency/error rate/throughput
-
-## Priority 5: Security baseline ที่ enforce ได้จริง
-
-**เป้าหมาย:** ลดความเสี่ยงเชิงระบบก่อนโต
-
-สิ่งที่ต้องเพิ่ม:
-
-1. Secrets management (ย้ายค่าลับออกจากไฟล์ plain env)
-2. Dependency scanning ใน CI
-3. Image scanning + minimum base image hardening
-4. Rate limiting และ auth policy สำหรับ endpoint ที่เสี่ยง
-
-## 3) ตัวอย่างแผน 2 สัปดาห์ (เริ่มได้เลย)
-
-### Week 1
-- สร้างมาตรฐาน `/healthz` ทุก service
-- ต่อ health check เข้า compose/k8s
-- เขียนเอกสาร endpoint สุขภาพรวม
-
-### Week 2
-- ทำ integration test เส้นทางหลักอย่างน้อย 2 flow
-- เพิ่ม schema validation ให้ endpoint สำคัญ 3 จุด
-- ใส่ CI gate: ถ้า integration test fail ให้ block merge
-
-## 4) Definition of Done (DoD) ที่แนะนำ
-
-งานแต่ละ service ถือว่าเสร็จเมื่อ:
-
-- มี health endpoint และผ่าน check อัตโนมัติ
-- มี integration test อย่างน้อย 1 เคสต่อเส้นทางหลัก
-- มี schema validation สำหรับ request สำคัญ
-- มี structured logs พร้อม correlation id
-- มีเอกสารอัปเดตใน `docs/services/*.md`
-
-## 5) Backlog พร้อมหยิบทำ (Ready-to-implement)
-
-1. สร้างไฟล์ `docs/operations/health-checks.md` รวบรวม endpoint สุขภาพทั้งหมด
-2. เพิ่มสคริปต์ `scripts/test-integration.sh` สำหรับรัน smoke/integration test
-3. เพิ่ม CI job `integration-test` ใน pipeline
-4. อัปเดต `docs/api/api-overview.md` ให้มีตัวอย่าง payload ที่ตรวจ schema แล้ว
-5. เพิ่มเอกสาร runbook incident สั้น ๆ ต่อ service ใน `docs/operations/`
+### Engineering and operations assets
+- CI workflow exists under `.github/workflows/zttato-ci.yml`.
+- Operational docs exist for backup, monitoring, logging, and disaster recovery.
+- Integration smoke-test script exists (`scripts/test-integration.sh`).
+- Repository validation script exists (`infrastructure/scripts/validate-repo.sh`).
 
 ---
 
-หากต้องการต่อยอดทันที แนะนำเริ่มจาก **Priority 1 + Priority 2** ก่อน เพราะได้ผลด้านเสถียรภาพเร็วที่สุดและลดปัญหาตอน deploy จริงอย่างชัดเจน
+## 2) Key strengths
+
+1. **Good infrastructure baseline**
+   - Compose topology, health checks, and dependency ordering are already in place.
+2. **Service decomposition is clear**
+   - Domain responsibilities are separated into individual services.
+3. **Operations-first mindset**
+   - Runbooks and operational documentation are already started.
+4. **Automation hooks already exist**
+   - There are scripts for diagnostics, deployment, repair, and integration checks.
+
+---
+
+## 3) Current gaps that block production maturity
+
+1. **Quality gates are not consistently enforced**
+   - Validation scripts exist, but there is no clear mandatory CI gate matrix (lint + unit + integration + contract).
+2. **Cross-service contracts need stronger control**
+   - APIs and payload schemas are documented, but strict contract verification should be expanded to prevent integration drift.
+3. **Observability still needs standardization**
+   - Need consistent correlation IDs, structured logs, and agreed service-level SLO dashboards.
+4. **Security baseline needs hard enforcement**
+   - Secret lifecycle, image/dependency scanning, and policy checks should be mandatory on pipeline.
+5. **Release governance and ownership model need formalization**
+   - Need explicit ownership, definition of done per service, and release readiness checklist.
+
+---
+
+## 4) What we need next (priority roadmap)
+
+## Priority A (Week 1): Reliability hardening
+
+- Standardize `/healthz` and `/readyz` response shape for all HTTP services.
+- Add readiness/liveness parity between Docker Compose and Kubernetes manifests.
+- Define one owner per service and add on-call routing metadata.
+- Add a single command to run baseline checks locally (syntax + smoke + docs link checks).
+
+**Exit criteria:**
+- Every API service has deterministic health endpoints.
+- Failures are visible through one dashboard or one aggregated health report.
+
+## Priority B (Week 2): CI quality gates and contract safety
+
+- Enforce mandatory CI stages: lint, syntax, unit tests, integration smoke tests.
+- Add contract tests for high-risk service boundaries:
+  - crawler -> analytics
+  - uploader -> analytics
+  - predictor -> downstream storage/reporting
+- Block merge on contract or integration failures.
+
+**Exit criteria:**
+- No PR can merge if service contracts break.
+- Main branch always deployable from latest commit.
+
+## Priority C (Week 3): Observability and incident response
+
+- Introduce correlation ID propagation in all APIs/workers.
+- Normalize JSON logging fields (`service`, `env`, `trace_id`, `request_id`, `latency_ms`, `status`).
+- Publish SLO dashboards for p95 latency, error rate, throughput.
+- Create incident playbooks for top-5 failure scenarios.
+
+**Exit criteria:**
+- One request can be traced end-to-end in logs.
+- Incident triage starts with a documented playbook and measured SLO status.
+
+## Priority D (Week 4): Security and release governance
+
+- Move secrets to managed secret mechanism (not plain env committed workflows).
+- Add dependency and container image scanning in CI.
+- Define release checklist: migration safety, rollback, smoke tests, post-deploy checks.
+- Add versioned changelog discipline for all production deployments.
+
+**Exit criteria:**
+- Security checks run on every PR and release branch.
+- Every deployment has rollback-ready evidence and post-release verification.
+
+---
+
+## 5) Ready-to-implement backlog (copy into tickets)
+
+1. Create `service-readiness-spec.md` with standard `/healthz` + `/readyz` response contract.
+2. Add `ci-quality-gates` job matrix to `.github/workflows/zttato-ci.yml`.
+3. Add contract-test suite for three critical service-to-service flows.
+4. Add structured logging middleware/template for Python and Node services.
+5. Add `docs/operations/release-checklist.md` and `docs/operations/oncall-ownership.md`.
+6. Add secret scanning and image scanning steps in CI.
+7. Add dashboard definition doc (`docs/operations/slo-dashboard.md`).
+
+---
+
+## 6) Recommended operating cadence
+
+- **Weekly architecture review (30 min):** risks, bottlenecks, contract drift.
+- **Weekly reliability review (30 min):** incidents, SLO trend, top flaky services.
+- **Release review per deploy:** checklist + rollback confirmation.
+
+---
+
+## 7) Executive summary
+
+The project already has a strong platform skeleton (multi-service architecture, orchestration, and operations scripts). The next step is to convert that foundation into **production-grade discipline**: strict quality gates, enforceable service contracts, standardized observability, and security governance.
+
+If we execute Priority A-D in sequence, we move from “functional platform” to “repeatably reliable platform” with lower incident risk and faster safe delivery.
