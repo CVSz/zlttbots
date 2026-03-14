@@ -138,6 +138,10 @@ cat > /tmp/tunnel-config.json <<EOF
         "service": "http://viral-predictor:9100"
       },
       {
+        "hostname": "*.zeaz.dev",
+        "service": "http://nginx:80"
+      },
+      {
         "service": "http_status:404"
       }
     ]
@@ -190,6 +194,7 @@ create_dns "zttato.zeaz.dev"
 create_dns "api.zeaz.dev"
 create_dns "gpu.zeaz.dev"
 create_dns "predict.zeaz.dev"
+create_dns "*.zeaz.dev"
 
 # ------------------------------------------------
 # Deploy Docker platform

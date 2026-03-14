@@ -132,6 +132,7 @@ services:
     env_file: .env
     command: ["python", "src/workers/worker.py"]
     environment:
+      PYTHONPATH: /app/src
       REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
       DB_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
     depends_on:
@@ -151,6 +152,7 @@ services:
     env_file: .env
     command: ["python", "src/workers/worker.py"]
     environment:
+      PYTHONPATH: /app/src
       DB_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
       REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
     depends_on:
@@ -170,6 +172,7 @@ services:
     env_file: .env
     command: ["python", "src/worker/worker.py"]
     environment:
+      PYTHONPATH: /app/src
       REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
     depends_on:
       redis:
