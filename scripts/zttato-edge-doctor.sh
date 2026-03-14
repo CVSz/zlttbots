@@ -177,9 +177,16 @@ echo ""
 echo "Docker Network"
 echo "--------------------------------------"
 
-docker network inspect zttato-platform_default >/dev/null 2>&1 \
-  && echo "[OK] zttato-platform_default exists" \
-  || echo "[WARN] docker network missing"
+DOCKER_NETWORK="zttato-platform_zttato-net"
+if ! docker network inspect "$DOCKER_NETWORK" >/dev/null 2>&1; then
+  DOCKER_NETWORK="zttato-platform_default"
+fi
+
+if docker network inspect "$DOCKER_NETWORK" >/dev/null 2>&1; then
+  echo "[OK] $DOCKER_NETWORK exists"
+else
+  echo "[WARN] docker network missing (checked zttato-platform_zttato-net and zttato-platform_default)"
+fi
 
 ########################################
 # Internal Connectivity
@@ -196,11 +203,19 @@ SERVICES=(
 "viral-predictor:9100"
 )
 
+PROBE_CONTAINER="zttato-market-crawler"
+if ! docker ps --format '{{.Names}}' | grep -qx "$PROBE_CONTAINER"; then
+  PROBE_CONTAINER="zttato-arbitrage-engine"
+fi
+
 for s in "${SERVICES[@]}"; do
-  docker exec zttato-platform-market-crawler-1 \
-    wget -qO- "http://$s" >/dev/null 2>&1 \
-    && echo "[OK] $s reachable" \
-    || echo "[FAIL] $s unreachable"
+  host="${s%:*}"
+  port="${s#*:}"
+  if docker exec "$PROBE_CONTAINER" python -c "import socket; s=socket.create_connection(('$host',$port),3); s.close()" >/dev/null 2>&1; then
+    echo "[OK] $s reachable"
+  else
+    echo "[FAIL] $s unreachable"
+  fi
 done
 
 ########################################
