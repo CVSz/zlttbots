@@ -17,6 +17,12 @@ export const initialSystemSettings = {
   maxConcurrentSessions: 3
 }
 
+export const initialBillingRecords = [
+  { id: "INV-1001", userId: 1, plan: "Enterprise", amount: 249, dueDate: "2026-04-02", status: "paid" },
+  { id: "INV-1002", userId: 2, plan: "Pro", amount: 79, dueDate: "2026-04-08", status: "pending" },
+  { id: "INV-1003", userId: 3, plan: "Starter", amount: 29, dueDate: "2026-03-28", status: "overdue" }
+]
+
 export const authUsers = [
   { email: "admin@zttato.com", password: "admin123", role: "admin", name: "Platform Admin" },
   { email: "user@zttato.com", password: "user123", role: "user", name: "Platform User" }
