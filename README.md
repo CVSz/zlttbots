@@ -42,6 +42,11 @@ zttato-platform
 └─ README.md
 ```
 
+
+## Project status and recommended next additions
+
+- Thai summary and implementation-ready roadmap: `docs/development/current-status-and-next-steps.md`
+
 ## Usage
 
 ```bash
