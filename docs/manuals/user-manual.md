@@ -58,7 +58,7 @@ Depending on your role and enabled modules, the platform frontend contains views
 - Campaigns pages
 - Products pages
 - User/admin control panel pages
-- Rent/admin operational views
+- Rent management operational views
 
 If a page is missing, request role access from an administrator.
 
