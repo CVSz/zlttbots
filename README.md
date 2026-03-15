@@ -170,4 +170,59 @@ docs/manuals/godmode-manual.md
 
 ---
 
+## Enterprise Production Advancement Backlog
+
+Use this list to prioritize what should be added next for enterprise-grade production maturity.
+
+### Security & Compliance
+
+- [ ] Centralized secrets management (Vault / cloud secret manager), replacing plain env files in runtime.
+- [ ] SSO + RBAC for admin panel and internal APIs (OIDC/SAML).
+- [ ] Audit log pipeline for privileged actions (who did what, when, from where).
+- [ ] Automated SAST/DAST and container image scanning in CI.
+- [ ] Data retention + PII controls (encryption at rest, field-level masking, policy docs).
+
+### Reliability & Resilience
+
+- [ ] Define and track SLOs (availability, latency, data freshness) per service.
+- [ ] Add circuit breakers, retries with backoff, and idempotency keys for external calls.
+- [ ] Multi-AZ database and Redis HA setup with tested failover playbooks.
+- [ ] Blue/green or canary deploy strategy for zero-downtime upgrades.
+- [ ] Disaster recovery plan with RPO/RTO targets and regular restore drills.
+
+### Observability & Operations
+
+- [ ] Unified logs, metrics, and tracing (OpenTelemetry + centralized dashboard).
+- [ ] Service-level runbooks for every production service and worker.
+- [ ] Alert routing with severity policy and on-call ownership.
+- [ ] Capacity dashboards (queue depth, worker throughput, DB saturation, error budgets).
+- [ ] Synthetic checks for public endpoints and key internal worker paths.
+
+### Delivery & Governance
+
+- [ ] CI/CD gates: unit/integration/security checks required before deploy.
+- [ ] Environment promotion workflow (dev -> staging -> production) with approvals.
+- [ ] Infrastructure-as-Code policy checks for k8s and docker changes.
+- [ ] Versioned API contracts with backward-compatibility verification.
+- [ ] Change management template for high-risk rollouts.
+
+### Performance & Cost Control
+
+- [ ] Autoscaling policy tuning using real workload metrics.
+- [ ] Workload profiling for Python/Node hot paths and crawler throughput.
+- [ ] Cost allocation tags per service and dashboard for cloud spend visibility.
+- [ ] Queue prioritization and admission control for burst traffic.
+- [ ] Periodic rightsizing review for compute-heavy services (GPU/ML/rendering).
+
+## Already Implemented in This Project (Current Baseline)
+
+- [x] Containerized microservices architecture with Docker Compose and service isolation.
+- [x] Kubernetes deployment artifacts (deployments, services, ingress, autoscaling manifests).
+- [x] Automated platform scripts for bootstrap, rollback, repair, and diagnostics.
+- [x] Worker model separated by domain (crawler-worker, renderer-worker, arbitrage-worker).
+- [x] PostgreSQL + Redis split for persistence and queue/cache responsibilities.
+- [x] Cloudflare edge/devops helper tooling for DNS and tunnel operations.
+
+---
+
 License: Private internal infrastructure project
