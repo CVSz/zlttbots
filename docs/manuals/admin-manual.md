@@ -107,7 +107,7 @@ Adjust based on queue depth and resource limits.
 ### Backup
 
 ```bash
-pg_dump -U zttato zttato > backup.sql
+pg_dump -U zttato zttato > backup-$(date +%Y%m%d%H%M%S).sql
 ```
 
 ### Restore
