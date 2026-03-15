@@ -6,6 +6,7 @@ from enterprise_maturity.performance import AutoscalingAdvisor, QueueAdmissionCo
 from enterprise_maturity.resilience import CircuitBreaker, IdempotencyStore, RetryPolicy
 from enterprise_maturity.roadmap import ROADMAP_IMPLEMENTATION
 from enterprise_maturity.security import AccessToken, AuditEvent, AuditLogPipeline, RBACPolicy, SecretManager, SecretRotationPolicy
+from enterprise_maturity.v3_upgrade import EnterpriseUpgradeV3, TopicSpec, UpgradeComponent, UpgradePhase
 
 
 def test_secret_manager_rotation_due():
@@ -88,3 +89,43 @@ def test_roadmap_has_all_items():
     assert len(ROADMAP_IMPLEMENTATION) == 25
     assert ROADMAP_IMPLEMENTATION[0].id == 1
     assert ROADMAP_IMPLEMENTATION[-1].id == 25
+
+
+def test_v3_upgrade_blueprint_validation_and_phase_checklist():
+    blueprint = EnterpriseUpgradeV3.default_blueprint()
+    blueprint.validate()
+
+    checklist = blueprint.phase_checklist("phase-1-foundation")
+    assert any("Traefik" in item for item in checklist)
+    assert any("SLI dashboards" in item for item in checklist)
+
+
+def test_v3_upgrade_blueprint_rejects_duplicate_topics():
+    blueprint = EnterpriseUpgradeV3(
+        components=(UpgradeComponent("api", "gateway", "high"),),
+        topics=(
+            TopicSpec("events", partitions=3, retention_hours=24),
+            TopicSpec("events", partitions=3, retention_hours=24),
+        ),
+        phases=(UpgradePhase("p1", goals=("goal",), exit_criteria=("exit",)),),
+    )
+
+    try:
+        blueprint.validate()
+        assert False, "validation should fail"
+    except ValueError as exc:
+        assert "Duplicate topic" in str(exc)
+
+
+def test_v3_upgrade_blueprint_rejects_unknown_dependency():
+    blueprint = EnterpriseUpgradeV3(
+        components=(UpgradeComponent("api", "gateway", "high", ("missing",)),),
+        topics=(TopicSpec("events", partitions=3, retention_hours=24),),
+        phases=(UpgradePhase("p1", goals=("goal",), exit_criteria=("exit",)),),
+    )
+
+    try:
+        blueprint.validate()
+        assert False, "validation should fail"
+    except ValueError as exc:
+        assert "Unknown dependency" in str(exc)
