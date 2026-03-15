@@ -152,6 +152,10 @@ psql -U zttato zttato < backup.sql
 docs/development/current-status-and-next-steps.md
 docs/operations/health-checks.md
 scripts/test-integration.sh
+docs/manuals/user-manual.md
+docs/manuals/admin-manual.md
+docs/manuals/devops-manual.md
+docs/manuals/godmode-manual.md
 
 ---
 
