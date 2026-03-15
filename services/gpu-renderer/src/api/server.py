@@ -35,5 +35,6 @@ def healthz():
 
 @app.post('/render')
 def render_video(job: Job):
-    enqueue(job.dict())
+    payload = job.model_dump() if hasattr(job, "model_dump") else job.dict()
+    enqueue(payload)
     return {'status': 'queued'}

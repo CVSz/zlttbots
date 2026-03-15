@@ -43,7 +43,8 @@ def healthz():
 
 @app.post('/predict')
 def predict_viral(video: Video):
-    features = extract_features(video.dict())
+    video_payload = video.model_dump() if hasattr(video, "model_dump") else video.dict()
+    features = extract_features(video_payload)
     score = predict(features)
 
     return {
