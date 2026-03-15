@@ -1,5 +1,8 @@
 name: Codex Automation
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:
