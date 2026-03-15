@@ -1,40 +1,44 @@
 # Full Source Scan Report (2026-03-15)
 
 ## Scope
-Scanned the repository source tree with available non-interactive checks:
+Deep-scanned the repository source tree with available non-interactive checks:
 
 - Python syntax validation across all `*.py` files.
 - JavaScript syntax validation across all `*.js` files.
 - JSX file inventory (`*.jsx`) with parser limitation note.
 - Existing Python test suite (`pytest`).
-- Repository validation script (`infrastructure/scripts/validate-repo.sh`).
+- Repository-wide validation script (`infrastructure/scripts/validate-repo.sh`).
+- Node dependency audit attempt across all Node services (`infrastructure/scripts/node-dependency-scan.sh`).
 
 ## Commands Run
 
 ```bash
 bash infrastructure/scripts/full-source-scan.sh
 bash infrastructure/scripts/validate-repo.sh
-npm -C services/admin-panel run build
+bash infrastructure/scripts/node-dependency-scan.sh
 ```
 
 ## Findings
 
-1. **No Python syntax errors** were detected.
-2. **No JavaScript syntax errors** were detected for `.js` files.
-3. **12 JSX files** were detected. Direct `node --check` does not parse JSX; these files should be validated through their framework build tooling.
-4. **Pytest passed**: `7 passed`.
-5. **Repository validation passed** (shell syntax, Python syntax, package.json validation).
-6. Attempting to build `services/admin-panel` failed in this environment because `next` is not installed in the current runtime (`sh: 1: next: not found`).
+1. **Source checks are up to date and passing** for currently configured local checks.
+   - Python syntax: pass.
+   - JavaScript syntax (`.js`): pass.
+   - Pytest suite: **9 passed**.
+   - Repository validation: pass (shell syntax, Python syntax, package.json validation).
+2. **JSX coverage is inventory-only** in this scan.
+   - 12 `.jsx` files were detected.
+   - Direct `node --check` does not parse JSX, so framework-level build validation is still required for full JSX assurance.
+3. **Dependency “latest update” status could not be fully confirmed for Node services** in this environment.
+   - `npm audit` calls in `node-dependency-scan.sh` returned HTTP 403 from npm advisory endpoints.
+   - Because of the registry-side access limitation, vulnerability/advisory freshness checks could not complete.
 
-## Fixes Applied
+## Update Status
 
-To make full-scan workflow repeatable and explicit, added:
+- **Codebase quality checks**: updated and successfully re-run.
+- **Dependency security update status**: **partially blocked by environment/registry policy** (npm audit endpoint unavailable from this runtime).
 
-- `infrastructure/scripts/full-source-scan.sh` — a consolidated scan script that performs Python checks, JavaScript checks, JSX inventory, and `pytest`.
+## Recommended Next Actions
 
-No source-code logic errors were detected during this pass, so no application code changes were required.
-
-## Recommended Follow-ups
-
-- Run frontend service-level builds in environments where dependencies are installed (e.g., `npm ci` inside each Node service before build checks).
-- If desired, add framework-specific lint/build steps for JSX/TSX services to CI.
+- Re-run `bash infrastructure/scripts/node-dependency-scan.sh` from an environment with npm advisory API access.
+- Optionally add a fallback `npm outdated` workflow per service to track version drift when audit endpoints are unavailable.
+- Keep this report refreshed whenever significant source or dependency changes are merged.
