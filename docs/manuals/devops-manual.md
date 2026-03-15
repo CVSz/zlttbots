@@ -152,7 +152,7 @@ docker compose up -d
 ### Backup data
 
 ```bash
-pg_dump -U zttato zttato > backup.sql
+pg_dump -U zttato zttato > backup.sql-$(date +%Y%m%d%H%M%S)
 ```
 
 ### Restore data
