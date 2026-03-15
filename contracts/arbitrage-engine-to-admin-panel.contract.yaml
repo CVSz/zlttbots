@@ -1,0 +1,6 @@
+name: arbitrage-engine-to-admin-panel
+version: 1.0.0
+owner: arbitrage-team
+producer: services/arbitrage-engine
+consumer: services/admin-panel
+schema: docs/services/arbitrage-engine.md

@@ -12,15 +12,24 @@ spec:
       labels:
         app: postgres
     spec:
+      securityContext:
+        runAsNonRoot: true
       containers:
-      - name: postgres
-        image: postgres:15
-        env:
-        - name: POSTGRES_DB
-          value: zttato
-        - name: POSTGRES_USER
-          value: zttato
-        - name: POSTGRES_PASSWORD
-          value: zttato
-        ports:
-        - containerPort: 5432
+        - name: postgres
+          image: postgres:15
+          env:
+            - name: POSTGRES_DB
+              value: zttato
+            - name: POSTGRES_USER
+              value: zttato
+            - name: POSTGRES_PASSWORD
+              value: zttato
+          ports:
+            - containerPort: 5432
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1
+              memory: 1Gi
