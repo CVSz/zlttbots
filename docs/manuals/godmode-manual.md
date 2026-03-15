@@ -90,7 +90,7 @@ When possible, use scripted pathways instead of ad-hoc commands to keep operatio
 ### Manual database backup
 
 ```bash
-pg_dump -U zttato zttato > backup.sql
+pg_dump -U zttato zttato > backup-$(date +%Y%m%d%H%M%S).sql
 ```
 
 ### Manual restore
