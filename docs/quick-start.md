@@ -1,17 +1,49 @@
 # Quick Start
 
-## Local startup
+This guide gets a local zTTato environment running with the default Docker Compose stack.
+
+## Prerequisites
+
+- Docker Engine + Docker Compose
+- Python 3 (for `pytest`)
+- Git
+
+## 1. Build
 
 ```bash
-./start-zttato.sh
+docker compose build
 ```
 
-## Verify services
+## 2. Start
+
+```bash
+docker compose up -d
+```
+
+## 3. Validate
 
 ```bash
 docker compose ps
 ```
 
-## Open dashboard
+Expected critical runtime services include `postgres`, `redis`, API services, and workers (`crawler-worker`, `renderer-worker`, `arbitrage-worker`).
 
-- http://localhost:5173
+## 4. Run tests
+
+```bash
+pytest
+```
+
+## 5. Use the platform
+
+- Dashboard (local): `http://localhost:5173`
+- API routes (via nginx):
+  - `http://localhost/predict`
+  - `http://localhost/crawl`
+  - `http://localhost/arbitrage`
+
+## 6. Stop
+
+```bash
+docker compose down
+```

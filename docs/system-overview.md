@@ -1,20 +1,49 @@
 # System Overview
 
-zTTato-platform is an AI-powered affiliate automation system for high-volume product discovery, content creation, campaign execution, and performance analytics.
+zTTato Platform is an AI-assisted affiliate automation system for product discovery, campaign acceleration, and conversion optimization.
 
-## Primary Goals
+## Platform objectives
 
-- Discover profitable products from multiple marketplaces.
-- Predict and generate high-performing marketing content.
-- Automate publishing and account operations.
-- Track user engagement and campaign conversion.
-- Provide analytics for optimization loops.
+- Discover profitable products from marketplaces.
+- Score opportunities using ML/prediction services.
+- Automate campaign publishing workflows.
+- Track click/conversion performance and optimize outcomes.
 
-## Major Components
+## High-level architecture
 
-- Crawlers and data ingestion workers
-- AI predictor and generation services
-- Rendering and media processing workers
-- Automation farm and uploader services
-- Click tracking and analytics services
-- Admin dashboard frontend
+### Data layer
+
+- `postgres`: persistent relational storage
+- `redis`: queue/cache and worker coordination
+
+### API and compute services
+
+- `viral-predictor`
+- `market-crawler`
+- `arbitrage-engine`
+- `gpu-renderer`
+- analytics/click-tracking services
+
+### Worker layer
+
+- `crawler-worker`
+- `renderer-worker`
+- `arbitrage-worker`
+
+### Access layer
+
+- `nginx`: reverse-proxy and route gateway
+- `admin-panel`: web UI for operators/admins
+
+## Core request and processing flow
+
+1. Ingestion/crawl discovers product candidates.
+2. Predictor and analytics services score opportunities.
+3. Workers process long-running jobs asynchronously.
+4. Dashboard and API consumers observe results and operate campaigns.
+
+## Operations model
+
+- Container orchestration: Docker Compose (local/ops baseline)
+- Optional deployment manifests: Kubernetes assets in `infrastructure/k8s/`
+- Operational automation: shell scripts in `scripts/` and `infrastructure/scripts/`
