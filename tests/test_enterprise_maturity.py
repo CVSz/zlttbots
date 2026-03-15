@@ -7,6 +7,7 @@ from enterprise_maturity.resilience import CircuitBreaker, IdempotencyStore, Ret
 from enterprise_maturity.roadmap import ROADMAP_IMPLEMENTATION
 from enterprise_maturity.full_upgrade import FULL_UPGRADE_BLUEPRINT, UpgradeBlueprint
 from enterprise_maturity.security import AccessToken, AuditEvent, AuditLogPipeline, RBACPolicy, SecretManager, SecretRotationPolicy
+from enterprise_maturity.v3_upgrade import EnterpriseUpgradeV3, TopicSpec, UpgradeComponent, UpgradePhase
 
 
 def test_secret_manager_rotation_due():
