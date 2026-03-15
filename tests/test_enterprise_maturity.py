@@ -5,6 +5,7 @@ from enterprise_maturity.operations import ErrorBudgetPolicy, ProbeResult, SLO, 
 from enterprise_maturity.performance import AutoscalingAdvisor, QueueAdmissionController, WorkloadMetrics
 from enterprise_maturity.resilience import CircuitBreaker, IdempotencyStore, RetryPolicy
 from enterprise_maturity.roadmap import ROADMAP_IMPLEMENTATION
+from enterprise_maturity.full_upgrade import FULL_UPGRADE_BLUEPRINT, UpgradeBlueprint
 from enterprise_maturity.security import AccessToken, AuditEvent, AuditLogPipeline, RBACPolicy, SecretManager, SecretRotationPolicy
 
 
@@ -88,3 +89,31 @@ def test_roadmap_has_all_items():
     assert len(ROADMAP_IMPLEMENTATION) == 25
     assert ROADMAP_IMPLEMENTATION[0].id == 1
     assert ROADMAP_IMPLEMENTATION[-1].id == 25
+
+
+def test_full_upgrade_blueprint_covers_requested_capabilities():
+    FULL_UPGRADE_BLUEPRINT.validate()
+
+    assert len(FULL_UPGRADE_BLUEPRINT.services) >= 25
+    assert FULL_UPGRADE_BLUEPRINT.crawler_cluster.queue_backend == "kafka"
+    assert "publish" in FULL_UPGRADE_BLUEPRINT.ai_video_pipeline.stages
+    assert "frontend-admin" in {service.name for service in FULL_UPGRADE_BLUEPRINT.services}
+
+
+def test_full_upgrade_blueprint_validation_rejects_small_layout():
+    small_blueprint = UpgradeBlueprint(
+        services=FULL_UPGRADE_BLUEPRINT.services[:2],
+        kafka_topics=FULL_UPGRADE_BLUEPRINT.kafka_topics,
+        crawler_cluster=FULL_UPGRADE_BLUEPRINT.crawler_cluster,
+        ai_video_pipeline=FULL_UPGRADE_BLUEPRINT.ai_video_pipeline,
+        admin_dashboard_modules=FULL_UPGRADE_BLUEPRINT.admin_dashboard_modules,
+        frontend_apps=FULL_UPGRADE_BLUEPRINT.frontend_apps,
+        kubernetes_namespaces=FULL_UPGRADE_BLUEPRINT.kubernetes_namespaces,
+        cicd_stages=FULL_UPGRADE_BLUEPRINT.cicd_stages,
+    )
+
+    try:
+        small_blueprint.validate()
+        assert False, "expected validation error"
+    except ValueError as exc:
+        assert "25 microservices" in str(exc)
