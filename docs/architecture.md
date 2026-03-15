@@ -21,3 +21,7 @@ Renderer → Automation
 Automation → Click Tracker  
 Click Tracker → Analytics  
 Analytics → Dashboard
+
+## Enterprise upgrade design
+
+For the full v3 Enterprise target model and phased migration path, see [`docs/architecture-v3-enterprise.md`](./architecture-v3-enterprise.md).
