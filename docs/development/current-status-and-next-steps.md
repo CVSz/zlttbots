@@ -56,63 +56,66 @@ This document is a practical review of the current `zttato-platform` repository 
 
 ## 4) What we need next (priority roadmap)
 
-## Priority A (Week 1): Reliability hardening
+The enterprise-grade sequence is now captured in `docs/operations/enterprise-production-maturity-roadmap.md`.
 
-- Standardize `/healthz` and `/readyz` response shape for all HTTP services.
-- Add readiness/liveness parity between Docker Compose and Kubernetes manifests.
-- Define one owner per service and add on-call routing metadata.
-- Add a single command to run baseline checks locally (syntax + smoke + docs link checks).
+### Priority A (0-30 days): Foundation controls
 
-**Exit criteria:**
-- Every API service has deterministic health endpoints.
-- Failures are visible through one dashboard or one aggregated health report.
-
-## Priority B (Week 2): CI quality gates and contract safety
-
-- Enforce mandatory CI stages: lint, syntax, unit tests, integration smoke tests.
-- Add contract tests for high-risk service boundaries:
-  - crawler -> analytics
-  - uploader -> analytics
-  - predictor -> downstream storage/reporting
-- Block merge on contract or integration failures.
+- Centralized secret management (remove runtime plain env dependencies).
+- SSO + RBAC for admin and internal privileged APIs.
+- Audit log pipeline for privileged actions.
+- Mandatory CI gates: unit/integration/security/image scanning.
+- Environment promotion with approvals (`dev -> staging -> production`).
+- Service SLO definitions (availability, p95 latency, freshness).
+- Circuit breakers, retries/backoff, and idempotency for external calls.
 
 **Exit criteria:**
-- No PR can merge if service contracts break.
-- Main branch always deployable from latest commit.
+- No production secret is sourced from plain files.
+- No privileged action is unaudited.
+- No production deploy bypasses required checks and approvals.
 
-## Priority C (Week 3): Observability and incident response
+### Priority B (31-60 days): Operational hardening
 
-- Introduce correlation ID propagation in all APIs/workers.
-- Normalize JSON logging fields (`service`, `env`, `trace_id`, `request_id`, `latency_ms`, `status`).
-- Publish SLO dashboards for p95 latency, error rate, throughput.
-- Create incident playbooks for top-5 failure scenarios.
-
-**Exit criteria:**
-- One request can be traced end-to-end in logs.
-- Incident triage starts with a documented playbook and measured SLO status.
-
-## Priority D (Week 4): Security and release governance
-
-- Move secrets to managed secret mechanism (not plain env committed workflows).
-- Add dependency and container image scanning in CI.
-- Define release checklist: migration safety, rollback, smoke tests, post-deploy checks.
-- Add versioned changelog discipline for all production deployments.
+- Unified OpenTelemetry logs/metrics/traces and dashboarding.
+- Runbooks for every production service and worker.
+- Severity-based alert routing with explicit ownership.
+- Capacity dashboards (queue depth, throughput, DB saturation, error budgets).
+- Synthetic checks for public endpoints and key worker paths.
+- IaC policy checks for Kubernetes and Docker changes.
+- Versioned API contracts with compatibility verification.
+- Standardized high-risk rollout template.
+- Data retention and PII policy enforcement.
 
 **Exit criteria:**
-- Security checks run on every PR and release branch.
-- Every deployment has rollback-ready evidence and post-release verification.
+- On-call can diagnose top incidents from runbooks and dashboards.
+- Contract and infra policy regressions are blocked before merge.
+
+### Priority C (61-90 days): Resilience and optimization
+
+- Multi-AZ DB + Redis HA with tested failover playbooks.
+- Blue/green or canary deployment strategy with rollback automation.
+- Disaster recovery targets (RPO/RTO) with regular restore drills.
+- Autoscaling tuning based on real production metrics.
+- Performance profiling for Python/Node hot paths.
+- Cost allocation tags and spend visibility dashboards.
+- Queue prioritization and admission control for burst traffic.
+- Rightsizing reviews for compute-heavy services.
+
+**Exit criteria:**
+- Failover and DR drills consistently meet target objectives.
+- Performance and cost improvements are measured and reported.
 
 ---
 
 ## 5) Ready-to-implement backlog (copy into tickets)
 
-1. Create `service-readiness-spec.md` with standard `/healthz` + `/readyz` response contract.
-2. Add `ci-quality-gates` job matrix to `.github/workflows/zttato-ci.yml`.
-3. Add contract-test suite for three critical service-to-service flows.
-4. Add structured logging middleware/template for Python and Node services.
-5. Add `docs/operations/release-checklist.md` and `docs/operations/oncall-ownership.md`.
-6. Add secret scanning and image scanning steps in CI.
-7. Add dashboard definition doc (`docs/operations/slo-dashboard.md`).
+1. Implement secret manager integration and remove production plain-env secret loading.
+2. Add OIDC/SAML SSO and RBAC middleware for admin/internal APIs.
+3. Add audit event schema and append-only sink for privileged actions.
+4. Add CI job matrix with required security + test gates.
+5. Implement OpenTelemetry baseline instrumentation in all services.
+6. Publish service runbooks, alert policy, and ownership map.
+7. Implement contract-versioning checks for top service boundaries.
+8. Execute HA/failover and DR drill with evidence and playbook updates.
 
 ---
 
