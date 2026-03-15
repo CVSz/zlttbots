@@ -2,44 +2,32 @@
 
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/services"
-LOG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/logs/node"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ECOSYSTEM_CONFIG="$REPO_ROOT/ecosystem.config.js"
+LOG_DIR="$REPO_ROOT/logs/node"
 
 mkdir -p "$LOG_DIR"
 
-SERVICES=(
-  shopee-crawler
-  tiktok-uploader
-  tiktok-shop-miner
-  tiktok-farm
-  account-farm
-  analytics
-  admin-panel
-  ai-video-generator
-  click-tracker
-)
-
 echo "================================="
-echo "Starting Node Services"
-echo "Root: $ROOT"
+echo "Starting Node Services with PM2"
+echo "Repo: $REPO_ROOT"
 echo "================================="
 
-for SERVICE in "${SERVICES[@]}"; do
-  SERVICE_DIR="$ROOT/$SERVICE"
+if [ ! -f "$ECOSYSTEM_CONFIG" ]; then
+  echo "ERROR: ecosystem config not found at $ECOSYSTEM_CONFIG"
+  exit 1
+fi
 
-  if [ ! -d "$SERVICE_DIR" ]; then
-    echo "SKIP: $SERVICE_DIR not found"
-    continue
-  fi
+if ! command -v pm2 >/dev/null 2>&1; then
+  echo "PM2 not found. Installing globally..."
+  npm install -g pm2
+fi
 
-  if [ ! -f "$SERVICE_DIR/package.json" ]; then
-    echo "SKIP: $SERVICE_DIR missing package.json"
-    continue
-  fi
-
-  echo "Installing dependencies -> $SERVICE"
-
-  pushd "$SERVICE_DIR" >/dev/null
+echo "Installing npm dependencies for Node services..."
+while IFS= read -r package_file; do
+  service_dir="$(dirname "$package_file")"
+  echo "Installing dependencies -> $(basename "$service_dir")"
+  pushd "$service_dir" >/dev/null
 
   if [ -f package-lock.json ]; then
     npm ci
@@ -47,23 +35,16 @@ for SERVICE in "${SERVICES[@]}"; do
     npm install
   fi
 
-  LOG_FILE="$LOG_DIR/$SERVICE.log"
-
-  echo "Starting service -> $SERVICE"
-
-  if npm run | grep -q "start"; then
-    nohup npm run start >"$LOG_FILE" 2>&1 &
-  elif npm run | grep -q "dev"; then
-    nohup npm run dev >"$LOG_FILE" 2>&1 &
-  else
-    echo "WARN: $SERVICE has no start/dev script"
-  fi
-
   popd >/dev/null
-done
+done < <(find "$REPO_ROOT/services" -mindepth 2 -maxdepth 2 -name package.json | sort)
+
+echo "Starting PM2 processes from $ECOSYSTEM_CONFIG"
+pm2 start "$ECOSYSTEM_CONFIG"
+pm2 save
+pm2 list
 
 echo ""
 echo "================================="
-echo "Node Services Started"
-echo "Logs: $LOG_DIR"
+echo "Node Services Started via PM2"
+echo "PM2 logs: pm2 logs"
 echo "================================="
