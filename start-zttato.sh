@@ -16,6 +16,10 @@
 set -Eeuo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
+LOG_DIR="$ROOT/logs"
+PID_DIR="$ROOT/pids"
+
+mkdir -p "$LOG_DIR" "$PID_DIR"
 
 echo "================================="
 echo "zTTato Platform Bootstrap"
@@ -53,6 +57,44 @@ do
   dir=$(dirname "$pkg")
   echo "npm install -> $dir"
   (cd "$dir" && npm install --silent)
+done
+
+start_background_process() {
+  local name="$1"
+  local cmd="$2"
+  local pid_file="$PID_DIR/$name.pid"
+  local log_file="$LOG_DIR/$name.log"
+
+  if [ -f "$pid_file" ]; then
+    local existing_pid
+    existing_pid=$(cat "$pid_file")
+
+    if ps -p "$existing_pid" >/dev/null 2>&1; then
+      echo "Process already running: $name (PID $existing_pid)"
+      return
+    fi
+  fi
+
+  nohup bash -c "$cmd" >"$log_file" 2>&1 &
+  echo "$!" >"$pid_file"
+  echo "Started: $name"
+}
+
+################################
+# Start Node.js services
+################################
+
+echo ""
+echo "Starting Node.js services..."
+
+for pkg in $NODE_PKGS
+do
+  service_dir=$(dirname "$pkg")
+  service_name=$(basename "$service_dir")
+
+  if node -e "const p=require(process.argv[1]); process.exit((p.scripts&&p.scripts.start)?0:1)" "$pkg"; then
+    start_background_process "node-$service_name" "cd '$service_dir' && npm start"
+  fi
 done
 
 ################################
