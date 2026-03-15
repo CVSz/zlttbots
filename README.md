@@ -83,6 +83,16 @@ The repository now ships a typed blueprint for a **full enterprise upgrade** tha
 
 See `enterprise_maturity/full_upgrade.py` and run the validation helper in tests.
 
+A runnable reference implementation for the requested v3 capabilities is available in `enterprise_maturity/v3_runtime/`, including:
+
+- API gateway + dynamic service discovery
+- Central topic queue system
+- Backlog-driven auto-scaling for workers
+- GPU job scheduling
+- Distributed crawler cluster manager
+
+Run `pytest` to validate the runtime modules and integration behavior.
+
 ## Documentation map
 
 - Platform overview: `docs/system-overview.md`
