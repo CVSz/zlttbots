@@ -67,6 +67,22 @@ docker compose restart <service-name>
 docker compose up -d --scale crawler-worker=3 --scale renderer-worker=2 --scale arbitrage-worker=2
 ```
 
+
+## Full upgrade blueprint
+
+The repository now ships a typed blueprint for a **full enterprise upgrade** that covers:
+
+- 25+ microservices
+- Kafka event system
+- Distributed crawler cluster
+- AI video generation pipeline
+- Full admin dashboard modules
+- Kubernetes namespaces
+- CI/CD stages
+- Full frontend app layout
+
+See `enterprise_maturity/full_upgrade.py` and run the validation helper in tests.
+
 ## Documentation map
 
 - Platform overview: `docs/system-overview.md`

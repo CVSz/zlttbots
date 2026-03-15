@@ -5,6 +5,7 @@ from enterprise_maturity.operations import ErrorBudgetPolicy, ProbeResult, SLO, 
 from enterprise_maturity.performance import AutoscalingAdvisor, QueueAdmissionController, WorkloadMetrics
 from enterprise_maturity.resilience import CircuitBreaker, IdempotencyStore, RetryPolicy
 from enterprise_maturity.roadmap import ROADMAP_IMPLEMENTATION
+from enterprise_maturity.full_upgrade import FULL_UPGRADE_BLUEPRINT, UpgradeBlueprint
 from enterprise_maturity.security import AccessToken, AuditEvent, AuditLogPipeline, RBACPolicy, SecretManager, SecretRotationPolicy
 from enterprise_maturity.v3_upgrade import EnterpriseUpgradeV3, TopicSpec, UpgradeComponent, UpgradePhase
 
@@ -91,41 +92,29 @@ def test_roadmap_has_all_items():
     assert ROADMAP_IMPLEMENTATION[-1].id == 25
 
 
-def test_v3_upgrade_blueprint_validation_and_phase_checklist():
-    blueprint = EnterpriseUpgradeV3.default_blueprint()
-    blueprint.validate()
+def test_full_upgrade_blueprint_covers_requested_capabilities():
+    FULL_UPGRADE_BLUEPRINT.validate()
 
-    checklist = blueprint.phase_checklist("phase-1-foundation")
-    assert any("Traefik" in item for item in checklist)
-    assert any("SLI dashboards" in item for item in checklist)
+    assert len(FULL_UPGRADE_BLUEPRINT.services) >= 25
+    assert FULL_UPGRADE_BLUEPRINT.crawler_cluster.queue_backend == "kafka"
+    assert "publish" in FULL_UPGRADE_BLUEPRINT.ai_video_pipeline.stages
+    assert "frontend-admin" in {service.name for service in FULL_UPGRADE_BLUEPRINT.services}
 
 
-def test_v3_upgrade_blueprint_rejects_duplicate_topics():
-    blueprint = EnterpriseUpgradeV3(
-        components=(UpgradeComponent("api", "gateway", "high"),),
-        topics=(
-            TopicSpec("events", partitions=3, retention_hours=24),
-            TopicSpec("events", partitions=3, retention_hours=24),
-        ),
-        phases=(UpgradePhase("p1", goals=("goal",), exit_criteria=("exit",)),),
+def test_full_upgrade_blueprint_validation_rejects_small_layout():
+    small_blueprint = UpgradeBlueprint(
+        services=FULL_UPGRADE_BLUEPRINT.services[:2],
+        kafka_topics=FULL_UPGRADE_BLUEPRINT.kafka_topics,
+        crawler_cluster=FULL_UPGRADE_BLUEPRINT.crawler_cluster,
+        ai_video_pipeline=FULL_UPGRADE_BLUEPRINT.ai_video_pipeline,
+        admin_dashboard_modules=FULL_UPGRADE_BLUEPRINT.admin_dashboard_modules,
+        frontend_apps=FULL_UPGRADE_BLUEPRINT.frontend_apps,
+        kubernetes_namespaces=FULL_UPGRADE_BLUEPRINT.kubernetes_namespaces,
+        cicd_stages=FULL_UPGRADE_BLUEPRINT.cicd_stages,
     )
 
     try:
-        blueprint.validate()
-        assert False, "validation should fail"
+        small_blueprint.validate()
+        assert False, "expected validation error"
     except ValueError as exc:
-        assert "Duplicate topic" in str(exc)
-
-
-def test_v3_upgrade_blueprint_rejects_unknown_dependency():
-    blueprint = EnterpriseUpgradeV3(
-        components=(UpgradeComponent("api", "gateway", "high", ("missing",)),),
-        topics=(TopicSpec("events", partitions=3, retention_hours=24),),
-        phases=(UpgradePhase("p1", goals=("goal",), exit_criteria=("exit",)),),
-    )
-
-    try:
-        blueprint.validate()
-        assert False, "validation should fail"
-    except ValueError as exc:
-        assert "Unknown dependency" in str(exc)
+        assert "25 microservices" in str(exc)

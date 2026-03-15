@@ -11,7 +11,7 @@ from .security import (
 from .resilience import CircuitBreaker, RetryPolicy, IdempotencyStore
 from .operations import SLO, ErrorBudgetPolicy, SeverityPolicy, SyntheticProbe
 from .performance import AutoscalingAdvisor, QueueAdmissionController
-from .v3_upgrade import EnterpriseUpgradeV3, TopicSpec, UpgradeComponent, UpgradePhase
+from .full_upgrade import FULL_UPGRADE_BLUEPRINT, UpgradeBlueprint
 
 __all__ = [
     "AccessToken",
@@ -29,8 +29,6 @@ __all__ = [
     "SyntheticProbe",
     "AutoscalingAdvisor",
     "QueueAdmissionController",
-    "EnterpriseUpgradeV3",
-    "TopicSpec",
-    "UpgradeComponent",
-    "UpgradePhase",
+    "UpgradeBlueprint",
+    "FULL_UPGRADE_BLUEPRINT",
 ]
