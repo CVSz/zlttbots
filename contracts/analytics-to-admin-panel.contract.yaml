@@ -1,0 +1,6 @@
+name: analytics-to-admin-panel
+version: 1.0.0
+owner: analytics-team
+producer: services/analytics
+consumer: services/admin-panel
+schema: docs/services/analytics.md

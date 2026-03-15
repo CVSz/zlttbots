@@ -12,8 +12,17 @@ spec:
       labels:
         app: admin-panel
     spec:
+      securityContext:
+        runAsNonRoot: true
       containers:
-      - name: admin
-        image: zttato/admin-panel:latest
-        ports:
-        - containerPort: 3000
+        - name: admin
+          image: zttato/admin-panel:latest
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

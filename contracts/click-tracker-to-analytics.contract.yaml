@@ -1,0 +1,6 @@
+name: click-tracker-to-analytics
+version: 1.0.0
+owner: growth-platform
+producer: services/click-tracker
+consumer: services/analytics
+schema: docs/services/click-tracker.md

@@ -12,8 +12,17 @@ spec:
       labels:
         app: analytics
     spec:
+      securityContext:
+        runAsNonRoot: true
       containers:
-      - name: analytics
-        image: zttato/analytics:latest
-        ports:
-        - containerPort: 9000
+        - name: analytics
+          image: zttato/analytics:latest
+          ports:
+            - containerPort: 9000
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1
+              memory: 1Gi
