@@ -111,9 +111,9 @@ docker compose up -d --scale crawler-worker=5
 ### API checks
 
 ```bash
-curl -fS http://localhost/predict || true
-curl -fS http://localhost/crawl || true
-curl -fS http://localhost/arbitrage || true
+curl -fS http://localhost/predict
+curl -fS http://localhost/crawl
+curl -fS http://localhost/arbitrage
 ```
 
 ### Container health perspective
