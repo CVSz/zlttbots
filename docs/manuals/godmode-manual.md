@@ -1,36 +1,27 @@
 # Godmode Manual
 
-## 1. Purpose and Scope
+## 1. Purpose and restrictions
 
-This manual defines high-authority operational control for trusted operators with full-platform permissions ("godmode").
+Godmode access is break-glass operational control for severe incidents, platform-wide maintenance, or recovery scenarios. Access must be tightly restricted and auditable.
 
-Godmode access should be tightly limited, audited, and used only for emergency intervention, platform-wide migrations, or deep maintenance.
+## 2. Capabilities
 
----
+A godmode operator may:
 
-## 2. Godmode Capabilities
+- run full stack restart/rebuild actions
+- scale workers and service capacity
+- execute repair, recovery, and infrastructure scripts
+- perform backup and restore operations
+- lead incident command from detection to recovery
 
-A godmode operator can:
+## 3. Preconditions before action
 
-- perform full-stack restart/rebuild
-- scale workers and service replicas
-- run repair and diagnostic scripts
-- apply infrastructure and edge networking changes
-- execute backup/restore procedures
-- supervise incident response end-to-end
+1. Confirm severity and blast radius.
+2. Capture initial state (`docker compose ps`, key logs, active alerts).
+3. Communicate maintenance/incident window.
+4. Confirm rollback and data-protection plan.
 
----
-
-## 3. Preconditions Before Godmode Actions
-
-1. Confirm incident severity and blast radius.
-2. Snapshot current state (`docker compose ps`, key logs, active alerts).
-3. Announce maintenance/incident handling to stakeholders.
-4. Confirm rollback plan and data safety approach.
-
----
-
-## 4. Full-Stack Control Commands
+## 4. Full-stack control
 
 ### Build and deploy
 
@@ -52,85 +43,44 @@ docker compose up -d
 docker compose down
 ```
 
-### Validate post-action health
+### Post-action verification
 
 ```bash
 docker compose ps
 ```
 
----
-
-## 5. Worker and Throughput Control
-
-Adjust worker capacity according to queue pressure and latency targets.
+## 5. Throughput control
 
 ```bash
 docker compose up -d --scale crawler-worker=5 --scale renderer-worker=3 --scale arbitrage-worker=3
 ```
 
-Observe CPU/memory saturation and avoid over-scaling beyond host capacity.
+Scale incrementally and monitor host saturation.
 
----
+## 6. Recovery and diagnostics
 
-## 6. Deep Diagnostics and Repair
+Prefer standard scripts in `scripts/` and `infrastructure/scripts/` for repeatability (doctor, monitor, repair, rollback, deploy).
 
-Use repository scripts under `scripts/` for advanced troubleshooting, including:
+## 7. Data state operations
 
-- doctor and monitor scripts
-- restart/supervisor scripts
-- docker recovery and stack repair scripts
-- cloudflare provisioning and tunnel recovery scripts
-
-When possible, use scripted pathways instead of ad-hoc commands to keep operations repeatable.
-
----
-
-## 7. Data and State Control
-
-### Manual database backup
+### Backup
 
 ```bash
 pg_dump -U zttato zttato > backup-$(date +%Y%m%d%H%M%S).sql
 ```
 
-### Manual restore
+### Restore
 
 ```bash
 psql -U zttato zttato < backup.sql
 ```
 
-Before restore, ensure write operations are quiesced to prevent data divergence.
+Quiesce write-heavy operations before restore.
 
----
+## 8. Incident command sequence
 
-## 8. Edge and Network Override
-
-Godmode may include control of Cloudflare and ingress automation:
-
-- provisioning scripts
-- DNS/tunnel creation scripts
-- migration and heal scripts
-
-Apply network changes incrementally and confirm service reachability after each step.
-
----
-
-## 9. Incident Command Mode
-
-During severe outages:
-
-1. Stabilize data stores (`postgres`, `redis`).
-2. Restore API baseline (`viral-predictor`, `market-crawler`, `arbitrage-engine`).
-3. Restore workers and confirm queue movement.
-4. Validate Nginx ingress and external routes.
-5. Announce recovery status and residual risks.
-
----
-
-## 10. Governance and Security Requirements
-
-- Use godmode only with explicit approval in your organization.
-- Maintain action logs and timestamps for postmortem.
-- Separate personal and break-glass credentials.
-- Rotate high-privilege secrets after major incidents.
-- Perform post-incident review and convert ad-hoc fixes into documented runbooks.
+1. Stabilize data stores.
+2. Restore API baseline.
+3. Restore workers and queue movement.
+4. Validate ingress and external routes.
+5. Publish recovery state and residual risks.
