@@ -74,3 +74,25 @@ services:
 volumes:
   postgres-data:
   grafana-data:
+
+  ai-orchestrator:
+    build: ./services/ai-orchestrator
+    container_name: zttato-ai-orchestrator
+    depends_on:
+      - market-crawler
+      - viral-predictor
+      - redis
+    networks:
+      - zttato-net
+
+  product-discovery:
+    build: ./services/product-discovery
+    container_name: zttato-product-discovery
+    networks:
+      - zttato-net
+
+  campaign-optimizer:
+    build: ./services/campaign-optimizer
+    container_name: zttato-campaign-optimizer
+    networks:
+      - zttato-net
