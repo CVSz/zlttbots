@@ -1,10 +1,13 @@
 import os
+import time
 
 import redis
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from pydantic import BaseModel
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from core.queue import enqueue
+from metrics import request_counter, request_latency
 
 app = FastAPI()
 
@@ -33,8 +36,16 @@ def healthz():
     }
 
 
+@app.get('/metrics')
+def metrics():
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
 @app.post('/render')
 def render_video(job: Job):
-    payload = job.model_dump() if hasattr(job, "model_dump") else job.dict()
+    start = time.perf_counter()
+    payload = job.model_dump() if hasattr(job, 'model_dump') else job.dict()
     enqueue(payload)
+    request_counter.inc()
+    request_latency.observe(time.perf_counter() - start)
     return {'status': 'queued'}

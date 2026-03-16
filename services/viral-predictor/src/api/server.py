@@ -1,10 +1,13 @@
 import os
+import time
 
 import psycopg2
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from pydantic import BaseModel
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from features.features import extract_features
+from metrics import request_counter, request_latency
 from model.model import predict
 
 app = FastAPI()
@@ -41,11 +44,19 @@ def healthz():
     }
 
 
+@app.get('/metrics')
+def metrics():
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
 @app.post('/predict')
 def predict_viral(video: Video):
-    video_payload = video.model_dump() if hasattr(video, "model_dump") else video.dict()
+    start = time.perf_counter()
+    video_payload = video.model_dump() if hasattr(video, 'model_dump') else video.dict()
     features = extract_features(video_payload)
     score = predict(features)
+    request_counter.inc()
+    request_latency.observe(time.perf_counter() - start)
 
     return {
         'viral_score': score,

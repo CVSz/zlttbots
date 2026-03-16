@@ -1,0 +1,19 @@
+name: zttato-enterprise-build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker Images
+        run: |
+          docker build -t zttato-market-crawler services/market-crawler
+          docker build -t zttato-viral-predictor services/viral-predictor
+          docker build -t zttato-arbitrage-engine services/arbitrage-engine
