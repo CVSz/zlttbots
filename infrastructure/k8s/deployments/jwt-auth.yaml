@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jwt-auth
+  namespace: platform
+  labels:
+    app: jwt-auth
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: jwt-auth
+  template:
+    metadata:
+      labels:
+        app: jwt-auth
+    spec:
+      containers:
+        - name: jwt-auth
+          image: zttato/jwt-auth:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-auth-secret
+                  key: jwt-secret
+            - name: JWT_ISSUER
+              value: "https://api.zttato.internal/auth"
+            - name: JWT_AUDIENCE
+              value: "zttato-platform"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 20

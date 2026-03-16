@@ -1,0 +1,24 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: gpu-renderer-scaler
+  namespace: platform
+spec:
+  scaleTargetRef:
+    name: gpu-renderer
+  minReplicaCount: 1
+  maxReplicaCount: 50
+  cooldownPeriod: 60
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://prometheus.platform.svc.cluster.local:9090
+        metricName: gpu_queue_depth
+        query: sum(render_queue_depth)
+        threshold: "20"
+    - type: kafka
+      metadata:
+        bootstrapServers: kafka.platform.svc.cluster.local:9092
+        consumerGroup: gpu-renderer
+        topic: render-jobs
+        lagThreshold: "150"

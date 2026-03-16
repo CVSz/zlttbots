@@ -1,0 +1,92 @@
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: platform-mtls
+  namespace: platform
+spec:
+  mtls:
+    mode: STRICT
+---
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: platform-jwt
+  namespace: platform
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  jwtRules:
+    - issuer: "https://api.zttato.internal/auth"
+      jwksUri: "http://jwt-auth.platform.svc.cluster.local/.well-known/jwks.json"
+      audiences:
+        - zttato-platform
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: require-jwt
+  namespace: platform
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            requestPrincipals: ["*"]
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: platform-gateway
+  namespace: platform
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "api.zttato.internal"
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: platform-routes
+  namespace: platform
+spec:
+  hosts:
+    - "api.zttato.internal"
+  gateways:
+    - platform-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /auth
+      rewrite:
+        uri: /
+      route:
+        - destination:
+            host: jwt-auth
+            port:
+              number: 80
+    - match:
+        - uri:
+            prefix: /analytics
+      route:
+        - destination:
+            host: analytics
+            port:
+              number: 3001
+    - match:
+        - uri:
+            prefix: /click
+      route:
+        - destination:
+            host: click-tracker
+            port:
+              number: 3000

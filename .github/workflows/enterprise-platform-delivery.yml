@@ -1,0 +1,51 @@
+name: Enterprise Platform Delivery
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'infrastructure/**'
+      - 'services/jwt-auth/**'
+      - '.github/workflows/enterprise-platform-delivery.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install checks
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest yamllint
+
+      - name: Unit tests
+        run: pytest -q
+
+      - name: Lint Kubernetes manifests
+        run: yamllint infrastructure/k8s
+
+  container-build:
+    needs: [validate]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build jwt-auth image
+        run: docker build -t zttato/jwt-auth:${{ github.sha }} services/jwt-auth
+
+  deploy-staging:
+    needs: [container-build]
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v4
+      - name: Kustomize deploy
+        run: kubectl apply -k infrastructure/k8s
