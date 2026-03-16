@@ -2,26 +2,32 @@
 
 ## 1. Purpose and restrictions
 
-Godmode access is break-glass operational control for severe incidents, platform-wide maintenance, or recovery scenarios. Access must be tightly restricted and auditable.
+Godmode access is break-glass control intended for severe incidents, platform-wide maintenance, or high-risk recovery operations.
 
-## 2. Capabilities
+Rules:
+
+- Access must be tightly restricted.
+- Every action must be auditable.
+- Use only when standard operator/admin authority is insufficient.
+
+## 2. Godmode capabilities
 
 A godmode operator may:
 
-- run full stack restart/rebuild actions
-- scale workers and service capacity
-- execute repair, recovery, and infrastructure scripts
-- perform backup and restore operations
-- lead incident command from detection to recovery
+- execute full stack rebuild/restart procedures
+- scale workers and service capacity rapidly
+- run advanced diagnostics, repair, and recovery scripts
+- perform backup/restore and controlled recovery sequencing
+- lead incident command until stabilization
 
-## 3. Preconditions before action
+## 3. Preconditions before any action
 
 1. Confirm severity and blast radius.
 2. Capture initial state (`docker compose ps`, key logs, active alerts).
-3. Communicate maintenance/incident window.
+3. Announce maintenance/incident command window.
 4. Confirm rollback and data-protection plan.
 
-## 4. Full-stack control
+## 4. Full-stack control operations
 
 ### Build and deploy
 
@@ -30,7 +36,7 @@ docker compose build
 docker compose up -d
 ```
 
-### Controlled restart
+### Controlled full restart
 
 ```bash
 docker compose down
@@ -43,25 +49,34 @@ docker compose up -d
 docker compose down
 ```
 
-### Post-action verification
+### Verification
 
 ```bash
 docker compose ps
 ```
 
-## 5. Throughput control
+## 5. Throughput and pressure control
 
 ```bash
 docker compose up -d --scale crawler-worker=5 --scale renderer-worker=3 --scale arbitrage-worker=3
 ```
 
-Scale incrementally and monitor host saturation.
+Guidance:
 
-## 6. Recovery and diagnostics
+- Scale in measured increments.
+- Observe host saturation before each scale-up step.
+- Revert scaling if resource contention worsens latency/error rates.
 
-Prefer standard scripts in `scripts/` and `infrastructure/scripts/` for repeatability (doctor, monitor, repair, rollback, deploy).
+## 6. Recovery and diagnostics toolkit
 
-## 7. Data state operations
+Prefer standardized scripts for repeatability:
+
+- `scripts/` (doctor, monitor, repair, restart, deploy helpers)
+- `infrastructure/scripts/` (bootstrap, rollback, validation, build tooling)
+
+Use script output as incident evidence artifacts.
+
+## 7. Data operations and integrity
 
 ### Backup
 
@@ -75,7 +90,11 @@ pg_dump -U zttato zttato > backup-$(date +%Y%m%d%H%M%S).sql
 psql -U zttato zttato < backup.sql
 ```
 
-Quiesce write-heavy operations before restore.
+Before restore:
+
+- Quiesce write-heavy services where possible.
+- Verify backup age and integrity.
+- Define clear post-restore validation checklist.
 
 ## 8. Incident command sequence
 
@@ -83,4 +102,11 @@ Quiesce write-heavy operations before restore.
 2. Restore API baseline.
 3. Restore workers and queue movement.
 4. Validate ingress and external routes.
-5. Publish recovery state and residual risks.
+5. Publish recovery status and residual risk.
+
+## 9. Post-incident obligations
+
+- Record all commands and timestamps.
+- Document root cause and containment decisions.
+- Propose preventive controls and runbook updates.
+- Hand off to standard ownership once stable.
