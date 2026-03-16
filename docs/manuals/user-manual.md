@@ -2,58 +2,90 @@
 
 ## 1. Purpose
 
-This manual is for business operators using zTTato workflows through the dashboard and API-facing features.
+This manual is for business operators using zTTato workflows through dashboard and API-facing features.
 
-## 2. Access
+## 2. What a user can do
 
-- Dashboard (local): `http://localhost:5173`
-- API gateway (local): `http://localhost`
-  - `/predict`
-  - `/crawl`
-  - `/arbitrage`
+Typical user-level activities:
 
-If access fails, contact an administrator for role or environment validation.
+- Review discovered products and campaign candidates.
+- Trigger prediction or analysis workflows via supported APIs/tools.
+- Monitor campaign results and move budget toward better performers.
+- Escalate anomalies to admins with reproducible context.
 
-## 3. Typical workflows
+## 3. Access
 
-### Product discovery
+Primary local endpoints:
 
-1. Trigger or wait for crawler pipelines.
-2. Review discovered products and freshness metadata.
-3. Move promising candidates into campaign planning.
+- Dashboard (frontend workflow): `http://localhost:5173`
+- API gateway: `http://localhost`
+  - `GET/POST /predict`
+  - `GET/POST /crawl`
+  - `GET/POST /arbitrage`
 
-### Prediction and ranking
+If access fails, contact an administrator to verify environment status and role permissions.
 
-1. Submit payloads for prediction.
-2. Compare relative scores rather than treating a single score as certainty.
-3. Prioritize assets with strong score + market viability.
+## 4. Standard operating workflow
 
-### Campaign optimization
+### A) Product discovery
 
-1. Monitor click and conversion trends.
-2. Pause low-performing campaigns.
-3. Reallocate budget to stronger products/content.
+1. Run or wait for crawler workflows.
+2. Review candidate freshness and source quality.
+3. Mark shortlist items for prediction and campaign planning.
 
-## 4. User safety rules
+### B) Prediction and ranking
 
-- Keep credentials private.
-- Do not paste secrets into free-text dashboard fields.
-- Avoid duplicate submissions when jobs are already queued.
-- Report suspicious behavior immediately.
+1. Submit or trigger prediction calls.
+2. Compare *relative* score differences rather than absolute certainty.
+3. Promote high-score/high-feasibility candidates.
 
-## 5. Common issues
+### C) Campaign optimization
+
+1. Monitor click/conversion trend movement.
+2. Pause weak assets early to reduce waste.
+3. Reallocate resources to high-conversion opportunities.
+
+## 5. Input quality rules
+
+- Use consistent product identifiers (avoid duplicated naming variants).
+- Submit complete payloads; avoid sparse fields where optional context improves scoring.
+- Use realistic campaign assumptions when requesting prioritization.
+- Avoid repeated duplicate submissions when queue lag already exists.
+
+## 6. Safety and security rules
+
+- Never share credentials in chat, tickets, or screenshots.
+- Never paste secrets into dashboard free-text fields.
+- Do not upload or submit data without source authorization.
+- Report suspicious account behavior immediately.
+
+## 7. Common issues and self-checks
 
 ### Dashboard unavailable
 
-- Check with admin that core services are running.
-- Validate `http://localhost:5173` connectivity.
+- Confirm URL is correct (`http://localhost:5173`).
+- Check with admin whether frontend runtime is active.
+- Check if core backend stack is healthy.
 
-### API 5xx responses
+### API returns 5xx
 
 - Retry once after a short delay.
-- Provide timestamp + endpoint + payload shape to support/admin.
+- Capture timestamp, endpoint, and payload shape.
+- Escalate to admin with exact response code/body snippet.
 
-### Missing recent analytics
+### Data seems stale
 
-- Data pipelines may be delayed.
-- Ask admins to check worker health and queue lag.
+- Verify whether worker queues are backlogged.
+- Ask admin for worker/service health status.
+- Recheck after queue backlog clears.
+
+## 8. Escalation template (recommended)
+
+When filing an issue to admins, include:
+
+- Time (with timezone)
+- Endpoint/page impacted
+- Steps to reproduce
+- Expected vs actual behavior
+- Error message/code
+- Whether issue is persistent or intermittent

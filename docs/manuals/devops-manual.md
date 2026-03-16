@@ -2,9 +2,9 @@
 
 ## 1. Purpose
 
-This manual is for infrastructure operators responsible for platform reliability, deployment, and recovery.
+This manual is for infrastructure operators responsible for platform reliability, deployment, scaling, and recovery.
 
-## 2. Baseline commands
+## 2. Standard lifecycle commands
 
 ### Build
 
@@ -12,7 +12,7 @@ This manual is for infrastructure operators responsible for platform reliability
 docker compose build
 ```
 
-### Start
+### Deploy/start
 
 ```bash
 docker compose up -d
@@ -24,22 +24,39 @@ docker compose up -d
 docker compose ps
 ```
 
-### Test
+### Test baseline
 
 ```bash
 pytest
 ```
 
-## 3. Runtime topology
+## 3. Runtime topology reference
 
-- Data: `postgres`, `redis`
-- API/compute: predictor, crawler, arbitrage, renderer
-- Workers: `crawler-worker`, `renderer-worker`, `arbitrage-worker`
-- Gateway: `nginx`
+Infrastructure:
 
-## 4. Operational playbook
+- `postgres`
+- `redis`
 
-### Logs
+Services:
+
+- `viral-predictor`
+- `market-crawler`
+- `arbitrage-engine`
+- `gpu-renderer`
+
+Workers:
+
+- `crawler-worker`
+- `renderer-worker`
+- `arbitrage-worker`
+
+Ingress:
+
+- `nginx`
+
+## 4. Day-2 operations
+
+### Tail logs
 
 ```bash
 docker compose logs --tail=200 <service>
@@ -60,10 +77,12 @@ docker compose up -d --force-recreate <service>
 ### Scale workers
 
 ```bash
-docker compose up -d --scale crawler-worker=5
+docker compose up -d --scale crawler-worker=5 --scale renderer-worker=3 --scale arbitrage-worker=3
 ```
 
 ## 5. Health diagnostics
+
+Gateway probes:
 
 ```bash
 curl -fS http://localhost/predict
@@ -71,11 +90,19 @@ curl -fS http://localhost/crawl
 curl -fS http://localhost/arbitrage
 ```
 
+Container status:
+
 ```bash
 docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
 ```
 
-## 6. Backup and recovery
+Deep-dive checks:
+
+- Inspect dependency failures from startup logs.
+- Validate DB connectivity from affected containers.
+- Validate Redis availability when workers stall.
+
+## 6. Backup and restore operations
 
 ### Backup
 
@@ -89,16 +116,24 @@ pg_dump -U zttato zttato > backup-$(date +%Y%m%d%H%M%S).sql
 psql -U zttato zttato < backup.sql
 ```
 
-Recovery order:
+Recommended recovery order:
 
-1. Restore `postgres` and `redis`
-2. Restore API services
-3. Restore workers
-4. Validate ingress and external routing
+1. Restore/check `postgres` and `redis`.
+2. Bring API services up and healthy.
+3. Bring workers up and verify queue movement.
+4. Verify ingress routes and user-facing paths.
 
-## 7. Reliability recommendations
+## 7. Deployment safety rules
 
-- Enforce alerting on service health and queue lag.
-- Run periodic restore drills.
-- Use staged rollout for high-risk changes.
-- Keep runbooks and ownership maps current.
+- Prefer incremental rollout over broad restarts during business hours.
+- Keep rollback path prepared before high-risk deploys.
+- Capture pre-change state (`ps`, logs, notable metrics).
+- Execute post-change verification before closing deployment.
+
+## 8. Suggested incident timeline
+
+1. **Triage (0-10 min):** scope blast radius and affected services.
+2. **Stabilize (10-30 min):** restore critical dependencies and ingress.
+3. **Recover (30+ min):** restart/scale impacted workers/services.
+4. **Validate:** run probes/tests and watch metrics.
+5. **Postmortem:** document root cause, fixes, and prevention actions.

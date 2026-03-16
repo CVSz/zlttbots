@@ -1,49 +1,79 @@
 # System Overview
 
-zTTato Platform is an AI-assisted affiliate automation system for product discovery, campaign acceleration, and conversion optimization.
+zTTato Platform is a microservice-based affiliate automation system that combines product crawling, prediction, arbitrage scoring, rendering, and analytics workflows.
 
-## Platform objectives
+## 1) What the platform does
 
-- Discover profitable products from marketplaces.
-- Score opportunities using ML/prediction services.
-- Automate campaign publishing workflows.
-- Track click/conversion performance and optimize outcomes.
+The platform is designed to support a full campaign lifecycle:
 
-## High-level architecture
+1. **Discover products** from external marketplaces.
+2. **Score opportunities** using model-driven predictor services.
+3. **Prioritize products/campaigns** through arbitrage logic.
+4. **Render creative assets** with asynchronous worker execution.
+5. **Track outcomes** and expose dashboards/metrics for optimization.
 
-### Data layer
+## 2) Runtime topology (Docker Compose baseline)
 
-- `postgres`: persistent relational storage
-- `redis`: queue/cache and worker coordination
+The default runtime in `docker-compose.yml` is composed of:
+
+### Data services
+- `postgres` (system-of-record relational data)
+- `redis` (queueing/cache/state handoff for async workers)
 
 ### API and compute services
+- `viral-predictor` (prediction API on internal port 9100)
+- `market-crawler` (crawler API on internal port 9400)
+- `arbitrage-engine` (arbitrage API on internal port 9500)
+- `gpu-renderer` (renderer API on internal port 9300)
 
-- `viral-predictor`
-- `market-crawler`
-- `arbitrage-engine`
-- `gpu-renderer`
-- analytics/click-tracking services
-
-### Worker layer
-
+### Worker services
 - `crawler-worker`
-- `renderer-worker`
 - `arbitrage-worker`
+- `renderer-worker`
 
-### Access layer
+### Access/gateway
+- `nginx` (exposes host `:80` and routes to internal APIs)
 
-- `nginx`: reverse-proxy and route gateway
-- `admin-panel`: web UI for operators/admins
+All services join the shared network `zttato-net` and rely on per-service health checks before dependency handoff.
 
-## Core request and processing flow
+## 3) Core data and request flow
 
-1. Ingestion/crawl discovers product candidates.
-2. Predictor and analytics services score opportunities.
-3. Workers process long-running jobs asynchronously.
-4. Dashboard and API consumers observe results and operate campaigns.
+A high-level operational flow:
 
-## Operations model
+1. Crawler service discovers product candidates and stores normalized records.
+2. Predictor service evaluates candidates and emits opportunity scoring signals.
+3. Arbitrage service combines score + economics to prioritize actions.
+4. Worker pipelines run longer jobs (batch crawl, render, post-processing).
+5. Output and behavior events feed analytics and admin-facing visibility.
 
-- Container orchestration: Docker Compose (local/ops baseline)
-- Optional deployment manifests: Kubernetes assets in `infrastructure/k8s/`
-- Operational automation: shell scripts in `scripts/` and `infrastructure/scripts/`
+## 4) Operational model
+
+### Local and ops baseline
+- Build: `docker compose build`
+- Start: `docker compose up -d`
+- Validate: `docker compose ps`
+- Test: `pytest`
+
+### Day-2 operations
+- Logs: `docker compose logs --tail=200 <service>`
+- Scale workers: `docker compose up -d --scale crawler-worker=3`
+- Roll restart: `docker compose restart <service>`
+
+## 5) Deployment and infrastructure options
+
+The repository includes multiple deployment/operations paths:
+
+- **Compose-first operations** for local, staging, and lightweight production setups.
+- **Kubernetes assets** under `infrastructure/k8s/` for cluster-based deployments.
+- **Cloudflare/devops automation** under `cloudflare-devops/` and `scripts/`.
+- **Monitoring stack assets** in `infrastructure/monitoring/`.
+
+## 6) Documentation map
+
+For full-detail follow-up docs:
+
+- Architecture and target model: `docs/architecture.md`, `docs/architecture-v3-enterprise.md`
+- Installation and bootstrap: `docs/installation.md`, `docs/quick-start.md`
+- API routes and contracts: `docs/api/`, `contracts/`
+- Operations and runbooks: `docs/operations/`
+- Role-based manuals: `docs/manuals/`
