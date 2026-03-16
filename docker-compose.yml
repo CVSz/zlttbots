@@ -66,6 +66,9 @@ services:
     env_file: .env
     environment:
       REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
+      FFMPEG_HWACCEL: ${FFMPEG_HWACCEL:-none}
+      FFMPEG_CPU_PRESET: ${FFMPEG_CPU_PRESET:-veryfast}
+      FFMPEG_CPU_CRF: ${FFMPEG_CPU_CRF:-23}
       DB_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
     depends_on:
       postgres:
@@ -111,6 +114,9 @@ services:
     env_file: .env
     environment:
       REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
+      FFMPEG_HWACCEL: ${FFMPEG_HWACCEL:-none}
+      FFMPEG_CPU_PRESET: ${FFMPEG_CPU_PRESET:-veryfast}
+      FFMPEG_CPU_CRF: ${FFMPEG_CPU_CRF:-23}
     depends_on:
       redis:
         condition: service_healthy
@@ -174,6 +180,9 @@ services:
     environment:
       PYTHONPATH: /app/src
       REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
+      FFMPEG_HWACCEL: ${FFMPEG_HWACCEL:-none}
+      FFMPEG_CPU_PRESET: ${FFMPEG_CPU_PRESET:-veryfast}
+      FFMPEG_CPU_CRF: ${FFMPEG_CPU_CRF:-23}
     depends_on:
       redis:
         condition: service_healthy

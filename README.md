@@ -68,6 +68,23 @@ docker compose up -d --scale crawler-worker=3 --scale renderer-worker=2 --scale 
 ```
 
 
+
+## No-cost local stack (full source code)
+
+This repository is fully source-available and can run end-to-end on a single machine with only open-source components (Docker, Postgres, Redis, Nginx, Python, Node).
+
+- No paid cloud services are required for the default `docker compose` flow.
+- GPU is optional: renderer now defaults to CPU encoding so you can run without NVIDIA hardware.
+- If you have a GPU, set `FFMPEG_HWACCEL=cuda` in `.env` to enable NVENC.
+
+Example `.env` overrides for free local mode:
+
+```bash
+FFMPEG_HWACCEL=none
+FFMPEG_CPU_PRESET=veryfast
+FFMPEG_CPU_CRF=23
+```
+
 ## Full upgrade blueprint
 
 The repository now ships a typed blueprint for a **full enterprise upgrade** that covers:
