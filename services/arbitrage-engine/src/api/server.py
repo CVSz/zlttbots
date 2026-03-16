@@ -1,7 +1,11 @@
 import os
+import time
 
 import psycopg2
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+
+from metrics import request_counter, request_latency
 
 app = FastAPI()
 
@@ -32,8 +36,14 @@ def healthz():
     }
 
 
+@app.get('/metrics')
+def metrics():
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
 @app.get('/arbitrage')
 def list_events():
+    start = time.perf_counter()
     with get_db() as db:
         with db.cursor() as cur:
             cur.execute(
@@ -57,4 +67,6 @@ def list_events():
             }
         )
 
+    request_counter.inc()
+    request_latency.observe(time.perf_counter() - start)
     return result
