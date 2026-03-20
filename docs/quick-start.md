@@ -42,7 +42,22 @@ curl -i http://localhost/arbitrage
 pytest
 ```
 
-## 6) Daily operations shortcuts
+## 6) Optional standalone Node service flow
+
+```bash
+bash scripts/zttato-node.sh install
+bash scripts/zttato-node.sh start
+bash scripts/zttato-node.sh status
+```
+
+Stop or restart them independently from Docker when needed:
+
+```bash
+bash scripts/zttato-node.sh stop
+bash scripts/zttato-node.sh restart
+```
+
+## 7) Daily operations shortcuts
 
 - Tail logs for one service:
   ```bash
@@ -57,7 +72,7 @@ pytest
   docker compose up -d --scale crawler-worker=3 --scale renderer-worker=2 --scale arbitrage-worker=2
   ```
 
-## 7) Access points
+## 8) Access points
 
 - API gateway (nginx): `http://localhost`
   - Predict route: `/predict`
@@ -65,7 +80,7 @@ pytest
   - Arbitrage route: `/arbitrage`
 - Admin panel is available from the repository under `services/admin-panel` for frontend runtime workflows.
 
-## 8) Stop the environment
+## 9) Stop the environment
 
 ```bash
 docker compose down

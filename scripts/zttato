@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # zttato
 
-set -e
+set -Eeuo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -51,6 +51,30 @@ curl -I https://api.zeaz.dev || true
 curl -I https://gpu.zeaz.dev || true
 ;;
 
+node-install)
+bash "$ROOT/scripts/install-node-services.sh"
+;;
+
+node-start)
+bash "$ROOT/scripts/run-node-services.sh"
+;;
+
+node-stop)
+bash "$ROOT/scripts/stop-node-services.sh"
+;;
+
+node-restart)
+bash "$ROOT/scripts/zttato-node.sh" restart
+;;
+
+node-status)
+bash "$ROOT/scripts/zttato-node.sh" status
+;;
+
+node-logs)
+bash "$ROOT/scripts/zttato-node.sh" logs "${2:-}"
+;;
+
 *)
 echo "Usage:"
 echo "zttato up"
@@ -59,6 +83,12 @@ echo "zttato restart"
 echo "zttato status"
 echo "zttato logs [service]"
 echo "zttato edge"
+echo "zttato node-install"
+echo "zttato node-start"
+echo "zttato node-stop"
+echo "zttato node-status"
+echo "zttato node-restart"
+echo "zttato node-logs [service]"
 ;;
 
 esac

@@ -83,7 +83,29 @@ A non-2xx response can still prove route reachability during initial smoke tests
 pytest
 ```
 
-## 9) Shutdown and cleanup
+
+## 9) Optional Node service lifecycle management
+
+For the standalone Node.js services listed under `services/`, use the dedicated installer and PM2-backed launcher:
+
+```bash
+bash scripts/zttato-node.sh install
+bash scripts/zttato-node.sh start
+bash scripts/zttato-node.sh status
+```
+
+Useful lifecycle commands:
+
+```bash
+bash scripts/zttato-node.sh logs
+bash scripts/zttato-node.sh logs admin-panel
+bash scripts/zttato-node.sh restart
+bash scripts/zttato-node.sh stop
+```
+
+This flow keeps dependency installation separate from service startup and writes runtime artifacts to `logs/node/` and `pids/node/`.
+
+## 10) Shutdown and cleanup
 
 Stop containers while preserving data volumes:
 
@@ -97,7 +119,7 @@ Destroy volumes only when intentionally resetting local state:
 docker compose down -v
 ```
 
-## 10) Troubleshooting quick references
+## 11) Troubleshooting quick references
 
 - Restart one service: `docker compose restart <service>`
 - Recreate one service: `docker compose up -d --force-recreate <service>`

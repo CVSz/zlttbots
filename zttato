@@ -72,16 +72,27 @@ bash "$ROOT/scripts/zttato-doctor.sh"
 ;;
 
 node-install)
-bash "$ROOT/scripts/node-install.sh"
+bash "$ROOT/scripts/install-node-services.sh"
 ;;
 
-node-status)
-ps aux | grep node
+node-start)
+bash "$ROOT/scripts/run-node-services.sh"
+;;
+
+node-stop)
+bash "$ROOT/scripts/stop-node-services.sh"
 ;;
 
 node-restart)
-pkill node
-zttato up
+bash "$ROOT/scripts/zttato-node.sh" restart
+;;
+
+node-status)
+bash "$ROOT/scripts/zttato-node.sh" status
+;;
+
+node-logs)
+bash "$ROOT/scripts/zttato-node.sh" logs "${2:-}"
 ;;
 
 deploy)
@@ -105,8 +116,11 @@ echo "zttato monitor"
 echo "zttato edge"
 echo "zttato deploy"
 echo "node-install"
+echo "node-start"
+echo "node-stop"
 echo "node-status"
 echo "node-restart"
+echo "node-logs [service]"
 echo
 
 ;;
