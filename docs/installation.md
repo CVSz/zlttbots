@@ -1,127 +1,212 @@
 # Installation
 
-This guide covers a practical local installation for development, smoke testing, and operator dry-runs.
+This guide covers the current repository from the simplest local Compose install through optional Node service setup and supporting infrastructure.
 
-## 1) Requirements
+## 1) Prerequisites
 
-Minimum toolchain:
-
-- Docker Engine + Docker Compose plugin
+### Required for the default stack
+- Docker Engine
+- Docker Compose plugin
 - Git
-- Python 3 + `pip` (for tests)
-- Optional: `psql` / `pg_dump` client tools (backup and restore operations)
+- Python 3.x and `pip` for running `pytest`
 
-Recommended host baseline:
+### Optional, depending on what you want to run
+- Node.js and npm for standalone services under `services/`
+- PM2 for PM2-managed Node service startup via `scripts/zttato-node.sh`
+- `curl` for smoke checks
+- `psql` and `pg_dump` for backup/restore workflows
 
+### Recommended host baseline
 - 4+ CPU cores
 - 8+ GB RAM
-- 20+ GB free disk for images/volumes
+- 20+ GB free disk for images, node modules, and database volumes
 
-## 2) Clone repository
+## 2) Clone the repository
 
 ```bash
-git clone <your-repository-url>
+git clone <repository-url>
 cd zttato-platform
 ```
 
-## 3) Environment setup
+## 3) Create environment configuration
 
-If `.env` is required in your environment, create/populate it before startup.
+The Compose file references `.env`. Create one before starting the stack.
 
-Typical values include database and redis endpoints plus service tuning flags.
+### Minimal `.env` example
 
-## 4) Build all services
+```env
+DB_NAME=zttato
+DB_USER=zttato
+DB_PASSWORD=zttato
+DB_PORT=5432
+REDIS_HOST=redis
+REDIS_PORT=6379
+FFMPEG_HWACCEL=none
+FFMPEG_CPU_PRESET=veryfast
+FFMPEG_CPU_CRF=23
+```
+
+### Notes
+- `FFMPEG_HWACCEL=none` is the safest default for CPU-only local environments.
+- Set `FFMPEG_HWACCEL=cuda` only when your host and container runtime are prepared for NVIDIA acceleration.
+- Add any service-specific secrets to `.env`, but do not commit them.
+
+## 4) Build the Compose stack
 
 ```bash
 docker compose build
 ```
 
-If build fails:
-
-- verify Docker daemon is running
-- verify internet access for dependency pulls
+If the build fails:
+- confirm the Docker daemon is running
+- confirm network access for base image and dependency pulls
 - retry with `--no-cache` only when troubleshooting stale layers
 
-## 5) Start stack
+## 5) Start the baseline platform
 
 ```bash
 docker compose up -d
 ```
 
-Expected critical services:
-
-- `postgres`, `redis`
-- `viral-predictor`, `market-crawler`, `arbitrage-engine`, `gpu-renderer`
-- `crawler-worker`, `arbitrage-worker`, `renderer-worker`
+This brings up:
+- `postgres`
+- `redis`
+- `viral-predictor`
+- `market-crawler`
+- `arbitrage-engine`
+- `gpu-renderer`
+- `crawler-worker`
+- `arbitrage-worker`
+- `renderer-worker`
 - `nginx`
 
-## 6) Verify runtime health
+## 6) Verify container health
 
 ```bash
 docker compose ps
 ```
 
-Optionally inspect startup logs:
+You should see the data services, API services, workers, and Nginx all in a running state. For deeper detail:
 
 ```bash
 docker compose logs --tail=200
 ```
 
-## 7) First API smoke checks
+## 7) Run first smoke checks
+
+### Root gateway probe
 
 ```bash
-curl -i http://localhost/predict
-curl -i http://localhost/crawl
+curl -i http://localhost/
+```
+
+### Predictor smoke check
+
+```bash
+curl -i -X POST http://localhost/predict \
+  -H 'content-type: application/json' \
+  -d '{"views":1000,"likes":100,"comments":10,"shares":5}'
+```
+
+### Crawler smoke check
+
+```bash
+curl -i -X POST http://localhost/crawl \
+  -H 'content-type: application/json' \
+  -d '{"keyword":"wireless earbuds"}'
+```
+
+### Arbitrage smoke check
+
+```bash
 curl -i http://localhost/arbitrage
 ```
 
-A non-2xx response can still prove route reachability during initial smoke tests; focus first on transport/routing and service availability.
-
-## 8) Run automated tests
+## 8) Run the test suite
 
 ```bash
 pytest
 ```
 
+The repository test suite validates the runtime blueprint, GPU render command behavior, JWT auth behavior, and enterprise maturity support.
 
-## 9) Optional Node service lifecycle management
+## 9) Optional: install and run standalone Node services
 
-For the standalone Node.js services listed under `services/`, use the dedicated installer and PM2-backed launcher:
+Use this path only if you need the extra Node applications in `services/`.
+
+### Install dependencies
 
 ```bash
 bash scripts/zttato-node.sh install
+```
+
+### Start PM2-managed Node services
+
+```bash
 bash scripts/zttato-node.sh start
+```
+
+### Check PM2 status
+
+```bash
 bash scripts/zttato-node.sh status
 ```
 
-Useful lifecycle commands:
+### View logs
 
 ```bash
 bash scripts/zttato-node.sh logs
 bash scripts/zttato-node.sh logs admin-panel
-bash scripts/zttato-node.sh restart
-bash scripts/zttato-node.sh stop
 ```
 
-This flow keeps dependency installation separate from service startup and writes runtime artifacts to `logs/node/` and `pids/node/`.
+## 10) Optional: monitoring stack
 
-## 10) Shutdown and cleanup
+Start the monitoring stack separately if you want Prometheus/Grafana/Loki locally.
 
-Stop containers while preserving data volumes:
+```bash
+docker compose -f infrastructure/monitoring/docker-compose.monitoring.yml up -d
+```
+
+Endpoints:
+- Prometheus: `http://localhost:9090`
+- Grafana: `http://localhost:3000`
+- Loki: `http://localhost:3100`
+
+## 11) Shutdown and cleanup
+
+### Stop containers, keep data
 
 ```bash
 docker compose down
 ```
 
-Destroy volumes only when intentionally resetting local state:
+### Stop containers and remove volumes
 
 ```bash
 docker compose down -v
 ```
 
-## 11) Troubleshooting quick references
+Use volume removal only when you intentionally want to reset local PostgreSQL and Redis state.
 
-- Restart one service: `docker compose restart <service>`
-- Recreate one service: `docker compose up -d --force-recreate <service>`
-- Inspect a service log: `docker compose logs --tail=200 <service>`
-- Inspect container-level status: `docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'`
+## 12) Troubleshooting quick reference
+
+- Restart one service:
+  ```bash
+  docker compose restart <service>
+  ```
+- Recreate one service:
+  ```bash
+  docker compose up -d --force-recreate <service>
+  ```
+- Inspect one service log:
+  ```bash
+  docker compose logs --tail=200 <service>
+  ```
+- Check direct container status:
+  ```bash
+  docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+  ```
+- Run the included integration smoke script:
+  ```bash
+  bash scripts/test-integration.sh
+  ```
