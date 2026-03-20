@@ -1,91 +1,128 @@
 # User Manual
 
-## 1. Purpose
+## 1) Purpose
 
-This manual is for business operators using zTTato workflows through dashboard and API-facing features.
+This manual is for business operators and day-to-day users of zTTato workflows. It focuses on how to use the currently exposed platform endpoints and what to expect from the broader stack.
 
-## 2. What a user can do
+## 2) What users interact with today
 
-Typical user-level activities:
+In the default local stack, the main user-facing entrypoint is the Nginx gateway at `http://localhost`. Through that gateway, users can reach:
 
-- Review discovered products and campaign candidates.
-- Trigger prediction or analysis workflows via supported APIs/tools.
-- Monitor campaign results and move budget toward better performers.
-- Escalate anomalies to admins with reproducible context.
+- `POST /predict` — submit video engagement inputs and receive a virality score.
+- `POST /crawl` — submit a product keyword to queue a crawl job.
+- `GET /arbitrage` — retrieve the current highest-profit arbitrage records.
+- `GET /` — basic gateway health response.
 
-## 3. Access
+In expanded deployments, users may also interact with:
+- the `admin-panel` Next.js frontend
+- analytics dashboards
+- click-tracking and campaign workflows
+- auth-protected interfaces using the JWT service
 
-Primary local endpoints:
+## 3) Access expectations
 
-- Dashboard (frontend workflow): `http://localhost:5173`
-- API gateway: `http://localhost`
-  - `GET/POST /predict`
-  - `GET/POST /crawl`
-  - `GET/POST /arbitrage`
+### Local baseline access
+- Gateway: `http://localhost`
+- Predictor route: `http://localhost/predict`
+- Crawler route: `http://localhost/crawl`
+- Arbitrage route: `http://localhost/arbitrage`
 
-If access fails, contact an administrator to verify environment status and role permissions.
+### Expanded environment access
+Actual URLs may differ in staging or production depending on Nginx, Cloudflare, or Kubernetes ingress configuration.
 
-## 4. Standard operating workflow
+If access fails, contact an administrator with the exact URL, timestamp, and error message.
 
-### A) Product discovery
+## 4) Standard user workflows
 
-1. Run or wait for crawler workflows.
-2. Review candidate freshness and source quality.
-3. Mark shortlist items for prediction and campaign planning.
+### A) Score a content candidate
 
-### B) Prediction and ranking
+Use `/predict` when you want a quick virality estimate for a piece of content.
 
-1. Submit or trigger prediction calls.
-2. Compare *relative* score differences rather than absolute certainty.
-3. Promote high-score/high-feasibility candidates.
+Example request:
 
-### C) Campaign optimization
+```bash
+curl -X POST http://localhost/predict \
+  -H 'content-type: application/json' \
+  -d '{"views":1000,"likes":100,"comments":10,"shares":5}'
+```
 
-1. Monitor click/conversion trend movement.
-2. Pause weak assets early to reduce waste.
-3. Reallocate resources to high-conversion opportunities.
+Good practice:
+- use realistic engagement numbers
+- compare results across multiple candidate assets
+- treat the score as a ranking aid, not a guaranteed outcome
 
-## 5. Input quality rules
+### B) Queue a crawl job
 
-- Use consistent product identifiers (avoid duplicated naming variants).
-- Submit complete payloads; avoid sparse fields where optional context improves scoring.
-- Use realistic campaign assumptions when requesting prioritization.
-- Avoid repeated duplicate submissions when queue lag already exists.
+Use `/crawl` to request product discovery around a keyword.
 
-## 6. Safety and security rules
+```bash
+curl -X POST http://localhost/crawl \
+  -H 'content-type: application/json' \
+  -d '{"keyword":"wireless earbuds"}'
+```
 
-- Never share credentials in chat, tickets, or screenshots.
-- Never paste secrets into dashboard free-text fields.
-- Do not upload or submit data without source authorization.
-- Report suspicious account behavior immediately.
+Good practice:
+- use concise product or niche keywords
+- avoid sending the same request repeatedly if the queue is already backed up
+- record which keyword set was submitted when comparing outcomes
 
-## 7. Common issues and self-checks
+### C) Review arbitrage output
 
-### Dashboard unavailable
+Use `/arbitrage` to inspect the top arbitrage rows currently available in PostgreSQL.
 
-- Confirm URL is correct (`http://localhost:5173`).
-- Check with admin whether frontend runtime is active.
-- Check if core backend stack is healthy.
+```bash
+curl http://localhost/arbitrage
+```
 
-### API returns 5xx
+Good practice:
+- focus on relative profit and source combinations
+- validate source freshness before acting on any opportunity
+- coordinate with admins if data appears stale or unexpectedly empty
 
-- Retry once after a short delay.
-- Capture timestamp, endpoint, and payload shape.
-- Escalate to admin with exact response code/body snippet.
+## 5) Data quality rules
 
-### Data seems stale
+- Use consistent naming for products and campaign inputs.
+- Avoid duplicate submissions unless you are intentionally re-running a job.
+- Include the full required JSON payload for API requests.
+- Keep a record of the time and input used for important decisions.
 
-- Verify whether worker queues are backlogged.
-- Ask admin for worker/service health status.
-- Recheck after queue backlog clears.
+## 6) Security and acceptable use
 
-## 8. Escalation template (recommended)
+- Never share account credentials, JWTs, or secrets in tickets or chat.
+- Do not upload unauthorized source data or media.
+- Do not use break-glass or admin-only workflows without approval.
+- Report suspicious access patterns immediately.
 
-When filing an issue to admins, include:
+## 7) Common problems and self-service checks
 
-- Time (with timezone)
-- Endpoint/page impacted
-- Steps to reproduce
-- Expected vs actual behavior
-- Error message/code
-- Whether issue is persistent or intermittent
+### Gateway unreachable
+- confirm `http://localhost/` responds
+- ask an admin to run `docker compose ps`
+- confirm the stack was started successfully
+
+### `/predict` returns errors
+- validate JSON formatting
+- confirm all numeric fields are present
+- retry once before escalating
+
+### `/crawl` queues but results seem delayed
+- the crawler uses background workers and Redis-backed queues
+- ask an admin whether worker backlog is increasing
+- avoid flooding the queue with duplicate keywords
+
+### `/arbitrage` returns no useful data
+- ask whether `arbitrage_events` has recent rows
+- confirm database initialization completed
+- ask whether upstream discovery/pipeline jobs have produced new data
+
+## 8) Escalation template
+
+When reporting an issue, include:
+- date and time with timezone
+- environment or URL used
+- exact endpoint or page
+- request payload shape if relevant
+- expected behavior
+- actual behavior
+- any response code or error text
+- whether the problem is constant or intermittent

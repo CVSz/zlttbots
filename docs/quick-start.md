@@ -1,48 +1,118 @@
 # Quick Start
 
-Use this guide when you want a fast, repeatable local bootstrap in a few commands.
+Use this guide for the fastest reliable path to a working local zTTato baseline.
 
 ## Prerequisites
 
-- Docker Engine + Docker Compose
+- Docker Engine
+- Docker Compose plugin
+- Python 3
 - Git
-- Python 3 (for test execution)
+- A repository-root `.env` file
 
-## 1) Build images
+## 1) Create a minimal `.env`
+
+```env
+DB_NAME=zttato
+DB_USER=zttato
+DB_PASSWORD=zttato
+DB_PORT=5432
+REDIS_HOST=redis
+REDIS_PORT=6379
+FFMPEG_HWACCEL=none
+FFMPEG_CPU_PRESET=veryfast
+FFMPEG_CPU_CRF=23
+```
+
+## 2) Build images
 
 ```bash
 docker compose build
 ```
 
-## 2) Start the platform
+## 3) Start the platform
 
 ```bash
 docker compose up -d
 ```
 
-## 3) Check service status
+## 4) Check service state
 
 ```bash
 docker compose ps
 ```
 
-Target state: core services are `Up` and health checks are green (or transitioning to healthy during warm-up).
+Expected baseline services:
+- `postgres`
+- `redis`
+- `viral-predictor`
+- `market-crawler`
+- `arbitrage-engine`
+- `gpu-renderer`
+- `crawler-worker`
+- `arbitrage-worker`
+- `renderer-worker`
+- `nginx`
 
-## 4) Validate key API routes
+## 5) Verify the gateway and APIs
+
+### Root health
 
 ```bash
-curl -i http://localhost/predict
-curl -i http://localhost/crawl
+curl -i http://localhost/
+```
+
+### Predictor
+
+```bash
+curl -i -X POST http://localhost/predict \
+  -H 'content-type: application/json' \
+  -d '{"views":1000,"likes":100,"comments":10,"shares":5}'
+```
+
+### Crawler
+
+```bash
+curl -i -X POST http://localhost/crawl \
+  -H 'content-type: application/json' \
+  -d '{"keyword":"wireless earbuds"}'
+```
+
+### Arbitrage
+
+```bash
 curl -i http://localhost/arbitrage
 ```
 
-## 5) Run tests
+## 6) Run tests
 
 ```bash
 pytest
 ```
 
-## 6) Optional standalone Node service flow
+## 7) Useful daily commands
+
+### Tail logs for one service
+
+```bash
+docker compose logs --tail=200 market-crawler
+```
+
+### Restart one service
+
+```bash
+docker compose restart market-crawler
+```
+
+### Scale workers
+
+```bash
+docker compose up -d --scale crawler-worker=3 --scale renderer-worker=2 --scale arbitrage-worker=2
+```
+
+## 8) Optional extras
+
+### Start standalone Node services
 
 ```bash
 bash scripts/zttato-node.sh install
@@ -50,35 +120,11 @@ bash scripts/zttato-node.sh start
 bash scripts/zttato-node.sh status
 ```
 
-Stop or restart them independently from Docker when needed:
+### Start monitoring stack
 
 ```bash
-bash scripts/zttato-node.sh stop
-bash scripts/zttato-node.sh restart
+docker compose -f infrastructure/monitoring/docker-compose.monitoring.yml up -d
 ```
-
-## 7) Daily operations shortcuts
-
-- Tail logs for one service:
-  ```bash
-  docker compose logs --tail=200 market-crawler
-  ```
-- Restart one service:
-  ```bash
-  docker compose restart market-crawler
-  ```
-- Scale worker throughput:
-  ```bash
-  docker compose up -d --scale crawler-worker=3 --scale renderer-worker=2 --scale arbitrage-worker=2
-  ```
-
-## 8) Access points
-
-- API gateway (nginx): `http://localhost`
-  - Predict route: `/predict`
-  - Crawl route: `/crawl`
-  - Arbitrage route: `/arbitrage`
-- Admin panel is available from the repository under `services/admin-panel` for frontend runtime workflows.
 
 ## 9) Stop the environment
 

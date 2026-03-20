@@ -1,97 +1,140 @@
 # Admin Manual
 
-## 1. Purpose
+## 1) Purpose
 
-This manual is for platform administrators managing access, service health, and operational coordination.
+This manual is for platform administrators responsible for day-to-day availability, user support, and operational coordination in the current zTTato stack.
 
-## 2. Core responsibilities
+## 2) What admins own
 
-- Maintain user/admin access workflows and policy enforcement.
-- Monitor API health, worker throughput, and queue pressure.
-- Coordinate incident triage and escalation with DevOps.
-- Perform post-deploy verification and release acceptance checks.
+Admins are typically responsible for:
+- keeping the default Compose stack healthy
+- verifying gateway/API reachability
+- watching worker throughput and queue pressure
+- supporting users with access or workflow issues
+- coordinating with DevOps for deeper infrastructure or deployment work
 
-## 3. Daily command baseline
+## 3) Current baseline service inventory
 
-### Start platform
-
-```bash
-docker compose up -d
-```
-
-### Stop platform
-
-```bash
-docker compose down
-```
-
-### Runtime status
-
-```bash
-docker compose ps
-```
-
-### Service logs
-
-```bash
-docker compose logs --tail=200 <service-name>
-```
-
-## 4. Service inventory and expectations
-
-Critical infrastructure:
-
+### Data services
 - `postgres`
 - `redis`
 
-Core APIs:
-
+### API services
 - `viral-predictor`
 - `market-crawler`
 - `arbitrage-engine`
 - `gpu-renderer`
 
-Workers:
-
+### Background workers
 - `crawler-worker`
-- `renderer-worker`
 - `arbitrage-worker`
+- `renderer-worker`
 
-Gateway:
-
+### Gateway
 - `nginx`
 
-## 5. Health and reachability checks
+### Optional managed Node applications
+Admins may also be asked to supervise PM2-managed Node services started through `scripts/zttato-node.sh`, especially `admin-panel` and analytics-related services.
 
-### API gateway checks
+## 4) Daily command baseline
+
+### Start the platform
 
 ```bash
-curl -i http://localhost/predict
-curl -i http://localhost/crawl
-curl -i http://localhost/arbitrage
+docker compose up -d
 ```
 
-### Container-level checks
+### Stop the platform
+
+```bash
+docker compose down
+```
+
+### Inspect state
+
+```bash
+docker compose ps
+```
+
+### Inspect logs
+
+```bash
+docker compose logs --tail=200 <service-name>
+```
+
+### Inspect container runtime status
 
 ```bash
 docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
 ```
 
-## 6. Worker capacity management
+## 5) Reachability and health checks
 
-Scale workers during backlog or SLA pressure:
+### Gateway root check
+
+```bash
+curl -i http://localhost/
+```
+
+### API checks through Nginx
+
+```bash
+curl -i -X POST http://localhost/predict \
+  -H 'content-type: application/json' \
+  -d '{"views":1000,"likes":100,"comments":10,"shares":5}'
+
+curl -i -X POST http://localhost/crawl \
+  -H 'content-type: application/json' \
+  -d '{"keyword":"wireless earbuds"}'
+
+curl -i http://localhost/arbitrage
+```
+
+### Direct health checks when isolating faults
+- predictor: `http://localhost:9100/healthz`
+- crawler: `http://localhost:9400/healthz`
+- renderer: `http://localhost:9300/healthz`
+- arbitrage: `http://localhost:9500/healthz`
+
+## 6) Worker and queue management
+
+The crawler and renderer depend on Redis-backed queueing, and the arbitrage engine includes its own worker process.
+
+### Scale worker replicas
 
 ```bash
 docker compose up -d --scale crawler-worker=3 --scale renderer-worker=2 --scale arbitrage-worker=2
 ```
 
-Operational guidance:
+Guidance:
+- increase capacity gradually
+- monitor CPU and memory after each change
+- check logs after scaling to confirm workers actually start and consume work
 
-- Increase replicas gradually.
-- Re-check host CPU/memory before further increases.
-- Roll back scale if saturation causes unstable latency.
+## 7) User support playbook
 
-## 7. Backup and data protection
+### User cannot access the gateway
+1. run `docker compose ps`
+2. verify `nginx` is running
+3. check `docker compose logs --tail=200 nginx`
+4. test `curl -i http://localhost/`
+
+### User reports scoring failures
+1. check `viral-predictor` logs
+2. confirm PostgreSQL is healthy
+3. test the `/predict` route with a known-good payload
+
+### User reports crawling delays
+1. check `market-crawler` and `crawler-worker` logs
+2. confirm Redis is healthy
+3. see whether queue pressure or worker failures are visible
+
+### User reports stale arbitrage data
+1. verify PostgreSQL availability
+2. inspect whether `arbitrage_events` has recent inserts
+3. escalate to DevOps if ingestion or upstream workflows appear broken
+
+## 8) Backup and restore basics
 
 ### Backup
 
@@ -105,27 +148,45 @@ pg_dump -U zttato zttato > backup-$(date +%Y%m%d%H%M%S).sql
 psql -U zttato zttato < backup.sql
 ```
 
-Admin checklist before restore:
+Checklist before restore:
+1. confirm backup source and timestamp
+2. coordinate a maintenance window if needed
+3. reduce write-heavy traffic where possible
+4. run post-restore smoke checks immediately
 
-1. Freeze or reduce write-heavy traffic.
-2. Confirm backup provenance and timestamp.
-3. Coordinate maintenance window with stakeholders.
-4. Validate post-restore API behavior.
+## 9) Optional Node-service administration
 
-## 8. Incident response (admin layer)
+### Install dependencies
 
-1. Detect and scope impact.
-2. Capture evidence (`ps`, logs, endpoint checks).
-3. Apply low-risk corrective actions (targeted restart/scale).
-4. Escalate infra-level issues to DevOps with artifacts.
-5. Publish status updates and resolution summary.
+```bash
+bash scripts/zttato-node.sh install
+```
 
-## 9. Release acceptance checklist
+### Start services
 
-After deployments:
+```bash
+bash scripts/zttato-node.sh start
+```
 
-- Confirm all critical services are healthy.
-- Confirm route reachability through nginx.
-- Confirm no immediate spike in 5xx rates.
-- Confirm worker queues are moving.
-- Confirm dashboard/operator paths are usable.
+### Check PM2 status
+
+```bash
+bash scripts/zttato-node.sh status
+```
+
+### View service logs
+
+```bash
+bash scripts/zttato-node.sh logs
+bash scripts/zttato-node.sh logs admin-panel
+```
+
+## 10) Release acceptance checklist
+
+After any deployment or restart:
+- confirm all baseline Compose services are running
+- confirm root gateway health works
+- confirm `/predict`, `/crawl`, and `/arbitrage` respond
+- confirm workers remain up after initial warm-up
+- confirm no obvious DB or Redis health failures in logs
+- confirm optional Node services, if used, are healthy in PM2
