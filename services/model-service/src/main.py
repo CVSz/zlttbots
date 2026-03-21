@@ -1,18 +1,36 @@
+import asyncio
+import logging
 import os
+import json
+from contextlib import asynccontextmanager
+import time
+import uuid
 from typing import Any
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Response, status
+from confluent_kafka import Producer
+from fastapi import FastAPI, Header, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
-from .async_queue import AsyncInferenceProducer, AsyncInferenceUnavailable
-from .onnx_model import MODEL_PATH, ONNXModel
+from metrics import ASYNC_REQUESTS_TOTAL, RESULT_LOOKUP_LATENCY
+from queue_runtime import REQUEST_TOPIC, start_background_consumers
+from result_store import result_store
 
-app = FastAPI(title="Model Service")
-MODEL_VERSION = os.getenv("MODEL_VERSION", "baseline-ctr-cvr-v2-onnx")
-ASYNC_INFERENCE_ENABLED = os.getenv("ASYNC_INFERENCE_ENABLED", "false").lower() == "true"
-model = ONNXModel(model_path=MODEL_PATH)
-async_producer = AsyncInferenceProducer.from_env(enabled=ASYNC_INFERENCE_ENABLED)
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    start_background_consumers(predict_from_payload)
+    yield
+
+
+app = FastAPI(title="Model Service", lifespan=lifespan)
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger("model-service")
+WEIGHTS = torch.tensor([0.3, 0.7], dtype=torch.float32)
+MODEL_VERSION = os.getenv("MODEL_VERSION", "baseline-ctr-cvr-v1")
+KAFKA_BROKER = os.getenv("KAFKA_BROKER", "redpanda:9092")
+producer = Producer({"bootstrap.servers": KAFKA_BROKER})
 
 
 class FeatureVector(BaseModel):
@@ -28,12 +46,12 @@ class PredictionResult(BaseModel):
     model_version: str
 
 
-class AsyncPredictionQueued(BaseModel):
+class AsyncJobAccepted(BaseModel):
     job_id: str
     status: str
 
 
-def featurize(features: FeatureVector) -> list[float]:
+def predict(features: FeatureVector) -> PredictionResult:
     ctr = features.clicks / features.views if features.views else 0.0
     cvr = features.conversions / features.clicks if features.clicks else 0.0
     return [ctr, cvr]
@@ -46,22 +64,24 @@ def predict(features: FeatureVector) -> PredictionResult:
     return PredictionResult(score=score, ctr=ctr, cvr=cvr, model_version=MODEL_VERSION)
 
 
-@app.on_event("startup")
-def warm_up_model() -> None:
-    model.warm_up()
+def predict_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    features = FeatureVector.model_validate(payload)
+    return predict(features).model_dump()
 
 
 @app.get("/healthz")
-def healthz(response: Response) -> dict[str, Any]:
-    if not model.ready:
-        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+def healthz() -> dict[str, Any]:
     return {
-        "status": "ok" if model.ready else "degraded",
+        "status": "ok",
         "service": "model-service",
         "model_version": MODEL_VERSION,
-        "model_path": str(model.model_path),
-        "async_inference_enabled": ASYNC_INFERENCE_ENABLED,
+        "kafka_broker": KAFKA_BROKER,
     }
+
+
+@app.get("/metrics")
+def metrics() -> Response:
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 @app.post("/predict", response_model=PredictionResult)
@@ -71,15 +91,66 @@ def predict_api(features: FeatureVector) -> PredictionResult:
     return predict(features)
 
 
-@app.post("/predict_async", response_model=AsyncPredictionQueued, status_code=status.HTTP_202_ACCEPTED)
-def predict_async(features: FeatureVector) -> AsyncPredictionQueued:
-    if not model.ready:
-        raise HTTPException(status_code=503, detail=f"ONNX model is unavailable at {model.model_path}")
+@app.post("/predict_async", response_model=AsyncJobAccepted)
+def predict_async(
+    features: FeatureVector,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+) -> AsyncJobAccepted:
     try:
-        job_id = async_producer.enqueue(featurize(features))
-    except AsyncInferenceUnavailable as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
-    return AsyncPredictionQueued(job_id=job_id, status="queued")
+        job_id = idempotency_key or str(uuid.uuid4())
+        result_store.set_result(job_id, {"status": "queued", "model_version": MODEL_VERSION})
+        producer.produce(
+            REQUEST_TOPIC,
+            json.dumps(
+                {
+                    "job_id": job_id,
+                    "features": features.model_dump(),
+                    "model_version": MODEL_VERSION,
+                }
+            ).encode("utf-8"),
+        )
+        producer.flush()
+        ASYNC_REQUESTS_TOTAL.inc()
+        return AsyncJobAccepted(job_id=job_id, status="queued")
+    except Exception as exc:
+        log.exception("Failed to enqueue async prediction")
+        raise HTTPException(status_code=500, detail=f"Failed to enqueue async prediction: {exc}") from exc
+
+
+@app.get("/result/{job_id}")
+def fetch_result(job_id: str) -> dict[str, Any]:
+    started_at = time.perf_counter()
+    result = result_store.get_result(job_id)
+    RESULT_LOOKUP_LATENCY.observe(time.perf_counter() - started_at)
+    return result or {"job_id": job_id, "status": "pending"}
+
+
+@app.get("/result/{job_id}/wait")
+async def wait_result(job_id: str, timeout: int = 10, poll_interval: float = 0.2) -> dict[str, Any]:
+    deadline = asyncio.get_running_loop().time() + max(timeout, 1)
+    while True:
+        result = result_store.get_result(job_id)
+        if result and result.get("status") not in {"queued", "pending"}:
+            return result
+        if asyncio.get_running_loop().time() >= deadline:
+            return {"job_id": job_id, "status": "timeout"}
+        await asyncio.sleep(max(poll_interval, 0.05))
+
+
+@app.websocket("/ws/result/{job_id}")
+async def ws_result(websocket: WebSocket, job_id: str) -> None:
+    await websocket.accept()
+    try:
+        while True:
+            result = result_store.get_result(job_id)
+            if result and result.get("status") not in {"queued", "pending"}:
+                await websocket.send_json(result)
+                return
+            await asyncio.sleep(0.2)
+    except WebSocketDisconnect:
+        return
+    finally:
+        await websocket.close()
 
 
 if __name__ == "__main__":
