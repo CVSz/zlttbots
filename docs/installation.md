@@ -1,38 +1,66 @@
 # Installation
 
-This guide covers the current repository from the simplest local Compose install through optional Node service setup and supporting infrastructure.
+This guide is the full-detail installer reference for zTTato Platform. It covers baseline setup, extended service expectations, optional Node-app setup, and common installation recovery paths.
 
-## 1) Prerequisites
+## 1) Choose your installation path
 
-### Required for the default stack
+### Path A — baseline local platform
+Use this if you want the fastest reliable start for:
+
+- PostgreSQL
+- Redis
+- virality scoring
+- crawl queueing
+- arbitrage review
+- rendering queue intake
+- nginx gateway
+
+### Path B — full repository bootstrap
+Use this if you want:
+
+- baseline Compose services
+- local dependency install across Python and Node service folders
+- host-side bootstrap behavior from `start-zttato.sh`
+
+### Path C — Node application fleet
+Use this when you specifically need the admin panel or the separate Node services.
+
+## 2) Prerequisites
+
+### Required for baseline Compose
 - Docker Engine
 - Docker Compose plugin
 - Git
-- Python 3.x and `pip` for running `pytest`
+- Python 3 with `pip` for running `pytest`
 
-### Optional, depending on what you want to run
-- Node.js and npm for standalone services under `services/`
-- PM2 for PM2-managed Node service startup via `scripts/zttato-node.sh`
-- `curl` for smoke checks
-- `psql` and `pg_dump` for backup/restore workflows
+### Required for expanded local workflows
+- Node.js and npm
+- `curl`
+- `psql` and `pg_dump` for database operations
+
+### Optional but useful
+- PM2 for Node-service lifecycle management
+- `jq` for JSON inspection in shell workflows
+- enough disk for multiple images and `node_modules`
 
 ### Recommended host baseline
 - 4+ CPU cores
-- 8+ GB RAM
-- 20+ GB free disk for images, node modules, and database volumes
+- 8+ GB RAM minimum
+- 20+ GB free disk
+- more memory if you plan to run the extended Compose/ML stack
 
-## 2) Clone the repository
+## 3) Clone the repository
 
 ```bash
 git clone <repository-url>
 cd zttato-platform
 ```
 
-## 3) Create environment configuration
+## 4) Create the root `.env`
 
-The Compose file references `.env`. Create one before starting the stack.
+The main Compose file references `.env`, and several services rely on environment values for connectivity or external integration behavior.
 
-### Minimal `.env` example
+### Recommended starter `.env`
 
 ```env
 DB_NAME=zttato
@@ -44,31 +72,83 @@ REDIS_PORT=6379
 FFMPEG_HWACCEL=none
 FFMPEG_CPU_PRESET=veryfast
 FFMPEG_CPU_CRF=23
+PLATFORM_API_BASE=https://api.partner.example
+PLATFORM_API_KEY=
+AFFILIATE_WEBHOOK_SECRET=change-me
+DEFAULT_DAILY_SPEND_LIMIT=100.0
+HTTP_TIMEOUT=10
+RATE_TOKENS=60
+RATE_MAX_TOKENS=120
+RATE_REFILL_PER_SEC=1
 ```
 
-### Notes
-- `FFMPEG_HWACCEL=none` is the safest default for CPU-only local environments.
-- Set `FFMPEG_HWACCEL=cuda` only when your host and container runtime are prepared for NVIDIA acceleration.
-- Add any service-specific secrets to `.env`, but do not commit them.
+### Important notes
+- Leave `FFMPEG_HWACCEL=none` for CPU-only hosts.
+- Change `AFFILIATE_WEBHOOK_SECRET` before any shared environment.
+- Set `PLATFORM_API_BASE` and `PLATFORM_API_KEY` only if you plan to use `execution-engine` against a real partner endpoint.
+- Never commit production credentials.
 
-## 4) Build the Compose stack
+## 5) Validate your tooling
+
+```bash
+docker --version
+docker compose version
+python3 --version
+pytest --version
+```
+
+Optional checks:
+
+```bash
+node --version
+npm --version
+pm2 -v
+```
+
+## 6) Build the platform images
+
+### Standard build
 
 ```bash
 docker compose build
 ```
 
-If the build fails:
-- confirm the Docker daemon is running
-- confirm network access for base image and dependency pulls
-- retry with `--no-cache` only when troubleshooting stale layers
+### Troubleshooting build cache issues
 
-## 5) Start the baseline platform
+```bash
+docker compose build --no-cache
+```
+
+Use `--no-cache` only when you are intentionally diagnosing stale layers or dependency mismatch problems.
+
+## 7) Start the platform
+
+### Standard baseline startup
 
 ```bash
 docker compose up -d
 ```
 
-This brings up:
+### Bootstrap helper startup
+
+```bash
+bash start.sh
+```
+
+This helper will create `.env` if needed, validate Compose config, and start the stack with build enabled.
+
+### Full bootstrap script
+
+```bash
+bash start-zttato.sh
+```
+
+Use this only when you intentionally want the script to install Node dependencies, create Python virtual environments in service folders, bring up infrastructure, and attempt a broader host-assisted startup flow.
+
+## 8) What starts in the default path
+
+At minimum, expect the following baseline services to matter on day one:
+
 - `postgres`
 - `redis`
 - `viral-predictor`
@@ -80,99 +160,69 @@ This brings up:
 - `renderer-worker`
 - `nginx`
 
-## 6) Verify container health
+Depending on the Compose invocation and available resources, additional control-plane services may also be started because they are declared in the main Compose file.
+
+## 9) Verify service health
+
+### Compose status
 
 ```bash
 docker compose ps
 ```
 
-You should see the data services, API services, workers, and Nginx all in a running state. For deeper detail:
-
-```bash
-docker compose logs --tail=200
-```
-
-## 7) Run first smoke checks
-
-### Root gateway probe
+### Gateway smoke checks
 
 ```bash
 curl -i http://localhost/
-```
-
-### Predictor smoke check
-
-```bash
-curl -i -X POST http://localhost/predict \
-  -H 'content-type: application/json' \
-  -d '{"views":1000,"likes":100,"comments":10,"shares":5}'
-```
-
-### Crawler smoke check
-
-```bash
-curl -i -X POST http://localhost/crawl \
-  -H 'content-type: application/json' \
-  -d '{"keyword":"wireless earbuds"}'
-```
-
-### Arbitrage smoke check
-
-```bash
+curl -i -X POST http://localhost/predict -H 'content-type: application/json' -d '{"views":1000,"likes":100,"comments":10,"shares":5}'
+curl -i -X POST http://localhost/crawl -H 'content-type: application/json' -d '{"keyword":"wireless earbuds"}'
 curl -i http://localhost/arbitrage
 ```
 
-## 8) Run the test suite
+### Direct service probes
+
+```bash
+curl -i http://localhost:9100/healthz || true
+curl -i http://localhost:9300/healthz || true
+curl -i http://localhost:9400/healthz || true
+curl -i http://localhost:9500/healthz || true
+```
+
+Direct host access to those service ports only works if your environment publishes or forwards them. By default, nginx is the intended host entrypoint.
+
+## 10) Run validation
 
 ```bash
 pytest
+bash scripts/test-integration.sh
+bash infrastructure/scripts/validate-repo.sh
 ```
 
-The repository test suite validates the runtime blueprint, GPU render command behavior, JWT auth behavior, and enterprise maturity support.
+## 11) Optional Node-service installation
 
-## 9) Optional: install and run standalone Node services
-
-Use this path only if you need the extra Node applications in `services/`.
-
-### Install dependencies
+If you need the admin panel and other Node applications:
 
 ```bash
 bash scripts/zttato-node.sh install
-```
-
-### Start PM2-managed Node services
-
-```bash
 bash scripts/zttato-node.sh start
-```
-
-### Check PM2 status
-
-```bash
 bash scripts/zttato-node.sh status
 ```
 
-### View logs
+### Important note
+This is a separate lifecycle from the nginx-routed Compose baseline. Treat it as an additional application layer, not a replacement for the Docker stack.
 
-```bash
-bash scripts/zttato-node.sh logs
-bash scripts/zttato-node.sh logs admin-panel
-```
-
-## 10) Optional: monitoring stack
-
-Start the monitoring stack separately if you want Prometheus/Grafana/Loki locally.
+## 12) Optional monitoring installation
 
 ```bash
 docker compose -f infrastructure/monitoring/docker-compose.monitoring.yml up -d
 ```
 
-Endpoints:
+Expected local endpoints:
 - Prometheus: `http://localhost:9090`
 - Grafana: `http://localhost:3000`
 - Loki: `http://localhost:3100`
 
-## 11) Shutdown and cleanup
+## 13) Shutdown and cleanup
 
 ### Stop containers, keep data
 
@@ -180,33 +230,35 @@ Endpoints:
 docker compose down
 ```
 
-### Stop containers and remove volumes
+### Stop and remove volumes
 
 ```bash
 docker compose down -v
 ```
 
-Use volume removal only when you intentionally want to reset local PostgreSQL and Redis state.
+Do this only when you intentionally want to reset PostgreSQL/Redis local state.
 
-## 12) Troubleshooting quick reference
+## 14) Installation troubleshooting
 
-- Restart one service:
-  ```bash
-  docker compose restart <service>
-  ```
-- Recreate one service:
-  ```bash
-  docker compose up -d --force-recreate <service>
-  ```
-- Inspect one service log:
-  ```bash
-  docker compose logs --tail=200 <service>
-  ```
-- Check direct container status:
-  ```bash
-  docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
-  ```
-- Run the included integration smoke script:
-  ```bash
-  bash scripts/test-integration.sh
-  ```
+### Compose config fails
+- validate `.env` syntax
+- run `docker compose config`
+- confirm Docker daemon is running
+
+### Containers exit repeatedly
+- inspect `docker compose logs --tail=200 <service>`
+- verify DB and Redis health first
+- confirm host resource pressure is not causing restart loops
+
+### Gateway is up but APIs fail
+- verify nginx upstream routes in `configs/nginx.conf`
+- inspect target service health checks
+- confirm dependent stores are healthy
+
+### Node-service wrapper fails
+- verify Node and npm versions
+- install PM2 if you need lifecycle management
+- check per-service `package.json` scripts
+
+### Full bootstrap script is too heavy
+Use `bash start.sh` or direct `docker compose up -d` instead of `start-zttato.sh` for simpler local onboarding.

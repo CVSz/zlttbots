@@ -1,36 +1,45 @@
 # Godmode Manual
 
-## 1) Purpose and restrictions
+This manual is the full-detail break-glass guide for severe zTTato incidents. Godmode is for platform-wide recovery, failed deployments, data-risk events, or situations where admin/standard DevOps actions are not enough.
 
-Godmode is break-glass access for severe incidents, failed deployments, data-risk scenarios, or platform-wide recovery work. Use it only when standard admin or DevOps workflows are insufficient.
+## 1) Rules of engagement
 
-Rules:
-- keep access tightly restricted
-- make every action auditable
-- record commands, timestamps, and intent
-- prefer the smallest effective recovery action before escalating further
+- restrict access tightly
+- log every action with timestamp and reason
+- prefer the smallest effective action
+- capture system state before destructive changes
+- define rollback/containment expectations before acting
 
-## 2) What godmode operators may control
+## 2) What godmode can control
 
 A godmode operator may:
-- rebuild and restart the default Compose stack
-- control worker scale aggressively during incidents
-- run recovery, repair, and diagnostics scripts from `scripts/` and `infrastructure/scripts/`
-- manage monitoring, PostgreSQL, and optional Node-service lifecycle when required
-- coordinate backup/restore and post-incident stabilization
+- rebuild and restart the full Compose stack
+- isolate, restart, or scale services aggressively
+- operate database backup/restore workflows
+- use repair, diagnostic, bootstrap, rollback, and doctor scripts
+- manage Node, monitoring, Cloudflare, or alternate runtime tooling when the incident environment uses them
+- contain public exposure issues by disabling or narrowing edge paths
 
-## 3) Preconditions before acting
+## 3) Mandatory pre-action capture
 
-Before taking any action:
-1. confirm the incident severity and scope
-2. capture current state with `docker compose ps`, key logs, and active alerts
-3. note whether PostgreSQL, Redis, gateway, or workers are implicated
-4. define rollback or containment expectations
-5. notify stakeholders if downtime or data risk is possible
+Before taking major action, collect:
+
+```bash
+docker compose ps
+docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+docker compose logs --tail=200 nginx
+docker compose logs --tail=200 postgres
+docker compose logs --tail=200 redis
+```
+
+Also identify:
+- whether the issue is DB, Redis, gateway, worker, extended-service, or edge related
+- whether there is data-loss risk
+- whether a maintenance notice is required
 
 ## 4) Full-stack control operations
 
-### Build and deploy baseline
+### Build and deploy
 
 ```bash
 docker compose build
@@ -50,28 +59,29 @@ docker compose up -d
 docker compose down
 ```
 
-### Verify post-action state
+### Validate state after action
 
 ```bash
 docker compose ps
+curl -fS http://localhost/ || true
 ```
 
-## 5) High-pressure scaling actions
+## 5) High-pressure scaling
 
-When backlog or incident load requires rapid worker increases:
+When backlogs require emergency worker increases:
 
 ```bash
 docker compose up -d --scale crawler-worker=5 --scale renderer-worker=3 --scale arbitrage-worker=3
 ```
 
 Guidance:
-- scale in measured steps when possible
-- inspect host CPU, memory, and container restart behavior after each step
-- reverse the scale-up if saturation makes latency or errors worse
+- scale in steps when possible
+- inspect host pressure after every scale-up
+- undo the change if it worsens restart churn or latency
 
-## 6) Recovery and diagnostics toolkit
+## 6) Recovery toolkit
 
-Useful standard tools include:
+Useful scripts include:
 - `scripts/test-integration.sh`
 - `scripts/zttato-doctor.sh`
 - `scripts/repair-platform.sh`
@@ -80,8 +90,9 @@ Useful standard tools include:
 - `infrastructure/scripts/validate-repo.sh`
 - `infrastructure/scripts/rollback.sh`
 - `infrastructure/scripts/bootstrap-platform.sh`
+- `infrastructure/scripts/full-source-scan.sh`
 
-Prefer scripted recovery when available so the action is repeatable and easier to audit.
+Prefer using an existing script over ad hoc shell when the script already matches the need.
 
 ## 7) Data operations
 
@@ -97,13 +108,13 @@ pg_dump -U zttato zttato > backup-$(date +%Y%m%d%H%M%S).sql
 psql -U zttato zttato < backup.sql
 ```
 
-Before restoring:
-- verify backup age and provenance
-- reduce or stop write-heavy traffic
-- decide whether a full-stack stop is needed
-- prepare a post-restore validation checklist
+Before restore:
+- verify backup provenance and age
+- stop or reduce write-heavy traffic
+- decide whether a full-stack stop is necessary
+- prepare post-restore validation commands
 
-## 8) Optional environment control paths
+## 8) Optional environment-control paths
 
 ### Monitoring stack
 
@@ -119,25 +130,25 @@ bash scripts/zttato-node.sh start
 bash scripts/zttato-node.sh status
 ```
 
-### Kubernetes / alternate deployment tooling
-Use `infrastructure/k8s/`, Cloudflare assets, and deployment scripts only if the incident environment actually uses them. Do not assume the local Compose path and the Kubernetes path are interchangeable.
+### Alternate runtime / edge tooling
+Use Kubernetes, Cloudflare, and tunnel assets only when the incident environment actually depends on them. Do not apply a local-compose fix blindly to an edge or k8s environment.
 
 ## 9) Incident command sequence
 
-A practical order for severe incidents:
+Recommended order for severe incidents:
 1. stabilize PostgreSQL and Redis
-2. restore gateway reachability
-3. restore predictor, crawler, arbitrage, and renderer APIs
-4. restore worker consumption and queue movement
-5. validate monitoring and logs
-6. verify user-facing routes and critical workflows
-7. hand off to standard ownership once stable
+2. restore nginx or ingress reachability
+3. restore predictor, crawler, arbitrage, and renderer baseline health
+4. restore queue consumption and worker throughput
+5. restore extended/internal services only after the baseline is stable
+6. verify monitoring and logs
+7. hand back to standard owners with evidence
 
 ## 10) Post-incident obligations
 
-After the platform is stable:
-- record all commands used
+After recovery:
+- record every command used
 - capture exact timestamps and outcomes
-- summarize root cause and containment actions
-- document any config drift discovered
-- update runbooks and manuals if the incident exposed a documentation gap
+- document root cause and containment
+- update docs/runbooks if the incident exposed gaps
+- identify whether the issue came from baseline runtime, extended Compose graph, Node-service layer, or edge/infrastructure drift

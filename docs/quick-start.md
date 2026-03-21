@@ -1,16 +1,12 @@
 # Quick Start
 
-Use this guide for the fastest reliable path to a working local zTTato baseline.
+This is the full starter-platform guide for getting zTTato running fast without reading the entire repository first.
 
-## Prerequisites
+## Goal
 
-- Docker Engine
-- Docker Compose plugin
-- Python 3
-- Git
-- A repository-root `.env` file
+Start the platform, verify the gateway, run one request per core API, and know where to go next.
 
-## 1) Create a minimal `.env`
+## 1) Create `.env`
 
 ```env
 DB_NAME=zttato
@@ -22,6 +18,9 @@ REDIS_PORT=6379
 FFMPEG_HWACCEL=none
 FFMPEG_CPU_PRESET=veryfast
 FFMPEG_CPU_CRF=23
+PLATFORM_API_BASE=https://api.partner.example
+PLATFORM_API_KEY=
+AFFILIATE_WEBHOOK_SECRET=change-me
 ```
 
 ## 2) Build images
@@ -30,19 +29,25 @@ FFMPEG_CPU_CRF=23
 docker compose build
 ```
 
-## 3) Start the platform
+## 3) Start the stack
 
 ```bash
 docker compose up -d
 ```
 
-## 4) Check service state
+If you prefer the helper script:
+
+```bash
+bash start.sh
+```
+
+## 4) Check container state
 
 ```bash
 docker compose ps
 ```
 
-Expected baseline services:
+Focus first on these services:
 - `postgres`
 - `redis`
 - `viral-predictor`
@@ -54,13 +59,17 @@ Expected baseline services:
 - `renderer-worker`
 - `nginx`
 
-## 5) Verify the gateway and APIs
+## 5) Verify the gateway
 
 ### Root health
 
 ```bash
 curl -i http://localhost/
 ```
+
+Expected behavior: a `200` response with the gateway health string.
+
+## 6) Exercise the baseline APIs
 
 ### Predictor
 
@@ -84,18 +93,33 @@ curl -i -X POST http://localhost/crawl \
 curl -i http://localhost/arbitrage
 ```
 
-## 6) Run tests
+## 7) Know what those calls do
+
+- `/predict` returns a virality score.
+- `/crawl` queues a crawl job for background worker processing.
+- `/arbitrage` returns the top arbitrage rows currently available in PostgreSQL.
+- `/render` exists on the internal renderer service but is not routed publicly by nginx by default.
+
+## 8) Run repository validation
 
 ```bash
 pytest
 ```
 
-## 7) Useful daily commands
+Optional additional checks:
 
-### Tail logs for one service
+```bash
+bash scripts/test-integration.sh
+bash infrastructure/scripts/validate-repo.sh
+```
+
+## 9) Useful day-two commands
+
+### View logs
 
 ```bash
 docker compose logs --tail=200 market-crawler
+docker compose logs --tail=200 nginx
 ```
 
 ### Restart one service
@@ -110,23 +134,28 @@ docker compose restart market-crawler
 docker compose up -d --scale crawler-worker=3 --scale renderer-worker=2 --scale arbitrage-worker=2
 ```
 
-## 8) Optional extras
+## 10) Optional next steps
 
-### Start standalone Node services
+### Run the Node application layer
 
 ```bash
 bash scripts/zttato-node.sh install
 bash scripts/zttato-node.sh start
-bash scripts/zttato-node.sh status
 ```
 
-### Start monitoring stack
+### Start the monitoring stack
 
 ```bash
 docker compose -f infrastructure/monitoring/docker-compose.monitoring.yml up -d
 ```
 
-## 9) Stop the environment
+### Read deeper docs
+- installer reference: `docs/installation.md`
+- configuration reference: `docs/configuration.md`
+- role manuals: `docs/manuals/`
+- admin UI docs: `docs/services/admin-panel.md` and `docs/ux-ui/admin-panel-ux-ui.md`
+
+## 11) Stop the environment
 
 ```bash
 docker compose down
