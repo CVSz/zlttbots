@@ -355,6 +355,113 @@ services:
     networks:
       - zttato-net
 
+  rl-agent-1:
+    build:
+      context: ./services/rl-engine
+      dockerfile: Dockerfile
+    container_name: zttato-rl-agent-1
+    restart: always
+    env_file: .env
+    environment:
+      REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
+      DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      RL_STATE_KEY: rl:linucb:agent1
+      RL_ALPHA: ${RL_AGENT_1_ALPHA:-1.0}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  rl-agent-2:
+    build:
+      context: ./services/rl-engine
+      dockerfile: Dockerfile
+    container_name: zttato-rl-agent-2
+    restart: always
+    env_file: .env
+    environment:
+      REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
+      DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      RL_STATE_KEY: rl:linucb:agent2
+      RL_ALPHA: ${RL_AGENT_2_ALPHA:-1.25}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  rl-coordinator:
+    build:
+      context: ./services/rl-coordinator
+      dockerfile: Dockerfile
+    container_name: zttato-rl-coordinator
+    restart: always
+    env_file: .env
+    environment:
+      RL_AGENTS: rl-agent-1:8000,rl-agent-2:8000
+    depends_on:
+      rl-agent-1:
+        condition: service_healthy
+      rl-agent-2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  budget-allocator:
+    build:
+      context: ./services/budget-allocator
+      dockerfile: Dockerfile
+    container_name: zttato-budget-allocator
+    restart: always
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  rtb-engine:
+    build:
+      context: ./services/rtb-engine
+      dockerfile: Dockerfile
+    container_name: zttato-rtb-engine
+    restart: always
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
   scaling-engine:
     build:
       context: ./services/scaling-engine
@@ -378,10 +485,14 @@ services:
     container_name: zttato-reward-collector
     restart: always
     env_file: .env
+    environment:
+      KAFKA_BROKER: redpanda:9092
     depends_on:
       feature-store:
         condition: service_healthy
-      rl-engine:
+      rl-coordinator:
+        condition: service_healthy
+      redpanda:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
@@ -399,6 +510,8 @@ services:
     container_name: zttato-master-orchestrator
     restart: always
     env_file: .env
+    environment:
+      KAFKA_BROKER: redpanda:9092
     depends_on:
       execution-engine:
         condition: service_healthy
@@ -406,9 +519,15 @@ services:
         condition: service_healthy
       model-service:
         condition: service_healthy
-      rl-engine:
+      rl-coordinator:
+        condition: service_healthy
+      budget-allocator:
+        condition: service_healthy
+      rtb-engine:
         condition: service_healthy
       scaling-engine:
+        condition: service_healthy
+      redpanda:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
