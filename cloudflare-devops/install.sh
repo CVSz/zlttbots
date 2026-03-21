@@ -72,8 +72,9 @@ echo "Tunnel ID: $TUNNEL_ID"
 # save token
 ########################################
 
-grep -v '^CF_TUNNEL_TOKEN=' "$ENV_FILE" > "$ENV_FILE.tmp" || true
+grep -Ev '^(CF_TUNNEL_TOKEN|CF_TUNNEL_ID)=' "$ENV_FILE" > "$ENV_FILE.tmp" || true
 mv "$ENV_FILE.tmp" "$ENV_FILE"
+echo "CF_TUNNEL_ID=$TUNNEL_ID" >> "$ENV_FILE"
 echo "CF_TUNNEL_TOKEN=$TOKEN" >> "$ENV_FILE"
 
 ########################################

@@ -1,0 +1,23 @@
+tunnel: zttato-global
+credentials-file: /root/.cloudflared/creds.json
+
+ingress:
+  - hostname: api.zeaz.dev
+    service: http://nginx:80
+  - hostname: admin.zeaz.dev
+    service: http://admin-panel:3000
+  - hostname: auth.zeaz.dev
+    service: http://jwt-auth:80
+  - hostname: ai.zeaz.dev
+    service: http://ai-video-generator:9200
+  - hostname: crawl.zeaz.dev
+    service: http://market-crawler:9400
+  - hostname: predict.zeaz.dev
+    service: http://viral-predictor:9100
+  - hostname: grafana.zeaz.dev
+    service: http://grafana:3000
+  - hostname: kafka.zeaz.dev
+    service: http://kafka-ui:8080
+  - hostname: '*.zeaz.dev'
+    service: http://localhost:80
+  - service: http_status:404
