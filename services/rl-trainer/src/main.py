@@ -8,7 +8,11 @@ from pathlib import Path
 import numpy as np
 from confluent_kafka import Consumer
 
+from agent_replicator import Replicator
+from compute_market import ComputeMarket
+from global_strategy import StrategyOptimizer
 from ppo import PPO
+from treasury import Treasury
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("rl-trainer")
@@ -22,6 +26,28 @@ consumer = Consumer(
 )
 consumer.subscribe(["inference.response"])
 ppo = PPO()
+market = ComputeMarket()
+treasury = Treasury()
+strategy = StrategyOptimizer()
+replicator = Replicator()
+
+market.register("node-1", capacity=10, price_per_unit=0.8, zone="us-east")
+market.register("node-2", capacity=5, price_per_unit=0.4, zone="us-west")
+
+
+def build_autonomous_snapshot(features: np.ndarray, reward: float) -> dict[str, object]:
+    allocation = treasury.allocate(features.tolist(), [0.02] * len(features))
+    hedge_amount = treasury.hedge(abs(reward))
+    assigned_worker = market.assign({"demand": max(float(np.linalg.norm(features)), 1.0)})
+    coordination = strategy.coordinate([reward] * strategy.agents)
+    replication = replicator.replicate()
+    return {
+        "allocation": allocation.round(6).tolist(),
+        "hedge_amount": hedge_amount,
+        "assigned_worker": assigned_worker.worker_id if assigned_worker else None,
+        "coordination": coordination,
+        "replication": replication,
+    }
 
 
 def loop() -> None:
@@ -40,8 +66,9 @@ def loop() -> None:
         reward = float(data.get("reward", 0.0))
         old_prob = float(data.get("prob", 0.5))
         prob = ppo.update(x, reward, old_prob)
-        MODEL_PATH.write_text(json.dumps({"weights": ppo.w.tolist(), "prob": prob}))
-        log.info("updated policy weights=%s", ppo.w.tolist())
+        snapshot = build_autonomous_snapshot(x, reward)
+        MODEL_PATH.write_text(json.dumps({"weights": ppo.w.tolist(), "prob": prob, "autonomous_snapshot": snapshot}))
+        log.info("updated policy weights=%s autonomous_snapshot=%s", ppo.w.tolist(), snapshot)
 
 
 if __name__ == "__main__":
