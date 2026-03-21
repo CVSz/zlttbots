@@ -63,7 +63,11 @@ def loop() -> None:
 
         data = json.loads(msg.value().decode())
         x = np.asarray(data.get("features", [0.1, 0.1]), dtype=float)
-        reward = float(data.get("reward", 0.0))
+        reward = compute_reward(
+            revenue=float(data.get("revenue", data.get("reward", 0.0))),
+            cost=float(data.get("cost", 0.0)),
+            risk=float(data.get("risk", 0.0)),
+        )
         old_prob = float(data.get("prob", 0.5))
         prob = ppo.update(x, reward, old_prob)
         snapshot = build_autonomous_snapshot(x, reward)
