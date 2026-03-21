@@ -240,6 +240,120 @@ services:
     networks:
       - zttato-net
 
+  tenant-service:
+    build:
+      context: ./services/tenant-service
+      dockerfile: Dockerfile
+    container_name: zttato-tenant-service
+    restart: always
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      RL_POLICY_MODEL_PATH: /models/policy.pt
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  product-generator:
+    build:
+      context: ./services/product-generator
+      dockerfile: Dockerfile
+    container_name: zttato-product-generator
+    restart: always
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  market-orchestrator:
+    build:
+      context: ./services/market-orchestrator
+      dockerfile: Dockerfile
+    container_name: zttato-market-orchestrator
+    restart: always
+    env_file: .env
+    depends_on:
+      product-generator:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  billing-service:
+    build:
+      context: ./services/billing-service
+      dockerfile: Dockerfile
+    container_name: zttato-billing-service
+    restart: always
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  landing-service:
+    build:
+      context: ./services/landing-service
+      dockerfile: Dockerfile
+    container_name: zttato-landing-service
+    restart: always
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  reward-collector:
+    build:
+      context: ./services/reward-collector
+      dockerfile: Dockerfile
+    container_name: zttato-reward-collector
+    restart: always
+    env_file: .env
+    environment:
+      KAFKA_BROKER: redpanda:9092
+    depends_on:
+      feature-store:
+        condition: service_healthy
+      rl-coordinator:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
   redpanda:
     image: docker.redpanda.com/redpandadata/redpanda:v24.2.10
     container_name: zttato-redpanda
@@ -480,120 +594,6 @@ services:
     container_name: zttato-scaling-engine
     restart: always
     env_file: .env
-    healthcheck:
-      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-    networks:
-      - zttato-net
-
-  tenant-service:
-    build:
-      context: ./services/tenant-service
-      dockerfile: Dockerfile
-    container_name: zttato-tenant-service
-    restart: always
-    env_file: .env
-    environment:
-      DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
-      RL_POLICY_MODEL_PATH: /models/policy.pt
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-    networks:
-      - zttato-net
-
-  product-generator:
-    build:
-      context: ./services/product-generator
-      dockerfile: Dockerfile
-    container_name: zttato-product-generator
-    restart: always
-    env_file: .env
-    healthcheck:
-      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-    networks:
-      - zttato-net
-
-  market-orchestrator:
-    build:
-      context: ./services/market-orchestrator
-      dockerfile: Dockerfile
-    container_name: zttato-market-orchestrator
-    restart: always
-    env_file: .env
-    depends_on:
-      product-generator:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-    networks:
-      - zttato-net
-
-  billing-service:
-    build:
-      context: ./services/billing-service
-      dockerfile: Dockerfile
-    container_name: zttato-billing-service
-    restart: always
-    env_file: .env
-    healthcheck:
-      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-    networks:
-      - zttato-net
-
-  landing-service:
-    build:
-      context: ./services/landing-service
-      dockerfile: Dockerfile
-    container_name: zttato-landing-service
-    restart: always
-    env_file: .env
-    healthcheck:
-      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-    networks:
-      - zttato-net
-
-  reward-collector:
-    build:
-      context: ./services/reward-collector
-      dockerfile: Dockerfile
-    container_name: zttato-reward-collector
-    restart: always
-    env_file: .env
-    environment:
-      KAFKA_BROKER: redpanda:9092
-    depends_on:
-      feature-store:
-        condition: service_healthy
-      rl-coordinator:
-        condition: service_healthy
-      redpanda:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
       interval: 15s
