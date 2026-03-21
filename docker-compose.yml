@@ -707,6 +707,12 @@ services:
         condition: service_healthy
       scaling-engine:
         condition: service_healthy
+      federation:
+        condition: service_healthy
+      scheduler:
+        condition: service_healthy
+      capital-allocator:
+        condition: service_healthy
       redpanda:
         condition: service_healthy
     healthcheck:
@@ -715,6 +721,78 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+    networks:
+      - zttato-net
+
+  federation:
+    build:
+      context: ./services/federation
+      dockerfile: Dockerfile
+    container_name: zttato-federation
+    restart: always
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      FEDERATION_SECRET: ${FEDERATION_SECRET:-change-me}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  scheduler:
+    build:
+      context: ./services/scheduler
+      dockerfile: Dockerfile
+    container_name: zttato-scheduler
+    restart: always
+    env_file: .env
+    environment:
+      FEDERATION_URL: http://federation:8000
+      FEDERATION_SECRET: ${FEDERATION_SECRET:-change-me}
+    depends_on:
+      federation:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  capital-allocator:
+    build:
+      context: ./services/capital-allocator
+      dockerfile: Dockerfile
+    container_name: zttato-capital-allocator
+    restart: always
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  p2p-node:
+    build:
+      context: ./services/p2p-node
+      dockerfile: Dockerfile
+    container_name: zttato-p2p-node
+    restart: always
+    env_file: .env
+    environment:
+      PEER_ALLOWLIST: ${PEER_ALLOWLIST:-}
     networks:
       - zttato-net
 
