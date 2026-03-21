@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from distributed_loop import run_cycle
+from economy_loop import run_economy
 from kafka_producer import emit_decision
 
 app = FastAPI(title="Master Orchestrator")
@@ -42,9 +43,31 @@ class CampaignDecision(BaseModel):
     execution: dict[str, Any]
 
 
+class CampaignCycleRequest(BaseModel):
+    campaign_id: str = Field(min_length=1)
+
+
+class EconomyRequest(BaseModel):
+    tenant_id: int = Field(ge=1)
+    niche: str = Field(min_length=2)
+    markets: list[str] | None = None
+
+
 @app.get("/healthz")
 def healthz() -> dict[str, Any]:
     return {"status": "ok", "service": "master-orchestrator"}
+
+
+
+
+@app.post("/run-cycle")
+def run_cycle_endpoint(request: CampaignCycleRequest) -> dict[str, Any]:
+    return run_cycle(request.campaign_id)
+
+
+@app.post("/economy/run")
+def run_economy_endpoint(request: EconomyRequest) -> dict[str, Any]:
+    return run_economy(request.tenant_id, request.niche, request.markets)
 
 
 @app.post("/campaign/run", response_model=CampaignDecision)

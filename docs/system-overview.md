@@ -13,6 +13,8 @@ At its core, the current runnable platform supports four main workflows:
 
 The repository also contains additional services for admin, analytics, click tracking, TikTok automation, auth, video generation, and enterprise-scale runtime experiments, but those are not all enabled in the default Compose stack.
 
+The Compose stack now also includes an AI economy control plane for tenant onboarding, deterministic product generation, multi-market launch orchestration, landing generation, billing, and master-orchestrator economy loops.
+
 ## 2) Runtime layers in this repository
 
 ### Compose baseline (`docker-compose.yml`)
