@@ -227,6 +227,9 @@ services:
     environment:
       AFFILIATE_WEBHOOK_SECRET: ${AFFILIATE_WEBHOOK_SECRET:-change-me}
       DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+    depends_on:
+      postgres:
+        condition: service_healthy
       RL_POLICY_MODEL_PATH: /models/policy.pt
     depends_on:
       postgres:

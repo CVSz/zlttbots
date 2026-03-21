@@ -12,6 +12,10 @@ from fastapi import FastAPI, HTTPException, Request
 app = FastAPI(title="Affiliate Webhook (Verified)")
 
 SECRET = os.getenv("AFFILIATE_WEBHOOK_SECRET", "")
+DB_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://zttato:zttato@postgres:5432/zttato",
+)
 DB_URL = os.getenv("DATABASE_URL", "postgresql://zttato:zttato@postgres:5432/zttato")
 REWARD_COLLECTOR_URL = os.getenv("REWARD_COLLECTOR_URL", "http://reward-collector:8000/reward")
 TIMEOUT = int(os.getenv("HTTP_TIMEOUT", "10"))
