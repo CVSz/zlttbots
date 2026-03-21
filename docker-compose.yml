@@ -228,6 +228,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      reward-collector:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',9700),2); s.close()"]
       interval: 15s
@@ -329,6 +331,67 @@ services:
     networks:
       - zttato-net
 
+  rl-engine:
+    build:
+      context: ./services/rl-engine
+      dockerfile: Dockerfile
+    container_name: zttato-rl-engine
+    restart: always
+    env_file: .env
+    environment:
+      REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
+      DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  scaling-engine:
+    build:
+      context: ./services/scaling-engine
+      dockerfile: Dockerfile
+    container_name: zttato-scaling-engine
+    restart: always
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  reward-collector:
+    build:
+      context: ./services/reward-collector
+      dockerfile: Dockerfile
+    container_name: zttato-reward-collector
+    restart: always
+    env_file: .env
+    depends_on:
+      feature-store:
+        condition: service_healthy
+      rl-engine:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
   master-orchestrator:
     build:
       context: ./services/master-orchestrator
@@ -342,6 +405,10 @@ services:
       feature-store:
         condition: service_healthy
       model-service:
+        condition: service_healthy
+      rl-engine:
+        condition: service_healthy
+      scaling-engine:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
