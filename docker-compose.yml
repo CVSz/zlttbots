@@ -438,6 +438,12 @@ services:
     container_name: zttato-model-service
     restart: always
     env_file: .env
+    environment:
+      MODEL_PATH: /models/policy.onnx
+      KAFKA_BROKER: redpanda:9092
+      ASYNC_INFERENCE_ENABLED: ${ASYNC_INFERENCE_ENABLED:-false}
+    volumes:
+      - model_runtime_data:/models
     healthcheck:
       test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
       interval: 15s

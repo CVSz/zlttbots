@@ -1,10 +1,15 @@
-FROM python:3.12
+FROM python:3.12-slim
 
 WORKDIR /app
 
+ENV OMP_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1 \
+    NUMEXPR_NUM_THREADS=1 \
+    ORT_ENABLE_CPU_MEM_ARENA=1 \
+    PYTHONUNBUFFERED=1
+
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -14,4 +19,4 @@ RUN pip install --upgrade pip \
 
 COPY src ./src
 
-CMD ["python", "src/main.py"]
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
