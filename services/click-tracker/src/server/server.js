@@ -1,56 +1,78 @@
 import http from "http"
-import { trackClick } from "../core/tracker.js"
+import { trackClick, resolveProductRedirect } from "../core/tracker.js"
 
-function isLocalUrl(path) {
+const allowedHosts = (process.env.CLICK_TRACKER_ALLOWED_HOSTS || "")
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean)
 
-try{
-  const base = "http://localhost"
-  const parsed = new URL(path, base)
-  return parsed.origin === base && parsed.pathname.startsWith("/")
-}catch(e){
-  return false
+function isAllowedRedirect(target) {
+  if (!target) return false
+
+  try {
+    const parsed = new URL(target)
+
+    if (allowedHosts.length === 0) {
+      return parsed.protocol === "https:"
+    }
+
+    return allowedHosts.includes(parsed.hostname)
+  } catch (error) {
+    return false
+  }
 }
 
+function sendJson(res, statusCode, payload) {
+  res.writeHead(statusCode, { "Content-Type": "application/json" })
+  res.end(JSON.stringify(payload))
 }
 
-const server = http.createServer(async (req,res)=>{
+const server = http.createServer(async (req, res) => {
+  try {
+    const url = new URL(req.url, "http://localhost")
 
-try{
+    if (url.pathname === "/healthz") {
+      return sendJson(res, 200, { ok: true })
+    }
 
-const url = new URL(req.url,"http://localhost")
+    if (url.pathname.startsWith("/r/")) {
+      const campaign = url.pathname.split("/")[2]
+      const target = url.searchParams.get("to")
+      const redirect = await trackClick(req, campaign, target)
 
-if(url.pathname.startsWith("/r/")){
+      if (!isAllowedRedirect(redirect)) {
+        return sendJson(res, 400, { error: "redirect target is not allowed" })
+      }
 
-const campaign = url.pathname.split("/")[2]
+      res.writeHead(302, { Location: redirect })
+      res.end()
+      return
+    }
 
-const target = url.searchParams.get("to")
+    if (url.pathname.startsWith("/go/")) {
+      const [, , campaign, productId] = url.pathname.split("/")
 
-const redirect = await trackClick(req,campaign,target)
+      if (!campaign || !productId) {
+        return sendJson(res, 400, { error: "campaign and product id are required" })
+      }
 
-const location = isLocalUrl(redirect) ? redirect : "/"
+      const target = await resolveProductRedirect(productId)
+      const redirect = await trackClick(req, campaign, target)
 
-res.writeHead(302,{
-Location: location
-})
+      if (!isAllowedRedirect(redirect)) {
+        return sendJson(res, 404, { error: "approved affiliate link not found" })
+      }
 
-res.end()
+      res.writeHead(302, { Location: redirect })
+      res.end()
+      return
+    }
 
-return
-
-}
-
-res.writeHead(404)
-res.end()
-
-}catch(e){
-
-console.error(e)
-
-res.writeHead(500)
-res.end()
-
-}
-
+    sendJson(res, 404, { error: "not found" })
+  } catch (error) {
+    console.error(error)
+    sendJson(res, 500, { error: "internal server error" })
+  }
 })
 
 server.listen(8080)

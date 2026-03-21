@@ -1,21 +1,29 @@
 import SectionCard from '../components/SectionCard'
 
-const affiliateRows = [
+const partnerRows = [
   { partner: 'CreatorHub', clicks: 14222, conversions: 812, revenue: '$48,720', status: 'Healthy' },
-  { partner: 'TrendNova', clicks: 9831, conversions: 461, revenue: '$28,110', status: 'Needs Review' },
+  { partner: 'TrendNova', clicks: 9831, conversions: 461, revenue: '$28,110', status: 'Review' },
   { partner: 'ShopPulse', clicks: 12054, conversions: 733, revenue: '$41,980', status: 'Healthy' }
 ]
 
-const automationQueue = [
-  { account: '@zttato_official', video: 'Top 5 gadgets under $30', slot: '13:00 UTC', state: 'Scheduled' },
-  { account: '@zttato_reviews', video: 'UGC ad variant B', slot: '14:30 UTC', state: 'Rendering' },
-  { account: '@zttato_deals', video: 'Flash sale countdown', slot: '16:00 UTC', state: 'Awaiting Approval' }
+const approvalQueue = [
+  { owner: 'Ops Team', asset: 'Top 5 gadgets under $30', slot: '13:00 UTC', state: 'Scheduled' },
+  { owner: 'Creative Review', asset: 'UGC ad variant B', slot: '14:30 UTC', state: 'Needs approval' },
+  { owner: 'Compliance', asset: 'Flash sale countdown', slot: '16:00 UTC', state: 'Approved' }
 ]
 
-const productIdeas = [
-  { keyword: 'portable blender', score: 92, demand: 'High', margin: '37%' },
-  { keyword: 'desk walking pad', score: 87, demand: 'High', margin: '29%' },
-  { keyword: 'wireless car vacuum', score: 83, demand: 'Medium', margin: '34%' }
+const edgeRoutes = [
+  { host: 'api.zeaz.dev', service: 'Kong / nginx edge', control: 'Rate limited + WAF' },
+  { host: 'admin.zeaz.dev', service: 'Admin dashboard', control: 'Cloudflare Access' },
+  { host: 'predict.zeaz.dev', service: 'Viral predictor', control: 'JWT or service token' },
+  { host: 'grafana.zeaz.dev', service: 'Monitoring', control: 'Internal only' }
+]
+
+const goLiveChecklist = [
+  'Postgres backup and restore drill completed',
+  'Cloudflare Access enabled for admin surfaces',
+  'Approved affiliate hosts configured in click tracker',
+  'Analytics summary and health endpoints returning data'
 ]
 
 export default function HomePage() {
@@ -23,28 +31,28 @@ export default function HomePage() {
     <main className="dashboard-root">
       <header className="hero">
         <div>
-          <p className="badge">Production</p>
-          <h1>ZTTATO Admin Dashboard</h1>
-          <p>Unified operations for affiliate tracking, TikTok video automation, and AI-powered product discovery.</p>
+          <p className="badge">Go-live</p>
+          <h1>ZTTATO Operator Console</h1>
+          <p>Unified operations for partner analytics, compliant redirect tracking, edge routing, and human-reviewed content workflows.</p>
         </div>
         <div className="hero-stats">
           <article>
-            <span>Total GMV</span>
+            <span>Tracked Revenue</span>
             <strong>$118,421</strong>
           </article>
           <article>
-            <span>Automation Health</span>
+            <span>Edge Health</span>
             <strong>98.2%</strong>
           </article>
           <article>
-            <span>New Product Leads</span>
-            <strong>54</strong>
+            <span>Open Reviews</span>
+            <strong>6</strong>
           </article>
         </div>
       </header>
 
       <div className="dashboard-grid">
-        <SectionCard title="Real Affiliate Tracking UI" subtitle="Live campaign and partner conversion observability.">
+        <SectionCard title="Affiliate tracking overview" subtitle="Partner performance and first-party attribution." >
           <div className="kpi-row">
             <article><span>Tracked Clicks</span><strong>36,107</strong></article>
             <article><span>Conversions</span><strong>2,006</strong></article>
@@ -53,10 +61,10 @@ export default function HomePage() {
           </div>
           <table>
             <thead>
-              <tr><th>Affiliate</th><th>Clicks</th><th>Conversions</th><th>Revenue</th><th>Status</th></tr>
+              <tr><th>Partner</th><th>Clicks</th><th>Conversions</th><th>Revenue</th><th>Status</th></tr>
             </thead>
             <tbody>
-              {affiliateRows.map((row) => (
+              {partnerRows.map((row) => (
                 <tr key={row.partner}>
                   <td>{row.partner}</td>
                   <td>{row.clicks.toLocaleString()}</td>
@@ -69,18 +77,18 @@ export default function HomePage() {
           </table>
         </SectionCard>
 
-        <SectionCard title="TikTok Video Automation UI" subtitle="Pipeline for generation, approvals, and scheduled posting.">
+        <SectionCard title="Approval queue" subtitle="Human-reviewed outbound publishing pipeline." >
           <div className="form-grid">
             <label>
               Campaign
-              <input defaultValue="Spring Viral Boost" />
+              <input defaultValue="Spring partner launch" />
             </label>
             <label>
-              Daily Upload Cap
+              Daily approval cap
               <input defaultValue="18" type="number" />
             </label>
             <label>
-              Target Region
+              Region
               <select defaultValue="US">
                 <option>US</option>
                 <option>UK</option>
@@ -88,20 +96,20 @@ export default function HomePage() {
               </select>
             </label>
             <label>
-              AI Caption Style
-              <select defaultValue="Story Hook">
-                <option>Story Hook</option>
-                <option>Problem/Solution</option>
-                <option>Authority Proof</option>
+              Review lane
+              <select defaultValue="Compliance">
+                <option>Compliance</option>
+                <option>Creative</option>
+                <option>Finance</option>
               </select>
             </label>
           </div>
           <ul className="queue-list">
-            {automationQueue.map((job) => (
-              <li key={job.account + job.video}>
+            {approvalQueue.map((job) => (
+              <li key={job.owner + job.asset}>
                 <div>
-                  <p>{job.video}</p>
-                  <small>{job.account} • {job.slot}</small>
+                  <p>{job.asset}</p>
+                  <small>{job.owner} • {job.slot}</small>
                 </div>
                 <span className="pill info">{job.state}</span>
               </li>
@@ -109,26 +117,29 @@ export default function HomePage() {
           </ul>
         </SectionCard>
 
-        <SectionCard title="AI Product Finder UI" subtitle="Trend scoring based on demand, margin, and competition signals.">
-          <div className="finder-toolbar">
-            <input placeholder="Search keyword, niche, or product type" defaultValue="smart home" />
-            <button type="button">Run AI Scan</button>
-          </div>
+        <SectionCard title="Edge routing map" subtitle="Recommended `*.zeaz.dev` service boundaries." >
           <table>
             <thead>
-              <tr><th>Keyword</th><th>Opportunity Score</th><th>Demand</th><th>Est. Margin</th></tr>
+              <tr><th>Hostname</th><th>Service</th><th>Control</th></tr>
             </thead>
             <tbody>
-              {productIdeas.map((idea) => (
-                <tr key={idea.keyword}>
-                  <td>{idea.keyword}</td>
-                  <td>{idea.score}</td>
-                  <td>{idea.demand}</td>
-                  <td>{idea.margin}</td>
+              {edgeRoutes.map((route) => (
+                <tr key={route.host}>
+                  <td>{route.host}</td>
+                  <td>{route.service}</td>
+                  <td>{route.control}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </SectionCard>
+
+        <SectionCard title="Go-live checklist" subtitle="Operational readiness before exposing production traffic." >
+          <ul className="checklist">
+            {goLiveChecklist.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
         </SectionCard>
       </div>
     </main>

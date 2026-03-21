@@ -7,41 +7,44 @@ import { productPerformance } from "../metrics/products.js"
 
 const app = express()
 
-
-app.get("/analytics/revenue", async(req,res)=>{
-
-const r = await totalRevenue()
-
-res.json({revenue:r})
-
+app.get("/healthz", async (req, res) => {
+  res.json({ ok: true })
 })
 
+app.get("/analytics/summary", async (req, res) => {
+  const [revenue, conversion, campaigns, products] = await Promise.all([
+    totalRevenue(),
+    conversionRate(),
+    campaignROI(),
+    productPerformance()
+  ])
 
-app.get("/analytics/conversion", async(req,res)=>{
-
-const r = await conversionRate()
-
-res.json({conversion:r})
-
+  res.json({
+    revenue,
+    conversion,
+    activeCampaigns: campaigns.length,
+    topProducts: products.slice(0, 5)
+  })
 })
 
-
-app.get("/analytics/campaigns", async(req,res)=>{
-
-const r = await campaignROI()
-
-res.json(r)
-
+app.get("/analytics/revenue", async (req, res) => {
+  const r = await totalRevenue()
+  res.json({ revenue: r })
 })
 
-
-app.get("/analytics/products", async(req,res)=>{
-
-const r = await productPerformance()
-
-res.json(r)
-
+app.get("/analytics/conversion", async (req, res) => {
+  const r = await conversionRate()
+  res.json({ conversion: r })
 })
 
+app.get("/analytics/campaigns", async (req, res) => {
+  const r = await campaignROI()
+  res.json(r)
+})
+
+app.get("/analytics/products", async (req, res) => {
+  const r = await productPerformance()
+  res.json(r)
+})
 
 app.listen(9000)

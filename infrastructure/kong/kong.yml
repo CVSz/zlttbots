@@ -1,0 +1,56 @@
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: analytics
+    url: http://analytics:9000
+    routes:
+      - name: analytics-api
+        paths:
+          - /analytics
+  - name: click-tracker
+    url: http://click-tracker:8080
+    routes:
+      - name: click-go
+        paths:
+          - /go
+          - /r
+      - name: click-health
+        paths:
+          - /healthz
+  - name: jwt-auth
+    url: http://jwt-auth:80
+    routes:
+      - name: auth-api
+        paths:
+          - /auth
+  - name: market-crawler
+    url: http://market-crawler:9400
+    routes:
+      - name: crawl-api
+        paths:
+          - /crawl
+  - name: viral-predictor
+    url: http://viral-predictor:9100
+    routes:
+      - name: predict-api
+        paths:
+          - /predict
+  - name: admin-panel
+    url: http://admin-panel:3000
+    routes:
+      - name: admin-ui
+        hosts:
+          - admin.zeaz.dev
+
+plugins:
+  - name: rate-limiting
+    service: analytics
+    config:
+      minute: 120
+      policy: local
+  - name: rate-limiting
+    service: click-tracker
+    config:
+      minute: 600
+      policy: local
