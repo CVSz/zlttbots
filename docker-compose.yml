@@ -225,6 +225,7 @@ services:
     environment:
       AFFILIATE_WEBHOOK_SECRET: ${AFFILIATE_WEBHOOK_SECRET:-change-me}
       DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      RL_POLICY_MODEL_PATH: /models/policy.pt
     depends_on:
       postgres:
         condition: service_healthy
@@ -237,6 +238,7 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      RL_POLICY_MODEL_PATH: /models/policy.pt
     depends_on:
       postgres:
         condition: service_healthy
@@ -371,6 +373,7 @@ services:
     environment:
       KAFKA_BROKER: redpanda:9092
       DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      RL_POLICY_MODEL_PATH: /models/policy.pt
       REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
     depends_on:
       postgres:
@@ -429,6 +432,7 @@ services:
     environment:
       REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
       DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      RL_POLICY_MODEL_PATH: /models/policy.pt
     depends_on:
       postgres:
         condition: service_healthy
@@ -440,6 +444,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+    volumes:
+      - model_runtime_data:/models
     networks:
       - zttato-net
 
@@ -453,6 +459,7 @@ services:
     environment:
       REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
       DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      RL_POLICY_MODEL_PATH: /models/policy.pt
       RL_STATE_KEY: rl:linucb:agent1
       RL_ALPHA: ${RL_AGENT_1_ALPHA:-1.0}
     depends_on:
@@ -466,6 +473,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+    volumes:
+      - model_runtime_data:/models
     networks:
       - zttato-net
 
@@ -479,6 +488,7 @@ services:
     environment:
       REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
       DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      RL_POLICY_MODEL_PATH: /models/policy.pt
       RL_STATE_KEY: rl:linucb:agent2
       RL_ALPHA: ${RL_AGENT_2_ALPHA:-1.25}
     depends_on:
@@ -492,6 +502,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+    volumes:
+      - model_runtime_data:/models
     networks:
       - zttato-net
 
@@ -575,6 +587,7 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      RL_POLICY_MODEL_PATH: /models/policy.pt
     depends_on:
       postgres:
         condition: service_healthy
@@ -733,6 +746,7 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      RL_POLICY_MODEL_PATH: /models/policy.pt
       FEDERATION_SECRET: ${FEDERATION_SECRET:-change-me}
       FEDERATION_TOKEN_TTL: ${FEDERATION_TOKEN_TTL:-3600}
     depends_on:
@@ -786,6 +800,89 @@ services:
     networks:
       - zttato-net
 
+  model-registry:
+    build:
+      context: ./services/model-registry
+      dockerfile: Dockerfile
+    container_name: zttato-model-registry
+    restart: always
+    env_file: .env
+    environment:
+      MODEL_REGISTRY_PATH: /models
+      MODEL_REGISTRY_SHARED_PATH: /shared-models
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    volumes:
+      - model_registry_data:/models
+      - shared_model_data:/shared-models
+    networks:
+      - zttato-net
+
+  model-sync:
+    build:
+      context: ./services/model-sync
+      dockerfile: Dockerfile
+    container_name: zttato-model-sync
+    restart: always
+    env_file: .env
+    environment:
+      MODEL_REGISTRY: http://model-registry:8000
+      MODEL_SYNC_LOCAL_PATH: /models
+      MODEL_SYNC_SHARED_PATH: /shared-models
+      MODEL_NAME: policy
+    depends_on:
+      model-registry:
+        condition: service_healthy
+    volumes:
+      - shared_model_data:/shared-models
+      - model_runtime_data:/models
+    networks:
+      - zttato-net
+
+  rl-policy:
+    build:
+      context: ./services/rl-policy
+      dockerfile: Dockerfile
+    container_name: zttato-rl-policy
+    restart: always
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    volumes:
+      - shared_model_data:/shared-models
+    networks:
+      - zttato-net
+
+  retraining-loop:
+    build:
+      context: ./services/retraining-loop
+      dockerfile: Dockerfile
+    container_name: zttato-retraining-loop
+    restart: always
+    env_file: .env
+    environment:
+      RL_POLICY_URL: http://rl-policy:8000
+      MODEL_REGISTRY_URL: http://model-registry:8000
+      MODEL_ARTIFACT_PATH: /shared-models/policy.pt
+      RETRAINING_INTERVAL_SECONDS: ${RETRAINING_INTERVAL_SECONDS:-300}
+    depends_on:
+      rl-policy:
+        condition: service_healthy
+      model-registry:
+        condition: service_healthy
+    volumes:
+      - shared_model_data:/shared-models
+    networks:
+      - zttato-net
+
   p2p-node:
     build:
       context: ./services/p2p-node
@@ -830,3 +927,6 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  model_registry_data:
+  model_runtime_data:
+  shared_model_data:

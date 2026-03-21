@@ -44,9 +44,8 @@ def healthz() -> dict[str, Any]:
 
 @app.post("/reward", response_model=RewardResponse)
 def reward(event: RewardEvent) -> RewardResponse:
-    ctr = (event.clicks / event.views) if event.views else 0.0
-    cvr = (event.conversions / event.clicks) if event.clicks else 0.0
-    reward_value = round((0.5 * ctr) + (0.5 * cvr) + (event.revenue * 0.01), 6)
+    profit = event.revenue - (event.clicks * 0.02)
+    reward_value = round(max(-1.0, min(1.0, profit)), 6)
 
     features = safe_call(requests.get, f"http://feature-store:8000/features/{event.campaign_id}")
     safe_call(
