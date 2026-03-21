@@ -21,4 +21,6 @@ resources:
   - autoscale/analytics-hpa.yaml
   - autoscale/gpu-renderer-hpa.yaml
   - autoscale/gpu-renderer-keda.yaml
+  - autoscale/model-service-hpa.yaml
+  - autoscale/model-service-keda.yaml
   - ingress/ingress.yaml
