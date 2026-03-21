@@ -9,6 +9,8 @@ import numpy as np
 from confluent_kafka import Consumer
 
 from ppo import PPO
+from hybrid_rl import HybridRL
+from reward import compute_reward
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("rl-trainer")
@@ -22,6 +24,7 @@ consumer = Consumer(
 )
 consumer.subscribe(["inference.response"])
 ppo = PPO()
+hybrid = HybridRL()
 
 
 def loop() -> None:
@@ -37,11 +40,17 @@ def loop() -> None:
 
         data = json.loads(msg.value().decode())
         x = np.asarray(data.get("features", [0.1, 0.1]), dtype=float)
-        reward = float(data.get("reward", 0.0))
+        reward = compute_reward(
+            revenue=float(data.get("revenue", data.get("reward", 0.0))),
+            cost=float(data.get("cost", 0.0)),
+            risk=float(data.get("risk", 0.0)),
+        )
         old_prob = float(data.get("prob", 0.5))
+        arm = hybrid.select_arm(x)
+        hybrid.update(arm, reward, x)
         prob = ppo.update(x, reward, old_prob)
         MODEL_PATH.write_text(json.dumps({"weights": ppo.w.tolist(), "prob": prob}))
-        log.info("updated policy weights=%s", ppo.w.tolist())
+        log.info("updated policy weights=%s arm=%s hybrid_values=%s", ppo.w.tolist(), arm, hybrid.values.tolist())
 
 
 if __name__ == "__main__":
