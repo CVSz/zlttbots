@@ -83,6 +83,8 @@ def verify_task_token(task: Task) -> dict[str, Any]:
     claims = decode_task_token(task.task_token)
     if claims.get('tenant_id') != task.tenant_id:
         raise HTTPException(status_code=403, detail='tenant mismatch in task token')
+    if claims.get('region') != task.region:
+        raise HTTPException(status_code=403, detail='region mismatch in task token')
     return claims
 
 
@@ -91,13 +93,19 @@ def assign(task: Task) -> Assignment:
     verify_task_token(task)
     nodes = fetch_nodes()
     tenant_nodes = [node for node in nodes if node.get("tenant_id") == task.tenant_id]
-    candidates = [node for node in tenant_nodes if node.get("capacity", 0) >= task.required_capacity]
+    candidates = [
+        node
+        for node in tenant_nodes
+        if node.get("capacity", 0) >= task.required_capacity
+        and int((node.get("labels") or {}).get("latency_ms", task.max_latency_ms)) <= task.max_latency_ms
+        and (node.get("labels") or {}).get("status", "ready") == "ready"
+    ]
     if not candidates:
         return Assignment(
             assigned=None,
             candidate_count=0,
             policy="capacity-latency-aware",
-            reason="no nodes satisfy tenant and capacity constraints",
+            reason="no nodes satisfy tenant, capacity, and latency constraints",
             observability={"tenant_id": task.tenant_id, "region": task.region, "task_id": task.task_id},
         )
 

@@ -734,6 +734,7 @@ services:
     environment:
       DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
       FEDERATION_SECRET: ${FEDERATION_SECRET:-change-me}
+      FEDERATION_TOKEN_TTL: ${FEDERATION_TOKEN_TTL:-3600}
     depends_on:
       postgres:
         condition: service_healthy
@@ -756,6 +757,7 @@ services:
     environment:
       FEDERATION_URL: http://federation:8000
       FEDERATION_SECRET: ${FEDERATION_SECRET:-change-me}
+      FEDERATION_TOKEN_TTL: ${FEDERATION_TOKEN_TTL:-3600}
     depends_on:
       federation:
         condition: service_healthy
@@ -793,6 +795,7 @@ services:
     env_file: .env
     environment:
       PEER_ALLOWLIST: ${PEER_ALLOWLIST:-}
+      NODE_ENV: production
     networks:
       - zttato-net
 
