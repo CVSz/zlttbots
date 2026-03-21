@@ -5,6 +5,8 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
+from kafka_producer import emit_feedback
+
 app = FastAPI(title="Reward Collector")
 TIMEOUT = 10
 
@@ -49,9 +51,10 @@ def reward(event: RewardEvent) -> RewardResponse:
     features = safe_call(requests.get, f"http://feature-store:8000/features/{event.campaign_id}")
     safe_call(
         requests.post,
-        "http://rl-engine:8000/update",
+        "http://rl-coordinator:8000/update",
         json={"campaign_id": event.campaign_id, "features": features, "reward": reward_value},
     )
+    emit_feedback({"campaign_id": event.campaign_id, "reward": reward_value, "features": features})
     return RewardResponse(ok=True, campaign_id=event.campaign_id, reward=reward_value)
 
 
