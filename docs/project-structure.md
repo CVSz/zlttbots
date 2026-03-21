@@ -1,134 +1,179 @@
 # Project Structure
 
-This repository contains a runnable platform, optional application services, deployment assets, and enterprise-scale reference code. Use this map to understand what is active by default and what is optional or environment-specific.
+This repository is large enough that a structure map matters. The tree mixes runnable platform code, optional services, operational scripts, infrastructure assets, and blueprint modules.
 
 ## Top-level layout
 
 ```text
 zttato-platform/
-├── configs/                    # Shared runtime configuration such as nginx routing
-├── contracts/                  # Service API/data contracts
-├── docs/                       # Overview docs, runbooks, manuals, architecture docs
-├── enterprise_maturity/        # Enterprise blueprint and v3 runtime reference code
-├── infrastructure/             # Monitoring, postgres, k8s, CI, scripts, cloud assets
-├── scripts/                    # Operator helpers for install, deploy, repair, monitor, node lifecycle
-├── services/                   # Python and Node services/apps
-├── tests/                      # Pytest suite for runtime, GPU, auth, and maturity checks
-├── docker-compose.yml          # Default local/runtime orchestration baseline
-├── README.md                   # Repository entrypoint documentation
-└── AGENTS.md                   # Repository-specific agent instructions
+├── AGENTS.md
+├── CHANGELOG.md
+├── LICENSE
+├── README.md
+├── configs/                        # Shared config such as nginx and env templates
+├── contracts/                      # Service-level API/data contracts
+├── docs/                           # Architecture, manuals, runbooks, setup, and reports
+├── enterprise_maturity/            # Future-state / reference implementation modules
+├── feature_repo/                   # Feature store definitions and feature metadata
+├── infrastructure/                 # Monitoring, k8s, postgres, cloud, CI, bootstrap scripts
+├── scripts/                        # Day-2 ops, install, deploy, repair, edge and node helpers
+├── services/                       # Python and Node services / apps
+├── tests/                          # Pytest validation for runtime and maturity modules
+├── docker-compose.yml              # Main local + extended platform compose definition
+├── docker-compose.enterprise.yml   # Additional enterprise deployment variant
+├── start.sh                        # Fast bootstrap helper for Compose baseline
+├── start-zttato.sh                 # Full bootstrap helper with node/python install flow
+└── stop.sh                         # Stop helper
 ```
 
 ## 1) `services/`
 
-The `services/` directory is the biggest part of the project. It contains both services used by the default Compose stack and additional applications used in other deployment modes.
+The `services/` directory contains three broad categories.
 
-### Services used by the default Compose stack
-- `services/viral-predictor/` — FastAPI virality scoring service.
-- `services/market-crawler/` — FastAPI crawler API plus worker.
-- `services/arbitrage-engine/` — FastAPI arbitrage API plus worker.
-- `services/gpu-renderer/` — FastAPI render queue API plus worker.
+### A. Baseline runtime services
+These are the safest starting services and are used by the main gateway flow:
 
-### Additional Python services
-- `services/jwt-auth/` — JWT token issuer/introspection service.
-- `services/ai-orchestrator/`
-- `services/campaign-optimizer/`
-- `services/product-discovery/`
+- `viral-predictor/`
+- `market-crawler/`
+- `arbitrage-engine/`
+- `gpu-renderer/`
 
-### Additional Node.js services/apps
-- `services/admin-panel/` — Next.js frontend.
-- `services/analytics/`
-- `services/click-tracker/`
-- `services/account-farm/`
-- `services/ai-video-generator/`
-- `services/shopee-crawler/`
-- `services/tiktok-farm/`
-- `services/tiktok-shop-miner/`
-- `services/tiktok-uploader/`
+### B. Extended Compose/control-plane services
+These expand platform automation and orchestration:
 
-### Typical service contents
-Depending on the service, you will see files such as:
+- `tenant-service/`
+- `affiliate-webhook/`
+- `execution-engine/`
+- `product-generator/`
+- `market-orchestrator/`
+- `billing-service/`
+- `landing-service/`
+- `reward-collector/`
+- `stream-consumer/`
+- `feature-store/`
+- `model-service/`
+- `rl-engine/`, `rl-policy/`, `rl-coordinator/`, `rl-trainer/`
+- `budget-allocator/`, `rtb-engine/`, `scaling-engine/`, `capital-allocator/`
+- `model-registry/`, `model-sync/`, `drift-detector/`, `retraining-loop/`
+- `federation/`, `scheduler/`, `p2p-node/`
+
+### C. Standalone Node services / applications
+These are typically run through Node tooling and PM2:
+
+- `admin-panel/`
+- `analytics/`
+- `click-tracker/`
+- `account-farm/`
+- `ai-video-generator/`
+- `shopee-crawler/`
+- `tiktok-farm/`
+- `tiktok-shop-miner/`
+- `tiktok-uploader/`
+- `edge-worker/`
+
+### Typical contents of a service directory
+Depending on the runtime, a service may contain:
+
 - `Dockerfile`
 - `docker/Dockerfile`
 - `requirements.txt`
 - `package.json`
 - `src/` application code
+- framework-level folders such as `app/`, `components/`, or `public`-style structures
 
 ## 2) `infrastructure/`
 
-This directory contains environment and deployment assets that are broader than the local Compose file.
+This directory holds deployment and environment assets beyond the main root Compose file.
 
-### Major subdirectories
-- `infrastructure/postgres/` — standalone PostgreSQL compose file, config, and SQL migrations.
-- `infrastructure/monitoring/` — Prometheus, Grafana, Loki, and Promtail stack.
-- `infrastructure/k8s/` — Kubernetes namespace, deployments, services, ingress, autoscaling, Kafka, JWT auth, monitoring, and mesh configs.
-- `infrastructure/cloudflare/` — Terraform-style Cloudflare config.
-- `infrastructure/ci/` — build and deploy scripts.
-- `infrastructure/scripts/` — validation, cluster bootstrap, rollout, rollback, and optimization helpers.
-- `infrastructure/start/` — environment and worker startup helpers.
+### Major subareas
+- `postgres/` — SQL migrations, PostgreSQL config, standalone database compose file
+- `monitoring/` — Prometheus, Grafana, Loki, Promtail configs and compose file
+- `k8s/` — Kubernetes manifests for deployments, services, ingress, monitoring, autoscaling, Kafka, JWT auth, mesh, and multi-region examples
+- `cloudflare/` — Cloudflare/WAF/Tunnel-oriented infrastructure files
+- `ci/` — build and deploy shell helpers
+- `scripts/` — validation, bootstrap, cluster, rollback, optimization, and scan scripts
+- `start/` — environment and worker helper scripts for host-side bootstrap flows
 
 ## 3) `scripts/`
 
-Operational shell tooling lives here. Common categories include:
-- stack startup/shutdown helpers
-- node-service installation and PM2 lifecycle wrappers
-- recovery and repair scripts
-- Cloudflare/tunnel/deployment helpers
-- monitoring and diagnostic commands
+Root-level `scripts/` is the operator toolbox. Main categories include:
+
+- install and lifecycle helpers (`start-zttato`, node-service wrappers)
+- cloud/edge provisioning and healing
+- integration and doctor scripts
+- repair, restart, and recovery scripts
+- deployment automation
 
 Frequently referenced scripts:
+
 - `scripts/zttato-node.sh`
 - `scripts/test-integration.sh`
 - `scripts/start-zttato.sh`
 - `scripts/stop-zttato.sh`
 - `scripts/zttato-doctor.sh`
 - `scripts/repair-platform.sh`
+- `scripts/deploy-zttato-production.sh`
 
 ## 4) `docs/`
 
-The docs tree contains:
-- platform-level overview and setup docs
-- manuals for user, admin, devops, and godmode personas
-- architecture documents
-- operational documentation
-- API documentation folders
+The docs tree is intentionally broad. It contains:
+
+- platform overview and setup docs
+- manuals by operator role
+- architecture and service docs
+- infrastructure docs
+- runbooks and SLO/monitoring guidance
+- development analyses and source scan reports
+- API and database documentation
+- UI/UX documentation
 
 ## 5) `enterprise_maturity/`
 
-This area represents the broader platform direction beyond the default Compose baseline. Tests reference code here for features such as:
-- service discovery
-- API gateway routing
-- central queueing
-- backlog-based autoscaling
-- distributed crawler management
-- GPU scheduling
+This area documents and implements advanced platform capabilities not always wired into baseline local startup. It includes modules for:
 
-Treat this directory as a reference implementation and maturity blueprint rather than assuming every feature is part of the default local runtime.
+- governance
+- performance
+- resilience
+- operations
+- roadmap and upgrade logic
+- v3 runtime capabilities such as service discovery, queue systems, autoscaling, crawler cluster, GPU scheduling, and API gateway behavior
 
 ## 6) `tests/`
 
-The pytest suite currently covers multiple project layers:
-- enterprise maturity and runtime behavior
-- GPU renderer CPU/GPU command generation
-- JWT auth token round-trip
+The pytest suite validates multiple repository layers, not just one service. Examples include:
 
-This means the repository validates more than just the Compose stack; it also validates supporting platform capabilities and future-state modules.
+- auth behavior
+- GPU renderer command generation
+- model/runtime async patterns
+- enterprise maturity modules
+- advanced RL and distributed stack behavior
+- safe-edge and production-maturity helpers
 
-## 7) Active-by-default vs optional
+## 7) Files new contributors should know first
 
-### Active by default
-- `docker-compose.yml`
-- `configs/nginx.conf`
-- the four Python API services
-- PostgreSQL and Redis
-- the three worker processes
+Start with these before making changes:
+
+1. `README.md`
+2. `docker-compose.yml`
+3. `configs/nginx.conf`
+4. `docs/system-overview.md`
+5. `docs/installation.md`
+6. `docs/configuration.md`
+7. the service directory you plan to modify
+
+## 8) Active-by-default vs optional
+
+### Active-by-default for the simplest local journey
+- root Compose baseline services
+- nginx gateway routes
+- PostgreSQL migrations
+- Redis-backed workers
+- pytest-based repository validation
 
 ### Optional or environment-specific
-- PM2-managed Node services
+- PM2-managed Node service fleet
 - monitoring stack
-- Kubernetes assets
-- Cloudflare automation
-- JWT auth deployment
-- enterprise maturity runtime modules
-
-Knowing this split prevents confusion when reading the repository: not every directory is intended to start automatically in the baseline local environment.
+- Kubernetes deployment path
+- Cloudflare edge automation
+- enterprise runtime patterns
+- some extended Compose services that are defined for platform completeness but not routed publicly by default

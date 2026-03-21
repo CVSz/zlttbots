@@ -1,58 +1,80 @@
 # Configuration
 
-This document summarizes how configuration works across the current zTTato repository, including the default Docker Compose stack, optional Node services, and supporting infrastructure assets.
+This document is the full configuration reference for the current zTTato repository. It focuses on the active local stack, the most relevant extended Compose variables, the Node-service layer, and practical configuration guidance.
 
 ## 1) Main configuration sources
 
-### Compose runtime
-- `.env` at the repository root for local Compose defaults.
-- `docker-compose.yml` service `environment:` blocks for derived values like `DB_URL` and `REDIS_URL`.
-- `configs/nginx.conf` for gateway routing.
+### Root runtime files
+- `.env` — primary source for Compose-local environment values
+- `docker-compose.yml` — service wiring, dependency graph, build contexts, health checks, environment propagation
+- `configs/nginx.conf` — gateway routes exposed on port `80`
+- `configs/env/production.env` — template/default source used by bootstrap flows when `.env` is missing
 
-### Supporting infrastructure
-- `infrastructure/monitoring/docker-compose.monitoring.yml` for monitoring services.
-- `infrastructure/postgres/docker-compose.postgres.yml` for standalone PostgreSQL setup.
-- `infrastructure/k8s/` manifests for Kubernetes deployments, ingress, autoscaling, Kafka, JWT auth, and service mesh features.
-- `infrastructure/cloudflare/*.tf` for Cloudflare-related infrastructure configuration.
+### Infrastructure config
+- `infrastructure/postgres/migrations/` — bootstrap SQL schema
+- `infrastructure/monitoring/*.yml` — Prometheus/Grafana/Loki/Promtail config
+- `infrastructure/k8s/` — Kubernetes manifests and related environment assumptions
+- `infrastructure/cloudflare/` — Cloudflare infrastructure configuration
 
-### Service-local defaults
-Several Python services read settings directly from environment variables at runtime, including database URLs, Redis URLs, and JWT-related values.
+### App/service-local config
+- `package.json` / framework configs in Node services
+- Python service defaults in each `src/main.py` or supporting module
+- PM2-oriented wrapper scripts under `scripts/`
 
-## 2) Core environment variables used by the Compose stack
+## 2) Core baseline environment variables
 
-### Database settings
-- `DB_NAME` — PostgreSQL database name. Default: `zttato`
-- `DB_USER` — PostgreSQL user. Default: `zttato`
-- `DB_PASSWORD` — PostgreSQL password. Default: `zttato`
-- `DB_PORT` — PostgreSQL port. Default: `5432`
-- `DB_URL` — generated for some services from the variables above
+### Database
+- `DB_NAME` — default `zttato`
+- `DB_USER` — default `zttato`
+- `DB_PASSWORD` — default `zttato`
+- `DB_PORT` — default `5432`
 
-### Redis settings
-- `REDIS_HOST` — Redis hostname. Default: `redis`
-- `REDIS_PORT` — Redis port. Default: `6379`
-- `REDIS_URL` — generated for Redis-backed services from the variables above
+Compose derives PostgreSQL URLs such as:
 
-### Renderer and FFmpeg settings
-- `FFMPEG_HWACCEL` — hardware acceleration mode. Suggested values: `none`, `auto`, `cuda`
-- `FFMPEG_CPU_PRESET` — CPU encoding preset, for example `veryfast`
-- `FFMPEG_CPU_CRF` — CPU encoding quality factor, for example `23`
+```text
+postgresql://${DB_USER}:${DB_PASSWORD}@postgres:${DB_PORT}/${DB_NAME}
+```
 
-### General runtime variables you may still encounter
-- `NODE_ENV` — Node.js runtime mode for standalone Node services
-- `PYTHON_ENV` — Python runtime mode where used by deploy tooling
-- `GPU_RENDER_ENABLED` — optional feature flag pattern referenced in documentation and deployment conventions
+### Redis
+- `REDIS_HOST` — default `redis`
+- `REDIS_PORT` — default `6379`
 
-## 3) JWT auth service configuration
+Compose derives Redis URLs such as:
 
-The `jwt-auth` service uses these variables when deployed:
+```text
+redis://${REDIS_HOST}:${REDIS_PORT}
+```
 
-- `JWT_ISSUER` — default `https://jwt-auth.platform.svc.cluster.local`
-- `JWT_AUDIENCE` — default `zttato-platform`
-- `JWT_SECRET` — signing secret; must be replaced in production
-- `JWT_ALGORITHM` — default `HS256`
-- `JWT_TTL_MINUTES` — token lifetime; default `30`
+### FFmpeg / renderer behavior
+- `FFMPEG_HWACCEL` — use `none` for CPU-only local setups; other documented values include `auto` and `cuda`
+- `FFMPEG_CPU_PRESET` — CPU encoder preset, for example `veryfast`
+- `FFMPEG_CPU_CRF` — quality/compression tradeoff value, for example `23`
 
-For any real environment, `JWT_SECRET` must be injected securely and never left at the default value.
+## 3) Extended Compose variables worth knowing
+
+### Execution engine
+- `PLATFORM_API_BASE` — upstream partner API base URL
+- `PLATFORM_API_KEY` — bearer token used for outbound publish/status calls
+- `HTTP_TIMEOUT` — request timeout for upstream calls
+- `RATE_TOKENS` — current token bucket size
+- `RATE_MAX_TOKENS` — maximum token bucket size
+- `RATE_REFILL_PER_SEC` — token refill speed
+
+### Affiliate webhook
+- `AFFILIATE_WEBHOOK_SECRET` — HMAC secret for verifying `X-Signature`
+- `REWARD_COLLECTOR_URL` — internal target for normalized reward forwarding
+- `DATABASE_URL` — database connection URL when running the service outside root Compose defaults
+
+### Tenant service
+- `DEFAULT_DAILY_SPEND_LIMIT` — default spend ceiling applied when creating tenants
+- `DATABASE_URL` — tenant persistence connection string
+
+### JWT auth service when deployed separately
+- `JWT_ISSUER`
+- `JWT_AUDIENCE`
+- `JWT_SECRET`
+- `JWT_ALGORITHM`
+- `JWT_TTL_MINUTES`
 
 ## 4) Recommended local `.env`
 
@@ -66,50 +88,107 @@ REDIS_PORT=6379
 FFMPEG_HWACCEL=none
 FFMPEG_CPU_PRESET=veryfast
 FFMPEG_CPU_CRF=23
+PLATFORM_API_BASE=https://api.partner.example
+PLATFORM_API_KEY=
+AFFILIATE_WEBHOOK_SECRET=change-me
+DEFAULT_DAILY_SPEND_LIMIT=100.0
+HTTP_TIMEOUT=10
+RATE_TOKENS=60
+RATE_MAX_TOKENS=120
+RATE_REFILL_PER_SEC=1
 NODE_ENV=development
 PYTHON_ENV=development
 ```
 
 ## 5) Gateway configuration
 
-Nginx currently exposes three proxied business routes and one root health endpoint:
+Nginx currently defines the following upstreams and routes:
 
-- `/` — returns a simple text health response
-- `/predict` — proxies to `viral-predictor:9100`
-- `/crawl` — proxies to `market-crawler:9400`
-- `/arbitrage` — proxies to `arbitrage-engine:9500`
+- upstream `predictor` → `viral-predictor:9100`
+- upstream `crawler` → `market-crawler:9400`
+- upstream `arbitrage` → `arbitrage-engine:9500`
 
-The renderer API exists in the stack but is not currently proxied by Nginx in `configs/nginx.conf`; access it directly on its service port when needed in internal environments.
+Host routes:
+- `/` — text health response
+- `/predict` — predictor proxy
+- `/crawl` — crawler proxy
+- `/arbitrage` — arbitrage proxy
 
-## 6) Database bootstrap behavior
+### Important limitation
+`gpu-renderer`, `tenant-service`, `execution-engine`, `affiliate-webhook`, and the other extended services are **not** routed through nginx in the default config. If you need them publicly, add ingress explicitly and document the security model.
 
-On first startup, PostgreSQL loads SQL files from `infrastructure/postgres/migrations/` through `/docker-entrypoint-initdb.d`. The initial schema creates the core operational tables used by products, campaigns, videos, jobs, clicks, orders, and arbitrage records.
+## 6) Service dependency shape in Compose
 
-## 7) Monitoring configuration
+### Database-backed services
+Examples:
+- `viral-predictor`
+- `arbitrage-engine`
+- `tenant-service`
+- `affiliate-webhook`
+- `federation`
 
-The monitoring Compose file defines:
-- Prometheus on port `9090`
-- Grafana on port `3000`
-- Loki on port `3100`
-- Promtail reading Docker container logs
+### Redis-backed services
+Examples:
+- `market-crawler`
+- `gpu-renderer`
+- `feature-store`
+- parts of the RL/model-serving stack
 
-These monitoring services are not part of the default `docker compose up -d` baseline; start them explicitly when needed.
+### Redpanda-backed/event-stream services
+Examples:
+- `reward-collector`
+- `stream-consumer`
+- `rl-trainer`
+- `model-service`
+- `master-orchestrator`
 
-## 8) Configuration practices
+## 7) Bootstrap behavior to be aware of
 
-- Keep secrets and production credentials out of source control.
-- Use separate `.env` or secret injection methods for local, staging, and production environments.
-- Replace all documented default credentials before any shared or production deployment.
-- Prefer explicit variable names over hidden shell state in automation.
-- Validate database and Redis connectivity during deployment acceptance.
-- Document any environment-specific overrides close to the deployment artifact that uses them.
+### `start.sh`
+- creates `.env` when missing
+- validates Compose config
+- runs `docker compose up -d --build --remove-orphans`
 
-## 9) Production hardening checklist
+### `start-zttato.sh`
+- makes shell scripts executable
+- sources `infrastructure/start/env.sh`
+- installs Node dependencies across services
+- creates Python virtual environments in service folders and installs requirements
+- starts base infrastructure
+- builds and starts Compose services
+- optionally runs host-side local worker helpers
 
-Before deploying outside local development:
+This makes `start-zttato.sh` more powerful but also heavier and more invasive than `start.sh`.
+
+## 8) Node-service configuration path
+
+Node services use their own package/runtime configs. Operational wrapper entrypoint:
+
+```bash
+bash scripts/zttato-node.sh {install|start|stop|restart|status|logs}
+```
+
+If you enable that path, document:
+- which services are expected to run
+- which ports they bind to
+- whether PM2 is installed
+- where logs are stored
+
+## 9) Configuration practices
+
+- Never commit production secrets.
+- Replace all placeholder/default credentials before any shared deployment.
+- Keep the gateway exposure list deliberately small.
+- Treat internal-only services as internal until authentication and routing are defined.
+- Document environment-specific overrides close to the deployment artifact that uses them.
+- Validate Compose config after changing `.env`, nginx, or service dependencies.
+
+## 10) Production hardening checklist
+
+Before real deployment outside local development:
 - change PostgreSQL defaults
-- inject a strong `JWT_SECRET`
-- restrict public ingress appropriately
-- confirm whether renderer should use CPU or GPU
-- enable monitoring and log collection
-- review Kubernetes, Cloudflare, and service-mesh settings for the chosen environment
+- set strong webhook/JWT secrets
+- define which internal services will be exposed and through what auth layer
+- confirm renderer CPU/GPU mode intentionally
+- enable monitoring and centralized logging
+- review Cloudflare, Kubernetes, and mesh configs for parity with actual runtime
