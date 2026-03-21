@@ -146,6 +146,24 @@ created_at TIMESTAMP DEFAULT NOW()
 
 
 
+CREATE TABLE IF NOT EXISTS campaign_metrics (
+
+id BIGSERIAL PRIMARY KEY,
+
+campaign_id UUID REFERENCES campaigns(id),
+
+views INT DEFAULT 0,
+
+clicks INT DEFAULT 0,
+
+conversions INT DEFAULT 0,
+
+revenue NUMERIC DEFAULT 0,
+
+created_at TIMESTAMP DEFAULT NOW()
+
+);
+
 CREATE TABLE IF NOT EXISTS clicks (
 
 id BIGSERIAL PRIMARY KEY,
