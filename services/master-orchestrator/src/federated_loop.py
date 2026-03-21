@@ -31,7 +31,7 @@ def safe_call(method, url: str, **kwargs: Any) -> dict[str, Any]:
 
 def build_task_token(campaign_id: str, tenant_id: str, region: str) -> str:
     payload = json.dumps(
-        {"campaign_id": campaign_id, "tenant_id": tenant_id, "region": region},
+        {"campaign_id": campaign_id, "tenant_id": tenant_id, "region": region, "token_type": "scheduler-task"},
         separators=(",", ":"),
         sort_keys=True,
     ).encode("utf-8")
@@ -68,4 +68,10 @@ def run_global_task(campaign_id: str, tenant_id: str = DEFAULT_TENANT, region: s
             "task_token": build_task_token(campaign_id, tenant_id, region),
         },
     )
-    return {"features": features, "rl": rl, "capital": capital, "node": scheduler}
+    return {
+        "features": features,
+        "rl": rl,
+        "capital": capital,
+        "node": scheduler,
+        "audit": {"tenant_id": tenant_id, "region": region, "campaign_id": campaign_id},
+    }
