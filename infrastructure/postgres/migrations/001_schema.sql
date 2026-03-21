@@ -223,3 +223,24 @@ ON products(sold);
 
 
 
+
+
+CREATE TABLE IF NOT EXISTS rl_decisions (
+
+id BIGSERIAL PRIMARY KEY,
+
+campaign_id TEXT NOT NULL,
+
+selected_campaign_id TEXT NOT NULL,
+
+score NUMERIC NOT NULL,
+
+features JSONB NOT NULL DEFAULT '{}'::jsonb,
+
+created_at TIMESTAMP DEFAULT NOW()
+
+);
+
+CREATE INDEX IF NOT EXISTS idx_rl_decisions_campaign_created_at
+
+ON rl_decisions(campaign_id, created_at DESC);
