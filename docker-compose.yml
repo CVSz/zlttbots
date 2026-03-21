@@ -189,6 +189,54 @@ services:
     networks:
       - zttato-net
 
+  execution-engine:
+    build:
+      context: ./services/execution-engine
+      dockerfile: Dockerfile
+    container_name: zttato-execution-engine
+    restart: always
+    env_file: .env
+    environment:
+      PLATFORM_API_BASE: ${PLATFORM_API_BASE:-https://api.partner.example}
+      PLATFORM_API_KEY: ${PLATFORM_API_KEY:-}
+      HTTP_TIMEOUT: ${HTTP_TIMEOUT:-10}
+      RATE_TOKENS: ${RATE_TOKENS:-60}
+      RATE_MAX_TOKENS: ${RATE_MAX_TOKENS:-120}
+      RATE_REFILL_PER_SEC: ${RATE_REFILL_PER_SEC:-1}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',9600),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  affiliate-webhook:
+    build:
+      context: ./services/affiliate-webhook
+      dockerfile: Dockerfile
+    container_name: zttato-affiliate-webhook
+    restart: always
+    env_file: .env
+    environment:
+      AFFILIATE_WEBHOOK_SECRET: ${AFFILIATE_WEBHOOK_SECRET:-change-me}
+      DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',9700),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
   nginx:
     image: nginx:1.27-alpine
     container_name: zttato-nginx
