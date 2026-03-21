@@ -438,6 +438,18 @@ services:
     container_name: zttato-model-service
     restart: always
     env_file: .env
+    environment:
+      REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
+      KAFKA_BROKER: redpanda:9092
+      MODEL_REQUEST_TOPIC: inference.request
+      MODEL_RESPONSE_TOPIC: inference.response
+      MODEL_DLQ_TOPIC: inference.dlq
+      PROMETHEUS_METRICS_ENABLED: ${PROMETHEUS_METRICS_ENABLED:-1}
+    depends_on:
+      redis:
+        condition: service_healthy
+      redpanda:
+        condition: service_started
     healthcheck:
       test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
       interval: 15s
