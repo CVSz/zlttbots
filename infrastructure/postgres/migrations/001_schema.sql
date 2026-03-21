@@ -160,9 +160,14 @@ user_agent TEXT,
 
 fingerprint TEXT,
 
+target_url TEXT,
+
 created_at TIMESTAMP DEFAULT NOW()
 
 );
+
+ALTER TABLE clicks
+ADD COLUMN IF NOT EXISTS target_url TEXT;
 
 
 
