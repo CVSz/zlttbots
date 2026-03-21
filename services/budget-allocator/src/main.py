@@ -13,12 +13,15 @@ if str(CURRENT_DIR) not in sys.path:
     sys.path.insert(0, str(CURRENT_DIR))
 
 from bandit import UCBBandit
+from global_allocator import GlobalAllocator
 
 app = FastAPI(title="Budget Allocator")
 BANDIT = UCBBandit(n_arms=3)
+GLOBAL_ALLOCATOR = GlobalAllocator(["TH", "US", "EU"])
 
 
 class BudgetRequest(BaseModel):
+    market: str = Field(default="TH", min_length=2)
     campaign_id: str = Field(min_length=1)
     score: float = Field(ge=0.0)
     current_spend: float = Field(default=0.0, ge=0.0)
@@ -29,6 +32,7 @@ class BudgetRequest(BaseModel):
 
 
 class BudgetResponse(BaseModel):
+    market_budget: float
     campaign_id: str
     target_budget: float
     adjustment: float
@@ -56,8 +60,11 @@ def allocate(request: BudgetRequest) -> BudgetResponse:
     adjusted_target = max(0.0, min(cap, request.current_spend + bounded_delta))
     adjustment = round(adjusted_target - request.current_spend, 4)
     BANDIT.update(selected_arm, reward=ratio)
+    GLOBAL_ALLOCATOR.update(request.market, reward=(ratio - 0.5) / 2)
+    market_budget = GLOBAL_ALLOCATOR.allocate(cap).get(request.market, cap)
 
     return BudgetResponse(
+        market_budget=round(market_budget, 4),
         campaign_id=request.campaign_id,
         target_budget=round(adjusted_target, 4),
         adjustment=adjustment,

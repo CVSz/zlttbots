@@ -11,8 +11,10 @@ if str(CURRENT_DIR) not in sys.path:
     sys.path.insert(0, str(CURRENT_DIR))
 
 from latency_bid import latency_adjusted_bid
+from rtb import RTBEngine
 
 app = FastAPI(title="RTB Engine")
+ENGINE = RTBEngine()
 
 
 class BidRequest(BaseModel):
@@ -41,8 +43,9 @@ def healthz() -> dict[str, Any]:
 @app.post("/bid", response_model=BidResponse)
 def bid(request: BidRequest) -> BidResponse:
     ev = request.ctr * request.cvr * request.score
+    floor_bid = ENGINE.compute_bid(request.ctr, request.cvr, request.score)
     pacing_multiplier = 0.5 + (request.pacing_ratio / 2)
-    bid_price = latency_adjusted_bid(
+    bid_price = max(floor_bid, latency_adjusted_bid(
         base_bid=request.base_bid,
         score=request.score,
         latency_ms=request.latency_ms,
@@ -50,7 +53,7 @@ def bid(request: BidRequest) -> BidResponse:
         ctr=request.ctr,
         cvr=request.cvr,
         max_bid=request.max_bid,
-    )
+    ))
     return BidResponse(
         campaign_id=request.campaign_id,
         bid_price=round(bid_price, 4),

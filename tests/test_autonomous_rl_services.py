@@ -69,12 +69,13 @@ def test_rl_engine_uses_policy_model_when_present(tmp_path, monkeypatch):
     _load_module('policy_model', 'services/rl-engine/src/policy_model.py')
     module = _load_module('test_rl_engine_main', 'services/rl-engine/src/main.py')
 
+    import numpy as np
+
     class DummyPolicy:
         def eval(self):
             return self
 
         def __call__(self, vector):
-            import numpy as np
             return np.array([[0.1, 0.9]], dtype=float)
 
     monkeypatch.setattr(module, 'load_policy_model', lambda: DummyPolicy())
@@ -88,3 +89,53 @@ def test_rl_engine_uses_policy_model_when_present(tmp_path, monkeypatch):
     data = response.json()
     assert data['selected_campaign_id'] == 'cmp-1'
     assert data['score'] == 0.9
+
+
+def test_budget_allocator_exposes_market_budget():
+    sys.path.insert(0, str(ROOT / 'services/budget-allocator/src'))
+    module = _load_module('test_budget_allocator_main', 'services/budget-allocator/src/main.py')
+    client = TestClient(module.app)
+
+    response = client.post('/allocate', json={
+        'campaign_id': 'cmp-1',
+        'market': 'TH',
+        'score': 0.8,
+        'current_spend': 20.0,
+        'max_budget': 100.0,
+    })
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload['market_budget'] > 0
+    assert payload['campaign_id'] == 'cmp-1'
+
+
+def test_rtb_engine_uses_floor_bid():
+    sys.path.insert(0, str(ROOT / 'services/rtb-engine/src'))
+    module = _load_module('test_rtb_engine_main', 'services/rtb-engine/src/main.py')
+    client = TestClient(module.app)
+
+    response = client.post('/bid', json={
+        'campaign_id': 'cmp-1',
+        'score': 0.5,
+        'ctr': 0.0,
+        'cvr': 0.0,
+        'base_bid': 0.5,
+        'pacing_ratio': 1.0,
+        'max_bid': 2.0,
+        'latency_ms': 120.0,
+    })
+    assert response.status_code == 200
+    assert response.json()['bid_price'] >= 0.01
+
+
+def test_tlearner_predicts_uplift():
+    pytest.importorskip('sklearn')
+    module = _load_module('test_uplift_model', 'services/rl-trainer/src/uplift_model.py')
+    learner = module.TLearner()
+    import numpy as np
+    X = np.array([[0.1, 0.2], [0.2, 0.1], [0.8, 0.7], [0.9, 0.6]])
+    treatment = np.array([0, 0, 1, 1])
+    y = np.array([0, 0, 1, 1])
+    learner.fit(X, treatment, y)
+    uplift = learner.predict_uplift(np.array([[0.85, 0.65]]))
+    assert uplift.shape == (1,)
