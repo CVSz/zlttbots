@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -14,6 +15,7 @@ app = FastAPI(title="RL Engine (LinUCB)")
 STATE_KEY = os.getenv("RL_STATE_KEY", "rl:linucb")
 DEFAULT_ALPHA = float(os.getenv("RL_ALPHA", "1.0"))
 DEFAULT_LAMBDA = float(os.getenv("RL_LAMBDA", "1.0"))
+MODEL_PATH = Path(os.getenv("RL_POLICY_MODEL_PATH", "/models/policy.pt"))
 
 
 class Features(BaseModel):
@@ -77,6 +79,31 @@ def persist_agent(agent: LinUCB) -> None:
     save_state(STATE_KEY, payload)
 
 
+def load_policy_model():
+    if not MODEL_PATH.exists():
+        return None
+
+    try:
+        from policy_model import Policy
+
+        return Policy.load(MODEL_PATH)
+    except Exception:
+        return None
+
+
+def score_with_policy(features: Features) -> float | None:
+    policy = load_policy_model()
+    if policy is None:
+        return None
+
+    vector = np.array(
+        [[(features.clicks / features.views) if features.views else 0.0, (features.conversions / features.clicks) if features.clicks else 0.0]],
+        dtype=np.float64,
+    )
+    probabilities = policy(vector)
+    return float(probabilities[0][1])
+
+
 @app.get("/healthz")
 def healthz() -> dict[str, Any]:
     try:
@@ -100,6 +127,10 @@ def select(request: SelectionRequest) -> RLDecision:
         agent = load_agent(arms)
         vector = to_vector(request.features)
         selected_campaign_id, score = agent.select(vector)
+        policy_score = score_with_policy(request.features)
+        if policy_score is not None:
+            score = policy_score
+            selected_campaign_id = request.campaign_id
         persist_agent(agent)
         log_decision(
             campaign_id=request.campaign_id,
