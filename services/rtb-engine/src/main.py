@@ -83,8 +83,9 @@ def healthz() -> dict[str, Any]:
 @app.post("/bid", response_model=BidResponse)
 def bid(request: BidRequest) -> BidResponse:
     ev = request.ctr * request.cvr * request.score
+    floor_bid = ENGINE.compute_bid(request.ctr, request.cvr, request.score)
     pacing_multiplier = 0.5 + (request.pacing_ratio / 2)
-    bid_price = latency_adjusted_bid(
+    bid_price = max(floor_bid, latency_adjusted_bid(
         base_bid=request.base_bid,
         score=request.score,
         latency_ms=request.latency_ms,
