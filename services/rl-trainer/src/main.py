@@ -8,13 +8,11 @@ from pathlib import Path
 import numpy as np
 from confluent_kafka import Consumer
 
-from causal_rl import doubly_robust
-from hierarchical_rl import HierarchicalRL
-from long_term_reward import long_term_reward
-from meta_learning import MetaLearner
-from p2p_agent import P2PAgent
+from agent_replicator import Replicator
+from compute_market import ComputeMarket
+from global_strategy import StrategyOptimizer
 from ppo import PPO
-from world_model import WorldModel
+from treasury import Treasury
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("rl-trainer")
@@ -28,12 +26,28 @@ consumer = Consumer(
 )
 consumer.subscribe(["inference.response"])
 ppo = PPO()
-hrl = HierarchicalRL()
-wm = WorldModel()
-meta = MetaLearner(lr=ppo.lr)
-agent = P2PAgent(ppo.w.tolist())
-agent.start_server()
-reward_history: list[float] = []
+market = ComputeMarket()
+treasury = Treasury()
+strategy = StrategyOptimizer()
+replicator = Replicator()
+
+market.register("node-1", capacity=10, price_per_unit=0.8, zone="us-east")
+market.register("node-2", capacity=5, price_per_unit=0.4, zone="us-west")
+
+
+def build_autonomous_snapshot(features: np.ndarray, reward: float) -> dict[str, object]:
+    allocation = treasury.allocate(features.tolist(), [0.02] * len(features))
+    hedge_amount = treasury.hedge(abs(reward))
+    assigned_worker = market.assign({"demand": max(float(np.linalg.norm(features)), 1.0)})
+    coordination = strategy.coordinate([reward] * strategy.agents)
+    replication = replicator.replicate()
+    return {
+        "allocation": allocation.round(6).tolist(),
+        "hedge_amount": hedge_amount,
+        "assigned_worker": assigned_worker.worker_id if assigned_worker else None,
+        "coordination": coordination,
+        "replication": replication,
+    }
 
 
 def loop() -> None:
@@ -55,44 +69,10 @@ def loop() -> None:
             risk=float(data.get("risk", 0.0)),
         )
         old_prob = float(data.get("prob", 0.5))
-        propensity = float(data.get("propensity", old_prob))
-        model_pred = float(data.get("model_pred", reward))
-        next_state = np.asarray(data.get("next_features", x), dtype=float)
-        ltv = float(data.get("ltv", float(np.dot(x, np.asarray([1.2, 0.8])[: x.shape[0]]))))
-
-        decisions = hrl.select(x)
-        predicted_next_state = wm.predict_next(x)
-        wm.update(x, next_state)
-
-        shaped_reward = long_term_reward(short_term=reward, ltv=ltv)
-        counterfactual_reward = doubly_robust(shaped_reward, propensity=propensity, model_pred=model_pred)
-        reward_history.append(counterfactual_reward)
-        adaptive_lr = meta.adapt(reward_history)
-
-        ppo.lr = adaptive_lr
-        prob = ppo.update(x, counterfactual_reward, old_prob)
-        hrl.update(x, counterfactual_reward, lr=adaptive_lr)
-        agent.weights = ppo.w.tolist()
-
-        MODEL_PATH.write_text(
-            json.dumps(
-                {
-                    "weights": ppo.w.tolist(),
-                    "prob": prob,
-                    "hierarchical": decisions,
-                    "predicted_next_state": predicted_next_state.tolist(),
-                    "meta_lr": adaptive_lr,
-                    "counterfactual_reward": counterfactual_reward,
-                }
-            )
-        )
-        log.info(
-            "updated policy weights=%s decisions=%s world_state=%s lr=%s",
-            ppo.w.tolist(),
-            decisions,
-            predicted_next_state.tolist(),
-            adaptive_lr,
-        )
+        prob = ppo.update(x, reward, old_prob)
+        snapshot = build_autonomous_snapshot(x, reward)
+        MODEL_PATH.write_text(json.dumps({"weights": ppo.w.tolist(), "prob": prob, "autonomous_snapshot": snapshot}))
+        log.info("updated policy weights=%s autonomous_snapshot=%s", ppo.w.tolist(), snapshot)
 
 
 if __name__ == "__main__":
