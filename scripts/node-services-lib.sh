@@ -10,17 +10,14 @@ ZTTATO_NODE_SERVICES_ROOT="$ZTTATO_ROOT/services"
 ZTTATO_NODE_LOG_DIR="$ZTTATO_ROOT/logs/node"
 ZTTATO_NODE_PID_DIR="$ZTTATO_ROOT/pids/node"
 
-ZTTATO_NODE_SERVICES=(
-  shopee-crawler
-  tiktok-uploader
-  tiktok-shop-miner
-  tiktok-farm
-  account-farm
-  analytics
-  admin-panel
-  ai-video-generator
-  click-tracker
-)
+zttato_node_discover_services() {
+  find "$ZTTATO_NODE_SERVICES_ROOT" -mindepth 1 -maxdepth 2 -name package.json -print \
+    | sed "s#^$ZTTATO_NODE_SERVICES_ROOT/##" \
+    | sed 's#/package.json$##' \
+    | sort
+}
+
+mapfile -t ZTTATO_NODE_SERVICES < <(zttato_node_discover_services)
 
 zttato_node_print_service_list() {
   printf '%s\n' "${ZTTATO_NODE_SERVICES[@]}"
