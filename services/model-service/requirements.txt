@@ -7,3 +7,7 @@ confluent-kafka==2.5.0
 redis==5.0.4
 msgpack==1.0.8
 prometheus-client==0.23.1
+onnxruntime==1.18.0
+ray[serve]==2.34.0
+feast==0.40.0
+psycopg2-binary==2.9.10

@@ -12,6 +12,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./infrastructure/postgres/migrations:/docker-entrypoint-initdb.d:ro
+    volumes:
+      - ./feature_repo:/app/feature_repo:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-zttato} -d ${DB_NAME:-zttato}"]
       interval: 10s
@@ -354,6 +356,44 @@ services:
     networks:
       - zttato-net
 
+  rl-trainer:
+    build:
+      context: ./services/rl-trainer
+      dockerfile: Dockerfile
+    container_name: zttato-rl-trainer
+    restart: always
+    env_file: .env
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    volumes:
+      - model_runtime_data:/models
+    networks:
+      - zttato-net
+
+  rl-coordinator:
+    build:
+      context: ./services/rl-coordinator
+      dockerfile: Dockerfile
+    container_name: zttato-rl-coordinator
+    restart: always
+    env_file: .env
+    environment:
+      RL_AGENTS: rl-agent-1:8000,rl-agent-2:8000
+    depends_on:
+      rl-agent-1:
+        condition: service_healthy
+      rl-agent-2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
   redpanda:
     image: docker.redpanda.com/redpandadata/redpanda:v24.2.10
     container_name: zttato-redpanda
@@ -385,6 +425,26 @@ services:
       timeout: 10s
       retries: 10
       start_period: 20s
+    networks:
+      - zttato-net
+
+  ray-head:
+    image: rayproject/ray:2.34.0
+    container_name: zttato-ray-head
+    restart: always
+    command: ["ray", "start", "--head", "--port=6379", "--dashboard-host=0.0.0.0", "--block"]
+    ports:
+      - "8265:8265"
+    networks:
+      - zttato-net
+
+  ray-worker:
+    image: rayproject/ray:2.34.0
+    container_name: zttato-ray-worker
+    restart: always
+    command: ["ray", "start", "--address=ray-head:6379", "--block"]
+    depends_on:
+      - ray-head
     networks:
       - zttato-net
 
@@ -445,11 +505,17 @@ services:
       MODEL_RESPONSE_TOPIC: inference.response
       MODEL_DLQ_TOPIC: inference.dlq
       PROMETHEUS_METRICS_ENABLED: ${PROMETHEUS_METRICS_ENABLED:-1}
+      RAY_ADDRESS: ray-head:6379
+      FEAST_REPO_PATH: /app/feature_repo
     depends_on:
       redis:
         condition: service_healthy
       redpanda:
         condition: service_started
+      ray-head:
+        condition: service_started
+    volumes:
+      - ./feature_repo:/app/feature_repo:ro
     healthcheck:
       test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
       interval: 15s
@@ -539,6 +605,21 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+    volumes:
+      - model_runtime_data:/models
+    networks:
+      - zttato-net
+
+  rl-trainer:
+    build:
+      context: ./services/rl-trainer
+      dockerfile: Dockerfile
+    container_name: zttato-rl-trainer
+    restart: always
+    env_file: .env
+    depends_on:
+      redpanda:
+        condition: service_healthy
     volumes:
       - model_runtime_data:/models
     networks:
@@ -635,7 +716,22 @@ services:
         condition: service_healthy
       model-service:
         condition: service_healthy
-      rl-coordinator:
+      rl-trainer:
+    build:
+      context: ./services/rl-trainer
+      dockerfile: Dockerfile
+    container_name: zttato-rl-trainer
+    restart: always
+    env_file: .env
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    volumes:
+      - model_runtime_data:/models
+    networks:
+      - zttato-net
+
+  rl-coordinator:
         condition: service_healthy
       budget-allocator:
         condition: service_healthy
@@ -757,12 +853,25 @@ services:
       MODEL_SYNC_LOCAL_PATH: /models
       MODEL_SYNC_SHARED_PATH: /shared-models
       MODEL_NAME: policy
+      MODEL_BUCKET: ${MODEL_BUCKET:-zttato-models}
+      MODEL_SYNC_OBJECT_KEY: ${MODEL_SYNC_OBJECT_KEY:-policy.onnx}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
     depends_on:
       model-registry:
         condition: service_healthy
     volumes:
       - shared_model_data:/shared-models
       - model_runtime_data:/models
+    networks:
+      - zttato-net
+
+  drift-detector:
+    build:
+      context: ./services/drift-detector
+      dockerfile: Dockerfile
+    container_name: zttato-drift-detector
+    restart: always
+    env_file: .env
     networks:
       - zttato-net
 
@@ -797,8 +906,8 @@ services:
       MODEL_ARTIFACT_PATH: /shared-models/policy.pt
       RETRAINING_INTERVAL_SECONDS: ${RETRAINING_INTERVAL_SECONDS:-300}
     depends_on:
-      rl-policy:
-        condition: service_healthy
+      drift-detector:
+        condition: service_started
       model-registry:
         condition: service_healthy
     volumes:

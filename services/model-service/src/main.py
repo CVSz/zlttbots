@@ -1,12 +1,13 @@
 import asyncio
+import json
 import logging
 import os
-import json
-from contextlib import asynccontextmanager
 import time
 import uuid
+from contextlib import asynccontextmanager
 from typing import Any
 
+import torch
 import uvicorn
 from confluent_kafka import Producer
 from fastapi import FastAPI, Header, HTTPException, WebSocket, WebSocketDisconnect
@@ -15,22 +16,17 @@ from pydantic import BaseModel, Field
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from metrics import ASYNC_REQUESTS_TOTAL, RESULT_LOOKUP_LATENCY
+from onnx_model import ONNXModel
 from queue_runtime import REQUEST_TOPIC, start_background_consumers
 from result_store import result_store
 
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    start_background_consumers(predict_from_payload)
-    yield
-
-
-app = FastAPI(title="Model Service", lifespan=lifespan)
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("model-service")
 WEIGHTS = torch.tensor([0.3, 0.7], dtype=torch.float32)
 MODEL_VERSION = os.getenv("MODEL_VERSION", "baseline-ctr-cvr-v1")
 KAFKA_BROKER = os.getenv("KAFKA_BROKER", "redpanda:9092")
 producer = Producer({"bootstrap.servers": KAFKA_BROKER})
+model = ONNXModel()
 
 
 class FeatureVector(BaseModel):
@@ -51,22 +47,44 @@ class AsyncJobAccepted(BaseModel):
     status: str
 
 
-def predict(features: FeatureVector) -> PredictionResult:
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    start_background_consumers(predict_from_payload)
+    yield
+
+
+app = FastAPI(title="Model Service", lifespan=lifespan)
+
+
+def featurize(features: FeatureVector) -> tuple[float, float]:
     ctr = features.clicks / features.views if features.views else 0.0
     cvr = features.conversions / features.clicks if features.clicks else 0.0
-    return [ctr, cvr]
+    return ctr, cvr
+
+
+def fallback_predict(ctr: float, cvr: float) -> float:
+    vector = torch.tensor([ctr, cvr], dtype=torch.float32)
+    score = torch.dot(WEIGHTS, vector).item()
+    return float(max(0.0, min(score, 1.0)))
 
 
 def predict(features: FeatureVector) -> PredictionResult:
     ctr, cvr = featurize(features)
-    outputs = model.predict([ctr, cvr])[0]
-    score = float(outputs[1]) if len(outputs) > 1 else float(outputs[0])
+    if model.ready:
+        outputs = model.predict([ctr, cvr])[0]
+        score = float(outputs[1]) if len(outputs) > 1 else float(outputs[0])
+    else:
+        score = fallback_predict(ctr, cvr)
     return PredictionResult(score=score, ctr=ctr, cvr=cvr, model_version=MODEL_VERSION)
 
 
 def predict_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
-    features = FeatureVector.model_validate(payload)
-    return predict(features).model_dump()
+    raw_features = payload.get("features", payload)
+    features = FeatureVector.model_validate(raw_features)
+    result = predict(features).model_dump()
+    if "job_id" in payload:
+        result_store.set_result(payload["job_id"], {"status": "completed", **result})
+    return result
 
 
 @app.get("/healthz")
@@ -76,6 +94,7 @@ def healthz() -> dict[str, Any]:
         "service": "model-service",
         "model_version": MODEL_VERSION,
         "kafka_broker": KAFKA_BROKER,
+        "onnx_ready": model.ready,
     }
 
 
@@ -86,8 +105,6 @@ def metrics() -> Response:
 
 @app.post("/predict", response_model=PredictionResult)
 def predict_api(features: FeatureVector) -> PredictionResult:
-    if not model.ready:
-        raise HTTPException(status_code=503, detail=f"ONNX model is unavailable at {model.model_path}")
     return predict(features)
 
 
