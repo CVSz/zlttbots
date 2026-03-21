@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from distributed_loop import run_cycle
 from economy_loop import run_economy
+from federated_loop import run_global_task
 from kafka_producer import emit_decision
 
 app = FastAPI(title="Master Orchestrator")
@@ -53,6 +54,12 @@ class EconomyRequest(BaseModel):
     markets: list[str] | None = None
 
 
+class FederatedTaskRequest(BaseModel):
+    campaign_id: str = Field(min_length=1)
+    tenant_id: str = Field(default="default", min_length=1)
+    region: str = Field(default="asia", min_length=2)
+
+
 @app.get("/healthz")
 def healthz() -> dict[str, Any]:
     return {"status": "ok", "service": "master-orchestrator"}
@@ -68,6 +75,11 @@ def run_cycle_endpoint(request: CampaignCycleRequest) -> dict[str, Any]:
 @app.post("/economy/run")
 def run_economy_endpoint(request: EconomyRequest) -> dict[str, Any]:
     return run_economy(request.tenant_id, request.niche, request.markets)
+
+
+@app.post("/federation/run")
+def run_federated_task_endpoint(request: FederatedTaskRequest) -> dict[str, Any]:
+    return run_global_task(request.campaign_id, request.tenant_id, request.region)
 
 
 @app.post("/campaign/run", response_model=CampaignDecision)

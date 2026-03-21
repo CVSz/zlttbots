@@ -1,0 +1,165 @@
+import base64
+import hashlib
+import hmac
+import json
+import os
+import time
+from pathlib import Path
+from typing import Any
+
+import psycopg2
+import uvicorn
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+
+app = FastAPI(title="Federation Control Plane")
+SECRET = os.getenv("FEDERATION_SECRET", "change-me")
+DB_URL = os.getenv("DATABASE_URL", "postgresql://zttato:zttato@postgres:5432/zttato")
+AUDIT_LOG_PATH = Path(os.getenv("FEDERATION_AUDIT_LOG", "/tmp/federation-audit.log"))
+DEFAULT_TENANT = os.getenv("FEDERATION_DEFAULT_TENANT", "default")
+
+
+class NodeRegister(BaseModel):
+    node_id: str = Field(min_length=6)
+    region: str = Field(min_length=2)
+    capacity: int = Field(ge=1)
+    tenant_id: str = Field(default=DEFAULT_TENANT, min_length=1)
+    labels: dict[str, str] = Field(default_factory=dict)
+
+
+class NodeRecord(NodeRegister):
+    registered_at: int
+
+
+def encode_signed_claims(claims: dict[str, Any]) -> str:
+    payload = json.dumps(claims, separators=(",", ":"), sort_keys=True).encode("utf-8")
+    signature = hmac.new(SECRET.encode("utf-8"), payload, hashlib.sha256).digest()
+    return f"{base64.urlsafe_b64encode(payload).decode('utf-8')}.{base64.urlsafe_b64encode(signature).decode('utf-8')}"
+
+
+def db_connection():
+    return psycopg2.connect(DB_URL)
+
+
+def ensure_schema() -> None:
+    with db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS federation_nodes (
+                    node_id TEXT PRIMARY KEY,
+                    tenant_id TEXT NOT NULL,
+                    region TEXT NOT NULL,
+                    capacity INTEGER NOT NULL,
+                    labels JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    registered_at BIGINT NOT NULL
+                )
+                """
+            )
+        conn.commit()
+
+
+@app.on_event("startup")
+def startup() -> None:
+    ensure_schema()
+
+
+@app.get("/healthz")
+def healthz() -> dict[str, Any]:
+    try:
+        ensure_schema()
+        database_ok = True
+    except psycopg2.Error:
+        database_ok = False
+    return {
+        "status": "ok" if database_ok else "degraded",
+        "service": "federation",
+        "checks": {"database": database_ok},
+        "prometheus_labels": {"service": "federation", "component": "control-plane"},
+    }
+
+
+@app.get("/nodes")
+def list_nodes() -> dict[str, Any]:
+    try:
+        with db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT node_id, tenant_id, region, capacity, labels, registered_at FROM federation_nodes ORDER BY registered_at DESC"
+                )
+                rows = cur.fetchall()
+    except psycopg2.Error as exc:
+        raise HTTPException(status_code=503, detail=f"database unavailable: {exc}") from exc
+
+    nodes = [
+        {
+            "node_id": row[0],
+            "tenant_id": row[1],
+            "region": row[2],
+            "capacity": row[3],
+            "labels": row[4] or {},
+            "registered_at": row[5],
+        }
+        for row in rows
+    ]
+    return {"nodes": nodes, "count": len(nodes)}
+
+
+@app.post("/register")
+def register(node: NodeRegister) -> dict[str, Any]:
+    issued_at = int(time.time())
+    token = encode_signed_claims(
+        {
+            "node_id": node.node_id,
+            "tenant_id": node.tenant_id,
+            "region": node.region,
+            "iat": issued_at,
+        }
+    )
+
+    try:
+        with db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO federation_nodes (node_id, tenant_id, region, capacity, labels, registered_at)
+                    VALUES (%s, %s, %s, %s, %s::jsonb, %s)
+                    ON CONFLICT (node_id) DO UPDATE
+                    SET tenant_id = EXCLUDED.tenant_id,
+                        region = EXCLUDED.region,
+                        capacity = EXCLUDED.capacity,
+                        labels = EXCLUDED.labels,
+                        registered_at = EXCLUDED.registered_at
+                    """,
+                    (node.node_id, node.tenant_id, node.region, node.capacity, json.dumps(node.labels), issued_at),
+                )
+            conn.commit()
+    except psycopg2.Error as exc:
+        raise HTTPException(status_code=503, detail=f"database unavailable: {exc}") from exc
+
+    AUDIT_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with AUDIT_LOG_PATH.open("a", encoding="utf-8") as handle:
+        handle.write(
+            json.dumps(
+                {
+                    "event": "node.registered",
+                    "node_id": node.node_id,
+                    "tenant_id": node.tenant_id,
+                    "region": node.region,
+                    "capacity": node.capacity,
+                    "labels": node.labels,
+                    "timestamp": issued_at,
+                }
+            )
+            + "\n"
+        )
+
+    return {
+        "token": token,
+        "node": NodeRecord(**node.model_dump(), registered_at=issued_at).model_dump(),
+        "prometheus_labels": {"tenant_id": node.tenant_id, "region": node.region},
+    }
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
