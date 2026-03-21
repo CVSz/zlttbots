@@ -91,3 +91,26 @@ def test_rl_coordinator_picks_highest_score(monkeypatch) -> None:
     data = response.json()
     assert data['score'] == 0.5
     assert data['agent'] == 'rl-agent-2:8000'
+
+
+def test_rtb_engine_applies_latency_penalty() -> None:
+    app = _load_app('rtb-engine')
+    client = TestClient(app)
+
+    response = client.post(
+        '/bid',
+        json={
+            'campaign_id': 'cmp-latency',
+            'score': 0.8,
+            'ctr': 0.5,
+            'cvr': 0.2,
+            'base_bid': 2.0,
+            'pacing_ratio': 1.0,
+            'max_bid': 10.0,
+            'latency_ms': 600.0,
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data['bid_price'] == 1.8
+    assert data['pacing_multiplier'] == 1.0

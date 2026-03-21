@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: zttato-eu
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orchestrator
+  namespace: zttato-eu
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: orchestrator
+  template:
+    metadata:
+      labels:
+        app: orchestrator
+        region: eu
+    spec:
+      containers:
+        - name: orchestrator
+          image: zttato/orchestrator:latest
+          env:
+            - name: REGION
+              value: eu
