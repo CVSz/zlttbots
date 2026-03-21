@@ -7,7 +7,6 @@ import time
 import uuid
 from typing import Any
 
-import torch
 import uvicorn
 from confluent_kafka import Producer
 from fastapi import FastAPI, Header, HTTPException, WebSocket, WebSocketDisconnect
@@ -55,8 +54,13 @@ class AsyncJobAccepted(BaseModel):
 def predict(features: FeatureVector) -> PredictionResult:
     ctr = features.clicks / features.views if features.views else 0.0
     cvr = features.conversions / features.clicks if features.clicks else 0.0
-    vector = torch.tensor([ctr, cvr], dtype=torch.float32)
-    score = float(torch.dot(WEIGHTS, vector).item())
+    return [ctr, cvr]
+
+
+def predict(features: FeatureVector) -> PredictionResult:
+    ctr, cvr = featurize(features)
+    outputs = model.predict([ctr, cvr])[0]
+    score = float(outputs[1]) if len(outputs) > 1 else float(outputs[0])
     return PredictionResult(score=score, ctr=ctr, cvr=cvr, model_version=MODEL_VERSION)
 
 
@@ -82,6 +86,8 @@ def metrics() -> Response:
 
 @app.post("/predict", response_model=PredictionResult)
 def predict_api(features: FeatureVector) -> PredictionResult:
+    if not model.ready:
+        raise HTTPException(status_code=503, detail=f"ONNX model is unavailable at {model.model_path}")
     return predict(features)
 
 
