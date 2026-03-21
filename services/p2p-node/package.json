@@ -1,0 +1,14 @@
+{
+  "name": "p2p-node",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node src/node.js"
+  },
+  "dependencies": {
+    "@chainsafe/libp2p-noise": "^16.1.4",
+    "@libp2p/mplex": "^12.0.10",
+    "@libp2p/tcp": "^10.1.19",
+    "libp2p": "^2.10.0"
+  }
+}

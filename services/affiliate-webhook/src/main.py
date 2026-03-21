@@ -5,6 +5,7 @@ import os
 from typing import Any
 
 import psycopg2
+import requests
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 
@@ -15,6 +16,9 @@ DB_URL = os.getenv(
     "DATABASE_URL",
     "postgresql://zttato:zttato@postgres:5432/zttato",
 )
+DB_URL = os.getenv("DATABASE_URL", "postgresql://zttato:zttato@postgres:5432/zttato")
+REWARD_COLLECTOR_URL = os.getenv("REWARD_COLLECTOR_URL", "http://reward-collector:8000/reward")
+TIMEOUT = int(os.getenv("HTTP_TIMEOUT", "10"))
 
 
 def verify(signature: str, body: bytes) -> bool:
@@ -65,6 +69,22 @@ async def conversion(req: Request) -> dict[str, bool]:
                 """,
                 (campaign_id, revenue),
             )
+
+    try:
+        response = requests.post(
+            REWARD_COLLECTOR_URL,
+            json={
+                "campaign_id": campaign_id,
+                "revenue": revenue,
+                "conversions": 1,
+                "clicks": int(data.get("clicks", 0)),
+                "views": int(data.get("views", 0)),
+            },
+            timeout=TIMEOUT,
+        )
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=f"reward collector unavailable: {exc}") from exc
 
     return {"ok": True}
 

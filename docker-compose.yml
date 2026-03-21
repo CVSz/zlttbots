@@ -12,6 +12,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./infrastructure/postgres/migrations:/docker-entrypoint-initdb.d:ro
+    volumes:
+      - ./feature_repo:/app/feature_repo:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-zttato} -d ${DB_NAME:-zttato}"]
       interval: 10s
@@ -228,12 +230,704 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      RL_POLICY_MODEL_PATH: /models/policy.pt
+    depends_on:
+      postgres:
+        condition: service_healthy
+      tenant-service:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',9700),2); s.close()"]
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 20s
+    networks:
+      - zttato-net
+
+  tenant-service:
+    build:
+      context: ./services/tenant-service
+      dockerfile: Dockerfile
+    container_name: zttato-tenant-service
+    restart: always
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      RL_POLICY_MODEL_PATH: /models/policy.pt
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  product-generator:
+    build:
+      context: ./services/product-generator
+      dockerfile: Dockerfile
+    container_name: zttato-product-generator
+    restart: always
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  market-orchestrator:
+    build:
+      context: ./services/market-orchestrator
+      dockerfile: Dockerfile
+    container_name: zttato-market-orchestrator
+    restart: always
+    env_file: .env
+    depends_on:
+      product-generator:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  billing-service:
+    build:
+      context: ./services/billing-service
+      dockerfile: Dockerfile
+    container_name: zttato-billing-service
+    restart: always
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  landing-service:
+    build:
+      context: ./services/landing-service
+      dockerfile: Dockerfile
+    container_name: zttato-landing-service
+    restart: always
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  reward-collector:
+    build:
+      context: ./services/reward-collector
+      dockerfile: Dockerfile
+    container_name: zttato-reward-collector
+    restart: always
+    env_file: .env
+    environment:
+      KAFKA_BROKER: redpanda:9092
+    depends_on:
+      feature-store:
+        condition: service_healthy
+      rl-coordinator:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  rl-trainer:
+    build:
+      context: ./services/rl-trainer
+      dockerfile: Dockerfile
+    container_name: zttato-rl-trainer
+    restart: always
+    env_file: .env
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    volumes:
+      - model_runtime_data:/models
+    networks:
+      - zttato-net
+
+  rl-coordinator:
+    build:
+      context: ./services/rl-coordinator
+      dockerfile: Dockerfile
+    container_name: zttato-rl-coordinator
+    restart: always
+    env_file: .env
+    environment:
+      RL_AGENTS: rl-agent-1:8000,rl-agent-2:8000
+    depends_on:
+      rl-agent-1:
+        condition: service_healthy
+      rl-agent-2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.10
+    container_name: zttato-redpanda
+    restart: always
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp
+      - "1"
+      - --memory
+      - 512M
+      - --reserve-memory
+      - 0M
+      - --node-id
+      - "0"
+      - --check=false
+      - --kafka-addr
+      - PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr
+      - PLAINTEXT://redpanda:9092
+      - --pandaproxy-addr
+      - 0.0.0.0:8082
+      - --advertise-pandaproxy-addr
+      - redpanda:8082
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -q 'Healthy:.*true'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  ray-head:
+    image: rayproject/ray:2.34.0
+    container_name: zttato-ray-head
+    restart: always
+    command: ["ray", "start", "--head", "--port=6379", "--dashboard-host=0.0.0.0", "--block"]
+    ports:
+      - "8265:8265"
+    networks:
+      - zttato-net
+
+  ray-worker:
+    image: rayproject/ray:2.34.0
+    container_name: zttato-ray-worker
+    restart: always
+    command: ["ray", "start", "--address=ray-head:6379", "--block"]
+    depends_on:
+      - ray-head
+    networks:
+      - zttato-net
+
+  stream-consumer:
+    build:
+      context: ./services/stream-consumer
+      dockerfile: Dockerfile
+    container_name: zttato-stream-consumer
+    restart: always
+    env_file: .env
+    environment:
+      KAFKA_BROKER: redpanda:9092
+      DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      RL_POLICY_MODEL_PATH: /models/policy.pt
+      REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+    networks:
+      - zttato-net
+
+  feature-store:
+    build:
+      context: ./services/feature-store
+      dockerfile: Dockerfile
+    container_name: zttato-feature-store
+    restart: always
+    env_file: .env
+    environment:
+      REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  model-service:
+    build:
+      context: ./services/model-service
+      dockerfile: Dockerfile
+    container_name: zttato-model-service
+    restart: always
+    env_file: .env
+    environment:
+      REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
+      KAFKA_BROKER: redpanda:9092
+      MODEL_REQUEST_TOPIC: inference.request
+      MODEL_RESPONSE_TOPIC: inference.response
+      MODEL_DLQ_TOPIC: inference.dlq
+      PROMETHEUS_METRICS_ENABLED: ${PROMETHEUS_METRICS_ENABLED:-1}
+      RAY_ADDRESS: ray-head:6379
+      FEAST_REPO_PATH: /app/feature_repo
+    depends_on:
+      redis:
+        condition: service_healthy
+      redpanda:
+        condition: service_started
+      ray-head:
+        condition: service_started
+    volumes:
+      - ./feature_repo:/app/feature_repo:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  rl-engine:
+    build:
+      context: ./services/rl-engine
+      dockerfile: Dockerfile
+    container_name: zttato-rl-engine
+    restart: always
+    env_file: .env
+    environment:
+      REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
+      DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      RL_POLICY_MODEL_PATH: /models/policy.pt
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    volumes:
+      - model_runtime_data:/models
+    networks:
+      - zttato-net
+
+  rl-agent-1:
+    build:
+      context: ./services/rl-engine
+      dockerfile: Dockerfile
+    container_name: zttato-rl-agent-1
+    restart: always
+    env_file: .env
+    environment:
+      REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
+      DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      RL_POLICY_MODEL_PATH: /models/policy.pt
+      RL_STATE_KEY: rl:linucb:agent1
+      RL_ALPHA: ${RL_AGENT_1_ALPHA:-1.0}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    volumes:
+      - model_runtime_data:/models
+    networks:
+      - zttato-net
+
+  rl-agent-2:
+    build:
+      context: ./services/rl-engine
+      dockerfile: Dockerfile
+    container_name: zttato-rl-agent-2
+    restart: always
+    env_file: .env
+    environment:
+      REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
+      DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      RL_POLICY_MODEL_PATH: /models/policy.pt
+      RL_STATE_KEY: rl:linucb:agent2
+      RL_ALPHA: ${RL_AGENT_2_ALPHA:-1.25}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    volumes:
+      - model_runtime_data:/models
+    networks:
+      - zttato-net
+
+  rl-trainer:
+    build:
+      context: ./services/rl-trainer
+      dockerfile: Dockerfile
+    container_name: zttato-rl-trainer
+    restart: always
+    env_file: .env
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    volumes:
+      - model_runtime_data:/models
+    networks:
+      - zttato-net
+
+  rl-coordinator:
+    build:
+      context: ./services/rl-coordinator
+      dockerfile: Dockerfile
+    container_name: zttato-rl-coordinator
+    restart: always
+    env_file: .env
+    environment:
+      RL_AGENTS: rl-agent-1:8000,rl-agent-2:8000
+    depends_on:
+      rl-agent-1:
+        condition: service_healthy
+      rl-agent-2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  budget-allocator:
+    build:
+      context: ./services/budget-allocator
+      dockerfile: Dockerfile
+    container_name: zttato-budget-allocator
+    restart: always
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  rtb-engine:
+    build:
+      context: ./services/rtb-engine
+      dockerfile: Dockerfile
+    container_name: zttato-rtb-engine
+    restart: always
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  scaling-engine:
+    build:
+      context: ./services/scaling-engine
+      dockerfile: Dockerfile
+    container_name: zttato-scaling-engine
+    restart: always
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  master-orchestrator:
+    build:
+      context: ./services/master-orchestrator
+      dockerfile: Dockerfile
+    container_name: zttato-master-orchestrator
+    restart: always
+    env_file: .env
+    environment:
+      KAFKA_BROKER: redpanda:9092
+    depends_on:
+      execution-engine:
+        condition: service_healthy
+      market-orchestrator:
+        condition: service_healthy
+      billing-service:
+        condition: service_healthy
+      feature-store:
+        condition: service_healthy
+      model-service:
+        condition: service_healthy
+      rl-trainer:
+    build:
+      context: ./services/rl-trainer
+      dockerfile: Dockerfile
+    container_name: zttato-rl-trainer
+    restart: always
+    env_file: .env
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    volumes:
+      - model_runtime_data:/models
+    networks:
+      - zttato-net
+
+  rl-coordinator:
+        condition: service_healthy
+      budget-allocator:
+        condition: service_healthy
+      rtb-engine:
+        condition: service_healthy
+      scaling-engine:
+        condition: service_healthy
+      federation:
+        condition: service_healthy
+      scheduler:
+        condition: service_healthy
+      capital-allocator:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  federation:
+    build:
+      context: ./services/federation
+      dockerfile: Dockerfile
+    container_name: zttato-federation
+    restart: always
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      RL_POLICY_MODEL_PATH: /models/policy.pt
+      FEDERATION_SECRET: ${FEDERATION_SECRET:-change-me}
+      FEDERATION_TOKEN_TTL: ${FEDERATION_TOKEN_TTL:-3600}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  scheduler:
+    build:
+      context: ./services/scheduler
+      dockerfile: Dockerfile
+    container_name: zttato-scheduler
+    restart: always
+    env_file: .env
+    environment:
+      FEDERATION_URL: http://federation:8000
+      FEDERATION_SECRET: ${FEDERATION_SECRET:-change-me}
+      FEDERATION_TOKEN_TTL: ${FEDERATION_TOKEN_TTL:-3600}
+    depends_on:
+      federation:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  capital-allocator:
+    build:
+      context: ./services/capital-allocator
+      dockerfile: Dockerfile
+    container_name: zttato-capital-allocator
+    restart: always
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - zttato-net
+
+  model-registry:
+    build:
+      context: ./services/model-registry
+      dockerfile: Dockerfile
+    container_name: zttato-model-registry
+    restart: always
+    env_file: .env
+    environment:
+      MODEL_REGISTRY_PATH: /models
+      MODEL_REGISTRY_SHARED_PATH: /shared-models
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    volumes:
+      - model_registry_data:/models
+      - shared_model_data:/shared-models
+    networks:
+      - zttato-net
+
+  model-sync:
+    build:
+      context: ./services/model-sync
+      dockerfile: Dockerfile
+    container_name: zttato-model-sync
+    restart: always
+    env_file: .env
+    environment:
+      MODEL_REGISTRY: http://model-registry:8000
+      MODEL_SYNC_LOCAL_PATH: /models
+      MODEL_SYNC_SHARED_PATH: /shared-models
+      MODEL_NAME: policy
+      MODEL_BUCKET: ${MODEL_BUCKET:-zttato-models}
+      MODEL_SYNC_OBJECT_KEY: ${MODEL_SYNC_OBJECT_KEY:-policy.onnx}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+    depends_on:
+      model-registry:
+        condition: service_healthy
+    volumes:
+      - shared_model_data:/shared-models
+      - model_runtime_data:/models
+    networks:
+      - zttato-net
+
+  drift-detector:
+    build:
+      context: ./services/drift-detector
+      dockerfile: Dockerfile
+    container_name: zttato-drift-detector
+    restart: always
+    env_file: .env
+    networks:
+      - zttato-net
+
+  rl-policy:
+    build:
+      context: ./services/rl-policy
+      dockerfile: Dockerfile
+    container_name: zttato-rl-policy
+    restart: always
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    volumes:
+      - shared_model_data:/shared-models
+    networks:
+      - zttato-net
+
+  retraining-loop:
+    build:
+      context: ./services/retraining-loop
+      dockerfile: Dockerfile
+    container_name: zttato-retraining-loop
+    restart: always
+    env_file: .env
+    environment:
+      RL_POLICY_URL: http://rl-policy:8000
+      MODEL_REGISTRY_URL: http://model-registry:8000
+      MODEL_ARTIFACT_PATH: /shared-models/policy.pt
+      RETRAINING_INTERVAL_SECONDS: ${RETRAINING_INTERVAL_SECONDS:-300}
+    depends_on:
+      drift-detector:
+        condition: service_started
+      model-registry:
+        condition: service_healthy
+    volumes:
+      - shared_model_data:/shared-models
+    networks:
+      - zttato-net
+
+  p2p-node:
+    build:
+      context: ./services/p2p-node
+      dockerfile: Dockerfile
+    container_name: zttato-p2p-node
+    restart: always
+    env_file: .env
+    environment:
+      PEER_ALLOWLIST: ${PEER_ALLOWLIST:-}
+      NODE_ENV: production
     networks:
       - zttato-net
 
@@ -268,3 +962,6 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  model_registry_data:
+  model_runtime_data:
+  shared_model_data:

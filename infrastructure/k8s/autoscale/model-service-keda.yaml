@@ -1,0 +1,16 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: model-service-scaler
+spec:
+  scaleTargetRef:
+    name: model-service
+  minReplicaCount: 1
+  maxReplicaCount: 20
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: kafka.platform.svc.cluster.local:9092
+        topic: inference.request
+        consumerGroup: model-service
+        lagThreshold: "50"
