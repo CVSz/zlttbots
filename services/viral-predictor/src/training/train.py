@@ -1,34 +1,45 @@
-import torch
+from __future__ import annotations
+
+import numpy as np
 import pandas as pd
 
-from model.model import ViralNet
+from model.model import FEATURE_COUNT, ViralNet
+
+FEATURE_COLUMNS = ["views", "likes", "comments", "shares", "engagement"]
+TARGET_COLUMN = "viral"
 
 
-def train(datafile):
+def _sigmoid(values: np.ndarray) -> np.ndarray:
+    return 1.0 / (1.0 + np.exp(-np.clip(values, -50.0, 50.0)))
 
+
+def train(datafile: str, epochs: int = 1500, learning_rate: float = 0.1) -> ViralNet:
     df = pd.read_csv(datafile)
+    X = df[FEATURE_COLUMNS].to_numpy(dtype=float)
+    y = df[TARGET_COLUMN].to_numpy(dtype=float)
 
-    X = df[["views","likes","comments","shares","engagement"]].values
-    y = df["viral"].values
+    if X.shape[1] != FEATURE_COUNT:
+        raise ValueError(f"Expected {FEATURE_COUNT} features, got {X.shape[1]}")
 
-    model = ViralNet()
+    means = X.mean(axis=0)
+    stds = np.where(X.std(axis=0) == 0.0, 1.0, X.std(axis=0))
+    X_scaled = (X - means) / stds
 
-    optimizer = torch.optim.Adam(model.parameters())
-    loss_fn = torch.nn.BCELoss()
+    weights = np.zeros(FEATURE_COUNT, dtype=float)
+    bias = 0.0
 
-    X = torch.tensor(X).float()
-    y = torch.tensor(y).float().unsqueeze(1)
+    sample_count = len(X_scaled)
+    for _ in range(epochs):
+        logits = X_scaled @ weights + bias
+        predictions = _sigmoid(logits)
+        errors = predictions - y
 
-    for epoch in range(100):
+        weights -= learning_rate * (X_scaled.T @ errors) / sample_count
+        bias -= learning_rate * errors.mean()
 
-        pred = model(X)
+    scaled_weights = weights / stds
+    scaled_bias = bias - np.dot(means / stds, weights)
 
-        loss = loss_fn(pred,y)
-
-        optimizer.zero_grad()
-
-        loss.backward()
-
-        optimizer.step()
-
-    torch.save(model.state_dict(),"viral_model.pt")
+    model = ViralNet(weights=scaled_weights, bias=scaled_bias)
+    model.save()
+    return model
