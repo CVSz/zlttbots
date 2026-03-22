@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: region-config
+  namespace: platform
+data:
+  regions: "asia,us,eu"
+  strategy: "active-active"
+  healthCheckPath: "/healthz"
+  replicationMode: "async"

@@ -17,6 +17,11 @@ resources:
   - monitoring/prometheus.yaml
   - mesh/service-mesh.yaml
   - mesh/rate-limit.yaml
+  - spire/spire-server.yaml
+  - spire/spire-agent.yaml
+  - istio/mtls.yaml
+  - global/loadbalancer.yaml
+  - global/failover.yaml
   - security/jwt-auth-secret.yaml
   - autoscale/analytics-hpa.yaml
   - autoscale/gpu-renderer-hpa.yaml
