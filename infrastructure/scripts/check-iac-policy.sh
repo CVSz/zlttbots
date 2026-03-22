@@ -8,17 +8,22 @@ status=0
 check_k8s_file() {
   local file="$1"
 
-  if ! rg -q '^\s*resources:' "$file"; then
+  if ! grep -Eq '^[[:space:]]*resources:' "$file"; then
     echo "❌ Missing resources block: $file"
     status=1
   fi
 
-  if ! rg -q '^\s*image:\s*.+:.+' "$file"; then
+  if ! grep -Eq '^[[:space:]]*image:[[:space:]]*[^[:space:]]+:[^[:space:]]+' "$file"; then
     echo "❌ Image tag is not pinned: $file"
     status=1
   fi
 
-  if ! rg -q 'runAsNonRoot:\s*true' "$file"; then
+  if grep -Eq '^[[:space:]]*image:[[:space:]]*[^[:space:]]+:latest([[:space:]]|$)' "$file"; then
+    echo "❌ Image uses forbidden latest tag: $file"
+    status=1
+  fi
+
+  if ! grep -Eq 'runAsNonRoot:[[:space:]]*true' "$file"; then
     echo "❌ Missing runAsNonRoot=true: $file"
     status=1
   fi

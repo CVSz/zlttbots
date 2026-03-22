@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: enterprise-prometheus-scrape
+  labels:
+    app: enterprise-observability
+data:
+  prometheus-additional.yaml: |
+    - job_name: zttato-enterprise
+      static_configs:
+        - targets:
+            - model-service.platform.svc.cluster.local:8000
+            - redpanda.platform.svc.cluster.local:9092

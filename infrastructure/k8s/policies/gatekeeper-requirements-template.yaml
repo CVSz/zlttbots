@@ -1,0 +1,71 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredsecuritycontrols
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredSecurityControls
+      validation:
+        legacySchema: false
+        openAPIV3Schema:
+          type: object
+          properties:
+            allowedRepos:
+              type: array
+              items:
+                type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package zttato.requiredsecuritycontrols
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Deployment"
+          container := input.review.object.spec.template.spec.containers[_]
+          not startswith(container.image, allowed_repo)
+          allowed_repo := input.parameters.allowedRepos[_]
+          msg := sprintf("image repository is not allowlisted: %v", [container.image])
+        }
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Deployment"
+          container := input.review.object.spec.template.spec.containers[_]
+          endswith(container.image, ":latest")
+          msg := sprintf("image tag latest is forbidden: %v", [container.image])
+        }
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Deployment"
+          not input.review.object.spec.template.spec.securityContext.runAsNonRoot
+          msg := "pod securityContext.runAsNonRoot must be true"
+        }
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Deployment"
+          container := input.review.object.spec.template.spec.containers[_]
+          not container.resources.requests.cpu
+          msg := sprintf("container %v missing resources.requests.cpu", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Deployment"
+          container := input.review.object.spec.template.spec.containers[_]
+          not container.resources.requests.memory
+          msg := sprintf("container %v missing resources.requests.memory", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Deployment"
+          container := input.review.object.spec.template.spec.containers[_]
+          not container.resources.limits.cpu
+          msg := sprintf("container %v missing resources.limits.cpu", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Deployment"
+          container := input.review.object.spec.template.spec.containers[_]
+          not container.resources.limits.memory
+          msg := sprintf("container %v missing resources.limits.memory", [container.name])
+        }

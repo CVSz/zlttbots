@@ -18,11 +18,13 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
     spec:
+      securityContext:
+        runAsNonRoot: true
       nodeSelector:
         accelerator: nvidia
       containers:
         - name: gpu-renderer
-          image: zttato/gpu-renderer:latest
+          image: zttato/gpu-renderer:v1.0.0
           resources:
             limits:
               nvidia.com/gpu: "1"

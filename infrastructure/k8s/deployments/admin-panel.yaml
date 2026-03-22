@@ -16,7 +16,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: admin
-          image: zttato/admin-panel:latest
+          image: zttato/admin-panel:v1.0.0
           ports:
             - containerPort: 3000
           resources:

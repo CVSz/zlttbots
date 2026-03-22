@@ -15,9 +15,11 @@ spec:
       labels:
         app: jwt-auth
     spec:
+      securityContext:
+        runAsNonRoot: true
       containers:
         - name: jwt-auth
-          image: zttato/jwt-auth:latest
+          image: zttato/jwt-auth:v1.0.0
           ports:
             - containerPort: 8080
           env:
@@ -42,3 +44,10 @@ spec:
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

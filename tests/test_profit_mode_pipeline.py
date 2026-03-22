@@ -105,7 +105,7 @@ def test_affiliate_webhook_updates_feature_store_and_reward_collector(monkeypatc
     body = json.dumps(payload).encode('utf-8')
     signature = hmac.new(b'topsecret', body, hashlib.sha256).hexdigest()
 
-    response = client.post('/conversion', data=body, headers={'X-Signature': signature, 'Content-Type': 'application/json'})
+    response = client.post('/conversion', content=body, headers={'X-Signature': signature, 'Content-Type': 'application/json'})
     assert response.status_code == 200
     assert calls[0][0].endswith('/features/cmp-1')
     assert calls[0][1]['revenue'] == 9.5

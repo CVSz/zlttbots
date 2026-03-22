@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-ha
+spec:
+  serviceName: postgres-ha
+  replicas: 3
+  selector:
+    matchLabels:
+      app: postgres-ha
+  template:
+    metadata:
+      labels:
+        app: postgres-ha
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: spilo
+          image: ghcr.io/zalando/spilo-15:3.2-p1
+          ports:
+            - containerPort: 5432
+          env:
+            - name: PATRONI_SCOPE
+              value: zttato
+            - name: PATRONI_POSTGRESQL_LISTEN
+              value: 0.0.0.0:5432
+            - name: PGUSER_SUPERUSER
+              value: postgres
+            - name: PGPASSWORD_SUPERUSER
+              valueFrom:
+                secretKeyRef:
+                  name: zttato-secrets
+                  key: JWT_SECRET
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+          volumeMounts:
+            - name: data
+              mountPath: /home/postgres/pgdata
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 50Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-ha
+spec:
+  selector:
+    app: postgres-ha
+  ports:
+    - port: 5432
+      targetPort: 5432
