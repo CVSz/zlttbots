@@ -41,6 +41,13 @@ If you prefer the helper script:
 bash start.sh
 ```
 
+If you want the managed lifecycle wrapper:
+
+```bash
+bash scripts/zttato-manager.sh install
+bash scripts/zttato-manager.sh start
+```
+
 ## 4) Check container state
 
 ```bash

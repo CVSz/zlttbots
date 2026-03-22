@@ -90,6 +90,14 @@ Or use the repository bootstrap helper:
 bash start.sh
 ```
 
+Or use the new platform manager flows:
+
+```bash
+bash scripts/zttato-manager.sh install
+bash scripts/zttato-manager.sh upgrade
+bash scripts/zttato-manager.sh deploy
+```
+
 ### 3) Verify health
 
 ```bash
@@ -121,6 +129,13 @@ docker compose restart <service-name>
 
 ```bash
 docker compose up -d --scale crawler-worker=3 --scale renderer-worker=2 --scale arbitrage-worker=2
+```
+
+### Use the zTTato manager
+
+```bash
+bash scripts/zttato-manager.sh status
+bash scripts/zttato-manager.sh logs nginx
 ```
 
 ### Use the Node-service wrapper
