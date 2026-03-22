@@ -71,10 +71,6 @@ services:
       - "3100:3100"
     restart: always
 
-volumes:
-  postgres-data:
-  grafana-data:
-
   ai-orchestrator:
     build: ./services/ai-orchestrator
     container_name: zttato-ai-orchestrator
@@ -88,6 +84,17 @@ volumes:
   product-discovery:
     build: ./services/product-discovery
     container_name: zttato-product-discovery
+    environment:
+      MARKET_CRAWLER_URL: http://market-crawler:8000/products
+      HTTP_TIMEOUT: 5
+      HTTP_RETRIES: 3
+      HTTP_BACKOFF: 0.5
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     networks:
       - zttato-net
 
@@ -96,3 +103,11 @@ volumes:
     container_name: zttato-campaign-optimizer
     networks:
       - zttato-net
+
+volumes:
+  postgres-data:
+  grafana-data:
+
+networks:
+  zttato-net:
+    driver: bridge
