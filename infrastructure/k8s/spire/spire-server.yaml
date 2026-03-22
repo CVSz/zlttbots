@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spire-server
+  namespace: platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spire-server
+  template:
+    metadata:
+      labels:
+        app: spire-server
+    spec:
+      serviceAccountName: spire-server
+      containers:
+        - name: spire-server
+          image: ghcr.io/spiffe/spire-server:1.8.0
+          args: ["-config", "/run/spire/config/server.conf"]
+          ports:
+            - containerPort: 8081
+              name: api
+          volumeMounts:
+            - name: spire-config
+              mountPath: /run/spire/config
+              readOnly: true
+      volumes:
+        - name: spire-config
+          configMap:
+            name: spire-server-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spire-server
+  namespace: platform
+spec:
+  selector:
+    app: spire-server
+  ports:
+    - port: 8081
+      targetPort: api
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spire-server
+  namespace: platform
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-server-config
+  namespace: platform
+data:
+  server.conf: |
+    server {
+      bind_address = "0.0.0.0"
+      bind_port = "8081"
+      trust_domain = "zttato.internal"
+      data_dir = "/run/spire/data"
+      log_level = "INFO"
+      ca_subject = {
+        country = ["US"]
+        organization = ["zttato"]
+        common_name = "zttato platform spire"
+      }
+      default_x509_svid_ttl = "1h"
+    }

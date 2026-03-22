@@ -17,6 +17,10 @@ from treasury import Treasury
 from token_engine import ComputeTokenEngine
 from civilization import Civilization
 from sovereign_identity import build_heartbeat_identity
+from autonomy.ai_sre import evaluate as evaluate_sre
+from autonomy.p2p import default_envelope
+from autonomy.redteam import plan as plan_redteam
+from autonomy.simulation import World
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("rl-trainer")
@@ -37,6 +41,7 @@ replicator = Replicator()
 token_engine = ComputeTokenEngine()
 simulation = Civilization()
 identity = build_heartbeat_identity()
+world = World()
 
 market.register("node-1", capacity=10, price_per_unit=0.8, zone="us-east")
 market.register("node-2", capacity=5, price_per_unit=0.4, zone="us-west")
@@ -49,6 +54,10 @@ def build_autonomous_snapshot(features: np.ndarray, reward: float) -> dict[str, 
     coordination = strategy.coordinate([reward] * strategy.agents)
     replication = replicator.replicate()
     simulation.step()
+    world.step()
+    sre_incident = evaluate_sre(lambda: {"cpu": 0.2, "oom": 0.0, "kafka_lag": 10.0})
+    redteam_plan = plan_redteam("sandbox")
+    p2p_envelope = default_envelope("autonomous-snapshot")
     staked = token_engine.stake("worker-1", 100.0)
     rewarded = token_engine.reward("worker-1", 5.0)
     return {
@@ -65,6 +74,17 @@ def build_autonomous_snapshot(features: np.ndarray, reward: float) -> dict[str, 
         },
         "compute_economy": {"staked": staked, "rewarded": rewarded},
         "civilization": simulation.metrics(),
+        "nation_state": world.metrics(),
+        "ai_sre": {
+            "incident": sre_incident.name if sre_incident else None,
+            "severity": sre_incident.severity if sre_incident else None,
+        },
+        "redteam": redteam_plan,
+        "p2p": {
+            "topic": p2p_envelope.topic,
+            "max_hops": p2p_envelope.max_hops,
+            "signed": p2p_envelope.signed,
+        },
     }
 
 

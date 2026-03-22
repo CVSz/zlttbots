@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: spire-agent
+  namespace: platform
+spec:
+  selector:
+    matchLabels:
+      app: spire-agent
+  template:
+    metadata:
+      labels:
+        app: spire-agent
+    spec:
+      serviceAccountName: spire-agent
+      containers:
+        - name: spire-agent
+          image: ghcr.io/spiffe/spire-agent:1.8.0
+          args: ["-config", "/run/spire/config/agent.conf"]
+          volumeMounts:
+            - name: agent-config
+              mountPath: /run/spire/config
+              readOnly: true
+      volumes:
+        - name: agent-config
+          configMap:
+            name: spire-agent-config
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spire-agent
+  namespace: platform
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-agent-config
+  namespace: platform
+data:
+  agent.conf: |
+    agent {
+      data_dir = "/run/spire/data"
+      log_level = "INFO"
+      server_address = "spire-server"
+      server_port = "8081"
+      trust_domain = "zttato.internal"
+    }
