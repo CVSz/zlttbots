@@ -26,3 +26,13 @@ scrape_configs:
     metrics_path: /metrics
     static_configs:
       - targets: ["zttato-gpu-renderer:9300"]
+
+  - job_name: zttato-model-service
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["zttato-model-service:8000"]
+
+  - job_name: zttato-analytics
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["zttato-analytics:3000"]
