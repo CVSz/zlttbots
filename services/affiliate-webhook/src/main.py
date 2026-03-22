@@ -8,17 +8,26 @@ import psycopg2
 import requests
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
+from pydantic import BaseModel, Field
 
 app = FastAPI(title="Affiliate Webhook (Verified)")
 
 SECRET = os.getenv("AFFILIATE_WEBHOOK_SECRET", "")
-DB_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://zttato:zttato@postgres:5432/zttato",
-)
 DB_URL = os.getenv("DATABASE_URL", "postgresql://zttato:zttato@postgres:5432/zttato")
 REWARD_COLLECTOR_URL = os.getenv("REWARD_COLLECTOR_URL", "http://reward-collector:8000/reward")
+FEATURE_STORE_URL = os.getenv("FEATURE_STORE_URL", "http://feature-store:8000")
 TIMEOUT = int(os.getenv("HTTP_TIMEOUT", "10"))
+
+
+class ConversionEvent(BaseModel):
+    campaign_id: str = Field(min_length=1)
+    revenue: float = Field(default=0.0, ge=0.0)
+    clicks: int = Field(default=0, ge=0)
+    views: int = Field(default=0, ge=0)
+    conversions: int = Field(default=1, ge=1)
+    source: str = Field(default="affiliate")
+    affiliate_account_id: str | None = None
+    order_id: str | None = None
 
 
 def verify(signature: str, body: bytes) -> bool:
@@ -56,35 +65,46 @@ async def conversion(req: Request) -> dict[str, bool]:
     if not verify(signature, body):
         raise HTTPException(status_code=401, detail="invalid signature")
 
-    data = json.loads(body.decode())
-    campaign_id = data["campaign_id"]
-    revenue = float(data.get("revenue", 0))
+    event = ConversionEvent.model_validate(json.loads(body.decode()))
 
     with db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 """
                 INSERT INTO campaign_metrics (campaign_id, views, clicks, conversions, revenue)
-                VALUES (%s, 0, 0, 1, %s)
+                VALUES (%s, %s, %s, %s, %s)
                 """,
-                (campaign_id, revenue),
+                (event.campaign_id, event.views, event.clicks, event.conversions, event.revenue),
             )
 
     try:
+        feature_response = requests.post(
+            f"{FEATURE_STORE_URL}/features/{event.campaign_id}",
+            json={
+                "views": event.views,
+                "clicks": event.clicks,
+                "conversions": event.conversions,
+                "revenue": event.revenue,
+                "mode": "increment",
+            },
+            timeout=TIMEOUT,
+        )
+        feature_response.raise_for_status()
+
         response = requests.post(
             REWARD_COLLECTOR_URL,
             json={
-                "campaign_id": campaign_id,
-                "revenue": revenue,
-                "conversions": 1,
-                "clicks": int(data.get("clicks", 0)),
-                "views": int(data.get("views", 0)),
+                "campaign_id": event.campaign_id,
+                "revenue": event.revenue,
+                "conversions": event.conversions,
+                "clicks": event.clicks,
+                "views": event.views,
             },
             timeout=TIMEOUT,
         )
         response.raise_for_status()
     except requests.RequestException as exc:
-        raise HTTPException(status_code=502, detail=f"reward collector unavailable: {exc}") from exc
+        raise HTTPException(status_code=502, detail=f"downstream service unavailable: {exc}") from exc
 
     return {"ok": True}
 
