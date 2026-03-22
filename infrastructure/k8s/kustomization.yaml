@@ -8,6 +8,7 @@ resources:
   - deployments/click-tracker.yaml
   - deployments/admin-panel.yaml
   - deployments/postgres.yaml
+  - postgres/patroni.yaml
   - deployments/jwt-auth.yaml
   - deployments/gpu-renderer.yaml
   - services/analytics.yaml
@@ -15,6 +16,7 @@ resources:
   - services/jwt-auth.yaml
   - kafka/kafka.yaml
   - monitoring/prometheus.yaml
+  - jobs/self-modifier-job.yaml
   - mesh/service-mesh.yaml
   - mesh/rate-limit.yaml
   - spire/spire-server.yaml

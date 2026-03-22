@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: patroni
+spec:
+  clusterIP: None
+  selector:
+    app: patroni
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: patroni
+spec:
+  serviceName: patroni
+  replicas: 3
+  selector:
+    matchLabels:
+      app: patroni
+  template:
+    metadata:
+      labels:
+        app: patroni
+    spec:
+      containers:
+        - name: patroni
+          image: ghcr.io/zalando/spilo-15:3.2-p1
+          ports:
+            - containerPort: 5432
+              name: postgres
+            - containerPort: 8008
+              name: patroni
+          env:
+            - name: PATRONI_SCOPE
+              value: zttato-postgres
+            - name: PATRONI_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: PATRONI_POSTGRESQL_DATA_DIR
+              value: /home/postgres/pgdata/pgroot/data
+            - name: PATRONI_REPLICATION_USERNAME
+              value: replicator
+            - name: PATRONI_REPLICATION_PASSWORD
+              value: replicator-password
+            - name: PATRONI_SUPERUSER_USERNAME
+              value: postgres
+            - name: PATRONI_SUPERUSER_PASSWORD
+              value: postgres-password
+            - name: PATRONI_etcd3_host
+              value: etcd.platform.svc.cluster.local:2379
+          volumeMounts:
+            - name: data
+              mountPath: /home/postgres/pgdata
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 20Gi

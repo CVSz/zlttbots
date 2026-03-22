@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: self-modifier
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: self-modifier
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        fsGroup: 1000
+      containers:
+        - name: runner
+          image: zttato-self-modifier:latest
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "engine"]
+          env:
+            - name: KMS_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: platform-config
+                  key: kms_endpoint
+          securityContext:
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
