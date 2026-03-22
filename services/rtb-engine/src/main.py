@@ -24,10 +24,12 @@ from hierarchical_rl import HierarchicalRL
 from latency_bid import latency_adjusted_bid
 from long_term_reward import long_term_reward
 from ltv_model import LTVModel
+from rtb import RTBEngine
 
 app = FastAPI(title="RTB Engine")
 hrl = HierarchicalRL()
 ltv_model = LTVModel()
+ENGINE = RTBEngine()
 
 
 class BidRequest(BaseModel):
@@ -85,14 +87,17 @@ def bid(request: BidRequest) -> BidResponse:
     ev = request.ctr * request.cvr * request.score
     floor_bid = ENGINE.compute_bid(request.ctr, request.cvr, request.score)
     pacing_multiplier = 0.5 + (request.pacing_ratio / 2)
-    bid_price = max(floor_bid, latency_adjusted_bid(
-        base_bid=request.base_bid,
-        score=request.score,
-        latency_ms=request.latency_ms,
-        pacing_multiplier=pacing_multiplier,
-        ctr=request.ctr,
-        cvr=request.cvr,
-        max_bid=request.max_bid,
+    bid_price = max(
+        floor_bid,
+        latency_adjusted_bid(
+            base_bid=request.base_bid,
+            score=request.score,
+            latency_ms=request.latency_ms,
+            pacing_multiplier=pacing_multiplier,
+            ctr=request.ctr,
+            cvr=request.cvr,
+            max_bid=request.max_bid,
+        ),
     )
 
     features = [request.ctr, request.cvr]

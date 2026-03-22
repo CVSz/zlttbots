@@ -139,3 +139,65 @@ def test_tlearner_predicts_uplift():
     learner.fit(X, treatment, y)
     uplift = learner.predict_uplift(np.array([[0.85, 0.65]]))
     assert uplift.shape == (1,)
+
+
+
+def test_identity_signatures_round_trip(tmp_path):
+    pytest.importorskip("cryptography")
+    sys.path.insert(0, str(ROOT / 'services/identity'))
+    module = _load_module('test_identity_did', 'services/identity/did.py')
+    key = module.load_or_create_key(tmp_path / 'agent.pem')
+    did = module.get_did(key)
+    message_b64, signature_b64 = module.sign(key, {'op': 'heartbeat', 'did': did})
+    public_key = key.public_key().public_bytes(
+        encoding=module.serialization.Encoding.Raw,
+        format=module.serialization.PublicFormat.Raw,
+    )
+    assert did.startswith('did:zttato:')
+    assert module.verify(public_key, message_b64, signature_b64) is True
+
+
+def test_exchange_matches_orders_with_signature(tmp_path):
+    pytest.importorskip("cryptography")
+    sys.path.insert(0, str(ROOT / 'services/exchange/src'))
+    sys.path.insert(0, str(ROOT / 'services/identity'))
+    did_module = _load_module('test_exchange_did', 'services/identity/did.py')
+    app_module = _load_module('test_exchange_main', 'services/exchange/src/main.py')
+    key = did_module.load_or_create_key(tmp_path / 'exchange.pem')
+    client = TestClient(app_module.app)
+
+    def signed_order(side, price, qty, nonce):
+        payload = {'side': side, 'price': price, 'qty': qty, 'nonce': nonce}
+        message_b64, signature_b64 = did_module.sign(key, payload)
+        public_key_b64 = did_module.export_public_key(key)
+        return {
+            'side': side,
+            'price': price,
+            'qty': qty,
+            'nonce': nonce,
+            'message_b64': message_b64,
+            'signature_b64': signature_b64,
+            'public_key_b64': public_key_b64,
+        }
+
+    buy = client.post('/order', json=signed_order('buy', 1.0, 10.0, 'n-1'))
+    sell = client.post('/order', json=signed_order('sell', 0.9, 5.0, 'n-2'))
+
+    assert buy.status_code == 200
+    assert sell.status_code == 200
+    assert sell.json()['trades'][0]['qty'] == 5.0
+    assert client.post('/order', json=signed_order('sell', 0.9, 1.0, 'n-2')).json()['error'] == 'replay'
+
+
+def test_rl_trainer_autonomous_snapshot_includes_new_subsystems(tmp_path):
+    pytest.importorskip("cryptography")
+    sys.path.insert(0, str(ROOT / 'services/rl-trainer/src'))
+    module = _load_module('test_rl_trainer_main', 'services/rl-trainer/src/main.py')
+    module.identity = module.build_heartbeat_identity(tmp_path / 'trainer.pem')
+    import numpy as np
+
+    snapshot = module.build_autonomous_snapshot(np.array([0.3, 0.4]), 1.2)
+
+    assert snapshot['identity']['did'].startswith('did:zttato:')
+    assert snapshot['compute_economy']['staked'] >= 100.0
+    assert 'avg_capital' in snapshot['civilization']

@@ -12,7 +12,11 @@ from agent_replicator import Replicator
 from compute_market import ComputeMarket
 from global_strategy import StrategyOptimizer
 from ppo import PPO
+from reward import compute_reward
 from treasury import Treasury
+from token_engine import ComputeTokenEngine
+from civilization import Civilization
+from sovereign_identity import build_heartbeat_identity
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("rl-trainer")
@@ -30,6 +34,9 @@ market = ComputeMarket()
 treasury = Treasury()
 strategy = StrategyOptimizer()
 replicator = Replicator()
+token_engine = ComputeTokenEngine()
+simulation = Civilization()
+identity = build_heartbeat_identity()
 
 market.register("node-1", capacity=10, price_per_unit=0.8, zone="us-east")
 market.register("node-2", capacity=5, price_per_unit=0.4, zone="us-west")
@@ -41,12 +48,23 @@ def build_autonomous_snapshot(features: np.ndarray, reward: float) -> dict[str, 
     assigned_worker = market.assign({"demand": max(float(np.linalg.norm(features)), 1.0)})
     coordination = strategy.coordinate([reward] * strategy.agents)
     replication = replicator.replicate()
+    simulation.step()
+    staked = token_engine.stake("worker-1", 100.0)
+    rewarded = token_engine.reward("worker-1", 5.0)
     return {
         "allocation": allocation.round(6).tolist(),
         "hedge_amount": hedge_amount,
         "assigned_worker": assigned_worker.worker_id if assigned_worker else None,
         "coordination": coordination,
         "replication": replication,
+        "identity": {
+            "did": identity["did"],
+            "message_b64": identity["message_b64"],
+            "signature_b64": identity["signature_b64"],
+            "public_key_b64": identity["public_key_b64"],
+        },
+        "compute_economy": {"staked": staked, "rewarded": rewarded},
+        "civilization": simulation.metrics(),
     }
 
 
