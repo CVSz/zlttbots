@@ -34,3 +34,4 @@ export DATABASE_URL=postgresql://...
 - All components validate required inputs.
 - Webhook processing explicitly rejects missing `campaign_id`, `click_id`, or `event_id`.
 - ROI and profit-loop decisions are deterministic for the same inputs.
+- Governance, human-override, and business-infrastructure controls are documented in `docs/operations/profit-system-governance.md`.

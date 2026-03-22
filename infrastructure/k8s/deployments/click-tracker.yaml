@@ -16,7 +16,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: tracker
-          image: zttato/click-tracker:latest
+          image: zttato/click-tracker:v1.0.0
           ports:
             - containerPort: 8080
           resources:

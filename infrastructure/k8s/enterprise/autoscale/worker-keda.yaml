@@ -1,0 +1,16 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: worker-kafka-scale
+spec:
+  scaleTargetRef:
+    name: model-service
+  minReplicaCount: 1
+  maxReplicaCount: 30
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: redpanda.platform.svc.cluster.local:9092
+        topic: inference_jobs
+        consumerGroup: model-service
+        lagThreshold: "50"

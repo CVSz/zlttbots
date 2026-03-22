@@ -16,7 +16,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: analytics
-          image: zttato/analytics:latest
+          image: zttato/analytics:v1.0.0
           ports:
             - containerPort: 9000
           resources:

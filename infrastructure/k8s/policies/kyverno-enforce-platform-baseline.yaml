@@ -1,0 +1,58 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: enforce-zttato-platform-baseline
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-run-as-non-root
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+      validate:
+        message: "pod securityContext.runAsNonRoot must be true"
+        pattern:
+          spec:
+            template:
+              spec:
+                securityContext:
+                  runAsNonRoot: true
+    - name: disallow-latest-tag
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+      validate:
+        message: "container image tag latest is forbidden"
+        foreach:
+          - list: "request.object.spec.template.spec.containers"
+            deny:
+              conditions:
+                any:
+                  - key: "{{ regex_match('^.+:latest$', element.image) }}"
+                    operator: Equals
+                    value: true
+    - name: require-cpu-memory-resources
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+      validate:
+        message: "containers must define cpu/memory requests and limits"
+        pattern:
+          spec:
+            template:
+              spec:
+                containers:
+                  - resources:
+                      requests:
+                        cpu: "?*"
+                        memory: "?*"
+                      limits:
+                        cpu: "?*"
+                        memory: "?*"
