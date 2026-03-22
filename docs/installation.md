@@ -137,6 +137,16 @@ bash start.sh
 
 This helper will create `.env` if needed, validate Compose config, and start the stack with build enabled.
 
+### Managed installer / upgrade / deploy flow
+
+```bash
+bash scripts/zttato-manager.sh install
+bash scripts/zttato-manager.sh upgrade
+bash scripts/zttato-manager.sh deploy
+```
+
+Use these commands when you want a clearer lifecycle split between preparing the workstation, refreshing images, and doing a full local deployment.
+
 ### Full bootstrap script
 
 ```bash
