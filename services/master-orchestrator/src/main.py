@@ -1,9 +1,10 @@
-from typing import Any
+from typing import Any, Literal
+from urllib.parse import quote
 
 import requests
 import uvicorn
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 
 from distributed_loop import run_cycle
 from economy_loop import run_economy
@@ -12,6 +13,47 @@ from kafka_producer import emit_decision
 
 app = FastAPI(title="Master Orchestrator")
 TIMEOUT = 10
+
+
+CLICK_TRACKER_URL = "http://click-tracker:8080"
+PAYMENT_GATEWAY_URL = "http://payment-gateway:8000"
+
+
+class PaymentConfig(BaseModel):
+    provider: Literal["stripe", "crypto"] = "stripe"
+    amount: float = Field(gt=0)
+    currency: str = Field(default="usd", min_length=3, max_length=8)
+    success_url: HttpUrl
+    cancel_url: HttpUrl
+    wallet_address: str | None = None
+
+
+class ProfitModeRequest(BaseModel):
+    campaign_id: str = Field(min_length=1)
+    video_url: HttpUrl
+    caption: str = Field(min_length=1, max_length=2200)
+    landing_url: HttpUrl
+    affiliate_product_id: str | None = Field(default=None, min_length=1)
+    tenant_id: str = Field(default="default", min_length=1)
+    region: str = Field(default="global", min_length=2)
+    market: str = Field(default="US", min_length=2, max_length=8)
+    payment: PaymentConfig
+    max_budget: float = Field(default=100.0, gt=0)
+    daily_cap: float = Field(default=50.0, gt=0)
+    base_bid: float = Field(default=0.25, gt=0)
+
+
+class ProfitModeResponse(BaseModel):
+    campaign_id: str
+    tracked_destination_url: str
+    features: dict[str, Any]
+    model: dict[str, Any]
+    rl: dict[str, Any]
+    budget: dict[str, Any]
+    bid: dict[str, Any]
+    execution: dict[str, Any]
+    payment: dict[str, Any]
+    audit: dict[str, Any]
 
 
 def safe_call(method, url: str, **kwargs: Any) -> dict[str, Any]:
@@ -82,6 +124,31 @@ def run_federated_task_endpoint(request: FederatedTaskRequest) -> dict[str, Any]
     return run_global_task(request.campaign_id, request.tenant_id, request.region)
 
 
+def build_tracked_destination(campaign_id: str, landing_url: str, affiliate_product_id: str | None = None) -> str:
+    if affiliate_product_id:
+        return f"{CLICK_TRACKER_URL}/go/{campaign_id}/{quote(affiliate_product_id)}"
+    return f"{CLICK_TRACKER_URL}/r/{campaign_id}?to={quote(landing_url, safe='')}"
+
+
+def create_checkout(request: ProfitModeRequest, tracked_destination_url: str) -> dict[str, Any]:
+    payload = {
+        "provider": request.payment.provider,
+        "campaign_id": request.campaign_id,
+        "amount": request.payment.amount,
+        "currency": request.payment.currency.lower(),
+        "success_url": str(request.payment.success_url),
+        "cancel_url": str(request.payment.cancel_url),
+        "wallet_address": request.payment.wallet_address,
+        "metadata": {
+            "campaign_id": request.campaign_id,
+            "tenant_id": request.tenant_id,
+            "market": request.market,
+            "tracked_destination_url": tracked_destination_url,
+        },
+    }
+    return safe_call(requests.post, f"{PAYMENT_GATEWAY_URL}/checkout", json=payload)
+
+
 @app.post("/campaign/run", response_model=CampaignDecision)
 def run_campaign(offer: Offer) -> CampaignDecision:
     cycle = run_cycle(offer.id)
@@ -120,6 +187,71 @@ def run_campaign(offer: Offer) -> CampaignDecision:
         bid=cycle["bid"],
         scaling=cycle["scale"],
         execution=execution,
+    )
+
+
+@app.post("/profit-mode/activate", response_model=ProfitModeResponse)
+def activate_profit_mode(request: ProfitModeRequest) -> ProfitModeResponse:
+    safe_call(
+        requests.post,
+        f"http://feature-store:8000/features/{request.campaign_id}",
+        json={
+            "max_budget": request.max_budget,
+            "daily_cap": request.daily_cap,
+            "base_bid": request.base_bid,
+            "mode": "increment",
+        },
+    )
+    cycle = run_cycle(request.campaign_id)
+    model = safe_call(requests.post, "http://model-service:8000/predict", json=cycle["features"])
+    tracked_destination_url = build_tracked_destination(
+        request.campaign_id,
+        str(request.landing_url),
+        request.affiliate_product_id,
+    )
+    execution = safe_call(
+        requests.post,
+        "http://execution-engine:9600/publish",
+        json={
+            "campaign_id": request.campaign_id,
+            "video_url": str(request.video_url),
+            "caption": request.caption,
+            "destination_url": tracked_destination_url,
+        },
+    )
+    payment = create_checkout(request, tracked_destination_url)
+    audit = {
+        "tenant_id": request.tenant_id,
+        "region": request.region,
+        "market": request.market,
+        "payment_provider": request.payment.provider,
+        "tracked_destination_url": tracked_destination_url,
+        "profit_mode": True,
+    }
+    emit_decision(
+        {
+            "campaign_id": request.campaign_id,
+            "features": cycle["features"],
+            "model": model,
+            "rl": cycle["rl"],
+            "budget": cycle["budget"],
+            "bid": cycle["bid"],
+            "execution": execution,
+            "payment": payment,
+            "audit": audit,
+        }
+    )
+    return ProfitModeResponse(
+        campaign_id=request.campaign_id,
+        tracked_destination_url=tracked_destination_url,
+        features=cycle["features"],
+        model=model,
+        rl=cycle["rl"],
+        budget=cycle["budget"],
+        bid=cycle["bid"],
+        execution=execution,
+        payment=payment,
+        audit=audit,
     )
 
 
