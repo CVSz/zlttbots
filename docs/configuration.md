@@ -18,7 +18,7 @@ This document is the full configuration reference for the current zTTato reposit
 
 ### App/service-local config
 - `package.json` / framework configs in Node services
-- Python service defaults in each `src/main.py` or supporting module
+- Python service defaults in each service entrypoint module (commonly `src/main.py`) or supporting module
 - PM2-oriented wrapper scripts under `scripts/`
 
 ## 2) Core baseline environment variables
