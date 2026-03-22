@@ -9,6 +9,8 @@ from services.analytics.unit_economics import UnitEconomics
 from services.core.profit_loop import ProfitLoop
 from services.cost.guard import DailyCostGuard
 from services.cost.controls import SpendControlPlane
+from services.core.profit_loop import ProfitLoop
+from services.cost.guard import DailyCostGuard
 
 
 class DummyROIRepo:
