@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from enterprise_maturity.v3_runtime import (
     APIGateway,
     AutoScaler,
@@ -7,13 +9,18 @@ from enterprise_maturity.v3_runtime import (
     EnterpriseRuntime,
     GPUScheduler,
     GPUNode,
+    PolicyFix,
+    PolicyViolation,
     QueueMessage,
+    RenderJob,
+    RegionalMetric,
     Route,
     ServiceDiscovery,
     ServiceInstance,
+    StageTiming,
     WorkerPool,
-    RenderJob,
 )
+from enterprise_maturity.v3_runtime.deployment_pipeline import NotificationBridge
 
 
 def test_api_gateway_uses_service_discovery_round_robin() -> None:
@@ -91,3 +98,74 @@ def test_enterprise_runtime_bootstrap_and_components() -> None:
     assert route_target.startswith("http://market-crawler")
     assert runtime.queue.depth("video.render") == 1
     assert assigned in {"gpu-a10-1", "gpu-a10-2", "gpu-l4-1"}
+
+
+def test_multi_region_canary_auto_rollback_and_pipeline_optimization() -> None:
+    runtime = EnterpriseRuntime()
+
+    assessment = runtime.evaluate_multi_region_canary(
+        [
+            RegionalMetric("us-east-1", baseline_error_rate=0.01, canary_error_rate=0.015, baseline_latency_ms=120, canary_latency_ms=140),
+            RegionalMetric("eu-west-1", baseline_error_rate=0.01, canary_error_rate=0.05, baseline_latency_ms=110, canary_latency_ms=220),
+        ]
+    )
+    assert assessment.decision == "rollback"
+    assert assessment.rollback_regions == ("eu-west-1",)
+
+    plan = runtime.optimize_pipeline_execution(
+        [
+            StageTiming(stage="lint", duration_seconds=40, parallelizable=True),
+            StageTiming(stage="type-check", duration_seconds=55, parallelizable=True),
+            StageTiming(stage="security-scan", duration_seconds=90, parallelizable=True),
+            StageTiming(stage="integration-tests", duration_seconds=120, parallelizable=False),
+            StageTiming(stage="deploy", duration_seconds=45, parallelizable=False),
+        ]
+    )
+
+    assert plan.ordered_groups[0] == ("security-scan", "type-check", "lint")
+    assert plan.predicted_duration_seconds == 255
+    assert plan.recommended_timeout_seconds > plan.predicted_duration_seconds
+
+
+def test_policy_analytics_persistence_manifest_healing_and_notifications(tmp_path: Path) -> None:
+    runtime = EnterpriseRuntime(policy_db_path=str(tmp_path / "policy.db"))
+
+    violation_id = runtime.record_policy_violation(
+        PolicyViolation(
+            policy="container.readOnlyRootFilesystem",
+            resource="deployment/renderer",
+            severity="high",
+            details="Container filesystem is writable",
+        )
+    )
+    fix_id = runtime.record_policy_fix(
+        PolicyFix(
+            violation_id=violation_id,
+            action="Set securityContext.readOnlyRootFilesystem=true",
+            actor="auto-healer",
+            notes="Applied and verified via policy engine",
+        )
+    )
+    snapshot = runtime.policy_store.snapshot()
+
+    assert violation_id == 1
+    assert fix_id == 1
+    assert len(snapshot["violations"]) == 1
+    assert len(snapshot["fixes"]) == 1
+
+    docker_drift = runtime.detect_manifest_drift(
+        kind="docker",
+        name="renderer-stack",
+        desired={"services": {"renderer": {"restart": "always"}}},
+        current={"services": {"renderer": {"restart": "on-failure"}}},
+    )
+    assert docker_drift is not None
+    healed = runtime.heal_manifest(docker_drift)
+    assert healed == {"services": {"renderer": {"restart": "always"}}}
+
+    runtime.notification_bridge = NotificationBridge(telegram_enabled=True, discord_enabled=True)
+    notifications = runtime.prepare_auto_fix_notifications(
+        message="Policy auto-fix applied",
+        metadata={"violation_id": violation_id, "fix_id": fix_id},
+    )
+    assert set(notifications.keys()) == {"telegram", "discord"}
