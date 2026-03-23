@@ -11,9 +11,15 @@ ENV OMP_NUM_THREADS=1 \
     PYTHONUNBUFFERED=1 \
     ENABLE_SGX=${ENABLE_SGX}
 
-RUN apt-get update && apt-get install -y \
-    libgomp1 \
-    && rm -rf /var/lib/apt/lists/*
+RUN set -eux; \
+    attempts=0; \
+    until [ "$attempts" -ge 5 ]; do \
+      apt-get update && break; \
+      attempts=$((attempts + 1)); \
+      sleep $((attempts * 2)); \
+    done; \
+    apt-get install -y --no-install-recommends libgomp1; \
+    rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 
