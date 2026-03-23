@@ -1,6 +1,6 @@
 fastapi==0.116.1
-uvicorn==0.34.0  # feast==0.54.0 constraint: <=0.34.0
-pydantic==2.10.6  # feast==0.54.0 constraint: ==2.10.6
+uvicorn==0.35.0
+pydantic==2.10.6
 numpy==2.0.2
 torch==2.2.2
 confluent-kafka==2.5.0
