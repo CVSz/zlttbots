@@ -18,8 +18,9 @@ RUN set -eux; \
       attempts=$((attempts + 1)); \
       sleep $((attempts * 2)); \
     done; \
-    apt-get install -y --no-install-recommends libgomp1; \
-    rm -rf /var/lib/apt/lists/*
+    mkdir -p /tmp/apt-cache/archives/partial; \
+    apt-get -o Dir::Cache::archives=/tmp/apt-cache/archives install -y --no-install-recommends libgomp1; \
+    rm -rf /var/lib/apt/lists/* /tmp/apt-cache
 
 COPY requirements.txt .
 
