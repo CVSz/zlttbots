@@ -12,14 +12,22 @@ ENV OMP_NUM_THREADS=1 \
     ENABLE_SGX=${ENABLE_SGX}
 
 RUN set -eux; \
-    attempts=0; \
-    until [ "$attempts" -ge 5 ]; do \
-      apt-get update && break; \
-      attempts=$((attempts + 1)); \
+    mkdir -p /tmp/apt-cache/archives/partial; \
+    install_ok=0; \
+    for attempts in 1 2 3 4 5; do \
+      if apt-get update \
+        && apt-get -o Dir::Cache::archives=/tmp/apt-cache/archives install -y --no-install-recommends libgomp1; then \
+        install_ok=1; \
+        break; \
+      fi; \
+      echo "apt-get failed on attempt ${attempts}; retrying..."; \
+      rm -rf /var/lib/apt/lists/*; \
       sleep $((attempts * 2)); \
     done; \
-    mkdir -p /tmp/apt-cache/archives/partial; \
-    apt-get -o Dir::Cache::archives=/tmp/apt-cache/archives install -y --no-install-recommends libgomp1; \
+    if [ "$install_ok" -ne 1 ]; then \
+      echo "Failed to install libgomp1 after 5 attempts"; \
+      exit 1; \
+    fi; \
     rm -rf /var/lib/apt/lists/* /tmp/apt-cache
 
 COPY requirements.txt .
