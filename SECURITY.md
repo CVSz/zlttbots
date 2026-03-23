@@ -2,20 +2,42 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+Security fixes are provided for the latest major release line.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+| Version | Supported |
+| ------- | --------- |
+| 2.0.x   | ✅ |
+| 1.x.x   | ❌ |
+| < 1.0   | ❌ |
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+To report a suspected vulnerability, use one of the channels below:
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+- **Email:** `security@zeazdev.com`
+- **Backup channel:** Open a private security advisory in GitHub for this repository.
+
+Please include:
+
+1. A clear summary of the issue and affected component(s).
+2. Reproduction steps or proof-of-concept details.
+3. Potential impact and suggested mitigations (if available).
+4. Your preferred contact information for follow-up.
+
+## Response Process and SLA
+
+- **Acknowledgement target:** within 2 business days.
+- **Initial triage target:** within 5 business days.
+- **Status updates:** at least every 7 calendar days while remediation is in progress.
+- **Resolution goal:** critical issues are prioritized for the nearest patch release.
+
+## Disclosure Policy
+
+- Do **not** publicly disclose vulnerabilities before a fix is released.
+- Coordinated disclosure is preferred.
+- Reporters acting in good faith will be credited in release notes unless they request anonymity.
+
+## Scope Notes
+
+This policy covers code and infrastructure definitions in this repository.
+Third-party dependencies and external integrations should also be reported if the repository usage introduces exploitable risk.
