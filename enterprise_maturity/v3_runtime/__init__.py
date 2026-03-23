@@ -3,6 +3,20 @@
 from .api_gateway import APIGateway, Route
 from .autoscaling import AutoScaler, WorkerPool
 from .crawler_cluster import CrawlerClusterManager, CrawlJob
+from .deployment_pipeline import (
+    CanaryAssessment,
+    ManifestDrift,
+    ManifestSelfHealer,
+    MultiRegionCanaryManager,
+    NotificationBridge,
+    OptimizationPlan,
+    PipelineAIOptimizer,
+    PolicyAnalyticsStore,
+    PolicyFix,
+    PolicyViolation,
+    RegionalMetric,
+    StageTiming,
+)
 from .gpu_scheduler import GPUScheduler, GPUNode, RenderJob
 from .orchestrator import EnterpriseRuntime
 from .queue_system import CentralQueue, QueueMessage
@@ -15,6 +29,18 @@ __all__ = [
     "WorkerPool",
     "CrawlJob",
     "CrawlerClusterManager",
+    "CanaryAssessment",
+    "ManifestDrift",
+    "ManifestSelfHealer",
+    "MultiRegionCanaryManager",
+    "NotificationBridge",
+    "OptimizationPlan",
+    "PipelineAIOptimizer",
+    "PolicyAnalyticsStore",
+    "PolicyFix",
+    "PolicyViolation",
+    "RegionalMetric",
+    "StageTiming",
     "GPUScheduler",
     "GPUNode",
     "RenderJob",
