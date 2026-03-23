@@ -14,7 +14,7 @@ ENV OMP_NUM_THREADS=1 \
 COPY requirements.txt .
 
 RUN pip install --upgrade pip \
- && pip install --no-cache-dir -r requirements.txt
+ && pip install --no-cache-dir --prefer-binary -r requirements.txt
 
 COPY src ./src
 COPY sgx_entry.sh ./sgx_entry.sh
