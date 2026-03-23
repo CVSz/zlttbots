@@ -25,8 +25,11 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+      billing-service:
+        condition: service_started
     environment:
       - KAFKA_BROKERS=kafka:9092
+      - BILLING_SERVICE_URL=http://billing-service:3002
 
   worker-ai:
     build: ../apps/worker-ai
@@ -35,6 +38,26 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
 
+  auth-service:
+    build: ../apps/auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      - JWT_SECRET=${JWT_SECRET:-please-set-a-32-char-minimum-secret-key}
+
+  billing-service:
+    build: ../apps/billing-service
+    ports:
+      - "3002:3002"
+    environment:
+      - STRIPE_KEY=${STRIPE_KEY:-}
+      - STRIPE_PRO_PRICE_ID=${STRIPE_PRO_PRICE_ID:-}
+
+  log-service:
+    build: ../apps/log-service
+    ports:
+      - "6000:6000"
+
   api-gateway:
     build: ../apps/api-gateway
     ports:
@@ -42,6 +65,14 @@ services:
     depends_on:
       - platform-core
       - worker-ai
+      - auth-service
+      - billing-service
+      - log-service
+    environment:
+      - JWT_SECRET=${JWT_SECRET:-please-set-a-32-char-minimum-secret-key}
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - BILLING_SERVICE_URL=http://billing-service:3002
+      - LOG_SERVICE_URL=http://log-service:6000
 
   frontend:
     build: ../apps/frontend
