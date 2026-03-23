@@ -1,0 +1,23 @@
+{
+  "include_roots": [
+    "apps",
+    "packages",
+    "services",
+    "scripts"
+  ],
+  "entrypoints": [
+    "apps/api-gateway/src/index.ts",
+    "apps/auth-service/src/index.ts",
+    "apps/billing-service/src/index.ts",
+    "apps/platform-core/src/index.ts",
+    "apps/worker-ai/src/index.ts",
+    "services/ai-video-generator/src/index.js",
+    "services/market-orchestrator/src/index.py",
+    "scripts/repo_cleanup_audit.py"
+  ],
+  "protected_files": [
+    "apps/frontend/src/main.tsx",
+    "apps/frontend/src/App.tsx",
+    "scripts/start.ts"
+  ]
+}
