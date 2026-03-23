@@ -1,3 +1,5 @@
+import { useState } from "react";
+import Landing from "./Landing";
 import { useEffect, useState } from "react";
 import Logs from "./Logs";
 
@@ -11,6 +13,8 @@ export default function App() {
   const [project, setProject] = useState("");
   const [repo, setRepo] = useState("");
   const [status, setStatus] = useState("Idle");
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
   const [token, setToken] = useState(localStorage.getItem("token") ?? "");
   const [gallery, setGallery] = useState<Array<{ projectId: string; url: string }>>([]);
 
@@ -76,6 +80,43 @@ export default function App() {
   }, [token]);
 
   return (
+    <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif", maxWidth: 760, margin: "0 auto" }}>
+      <Landing onStartFree={() => setShowSignup(true)} />
+
+      <section
+        style={{
+          marginTop: "1.5rem",
+          background: "#f9fafb",
+          borderRadius: "12px",
+          padding: "1rem",
+          border: "1px solid #e5e7eb",
+        }}
+      >
+        <h2 style={{ marginTop: 0 }}>Live AI Demo</h2>
+        <p style={{ marginBottom: 0 }}>❌ Build failed → 🤖 AI analyzing... → ✅ Fixed & deployed</p>
+      </section>
+
+      <section style={{ marginTop: "1.5rem" }}>
+        <h2 style={{ fontSize: "1.3rem" }}>Deploy Console</h2>
+        {showSignup ? (
+          <p style={{ color: "#111827" }}>
+            Signup step simulated. Connect GitHub, then deploy your first app.
+          </p>
+        ) : null}
+
+        <input
+          style={{ width: "100%", padding: "0.6rem", marginTop: "1rem" }}
+          placeholder="Project ID"
+          onChange={(e) => setProject(e.target.value)}
+        />
+
+        <button
+          style={{ marginTop: "1rem", padding: "0.6rem 1rem" }}
+          onClick={deploy}
+          disabled={isDeploying}
+        >
+          {isDeploying ? "Deploying..." : "Deploy"}
+        </button>
     <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif", maxWidth: 840 }}>
       <h1>ZTTATO SaaS Console</h1>
       <p>Auth, deploy, GitHub 1-click pipeline, and real-time logs.</p>
@@ -109,9 +150,10 @@ export default function App() {
       <h2>Live Logs</h2>
       <Logs />
 
-      <div style={{ marginTop: "1rem" }}>
-        <strong>Status:</strong> {status}
-      </div>
+        <div style={{ marginTop: "1rem" }}>
+          <strong>Status:</strong> {status}
+        </div>
+      </section>
     </div>
   );
 }

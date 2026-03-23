@@ -2,6 +2,8 @@ import express from "express";
 import { Kafka } from "kafkajs";
 import pino from "pino";
 import { z } from "zod";
+import crypto from "node:crypto";
+import { Pool } from "pg";
 import { checkLimits } from "./limits.js";
 import { createOrg, addMember, getOrg, requireRole } from "./org.js";
 import { generatePublicUrl } from "./public.js";
@@ -24,6 +26,16 @@ const deployPayloadSchema = z.object({
   actor: z.string().min(1).max(128).optional(),
   repo: z.string().min(1).max(500).optional(),
 });
+
+const databaseUrl = process.env.DATABASE_URL;
+const dbPool = databaseUrl
+  ? new Pool({
+      connectionString: databaseUrl,
+      max: Number(process.env.DB_POOL_MAX ?? "10"),
+      idleTimeoutMillis: Number(process.env.DB_IDLE_TIMEOUT_MS ?? "30000"),
+      ssl: process.env.DB_SSL_MODE === "require" ? { rejectUnauthorized: false } : undefined,
+    })
+  : null;
 
 const githubDeploySchema = z.object({
   repo: z.string().min(1).max(500),
@@ -48,7 +60,15 @@ type DeployRecord = {
 
 const deployments: DeployRecord[] = [];
 const app = express();
+app.disable("x-powered-by");
 app.use(express.json({ limit: "1mb" }));
+
+app.use((req, res, next) => {
+  const requestId = req.header("x-request-id") ?? crypto.randomUUID();
+  res.setHeader("x-request-id", requestId);
+  req.headers["x-request-id"] = requestId;
+  next();
+});
 
 const kafka = new Kafka({ brokers: kafkaBrokers });
 const producer = kafka.producer();
@@ -63,7 +83,7 @@ function requireUserContext(req: express.Request): { userId: string; tenantId: s
 }
 
 app.get("/healthz", (_req, res) => {
-  res.status(200).json({ ok: true, service: "platform-core" });
+  res.status(200).json({ ok: true, service: "platform-core", database: Boolean(dbPool) });
 });
 
 app.get("/github/repos", async (req, res) => {
@@ -78,8 +98,10 @@ app.get("/github/repos", async (req, res) => {
 
 app.post("/deploy", async (req, res) => {
   const parsed = deployPayloadSchema.safeParse(req.body);
+  const requestId = req.header("x-request-id") ?? crypto.randomUUID();
 
   if (!parsed.success) {
+    logger.warn({ requestId, details: parsed.error.flatten() }, "deploy.invalid_payload");
     return res.status(400).json({
       ok: false,
       error: "Invalid request payload",
@@ -87,6 +109,34 @@ app.post("/deploy", async (req, res) => {
     });
   }
 
+  const deployId = crypto.randomUUID();
+
+  await producer.send({
+    topic: process.env.DEPLOY_TOPIC ?? "deploy.started",
+    messages: [{ value: JSON.stringify({ deployId, ...parsed.data, requestId }) }],
+  });
+
+  if (dbPool) {
+    await dbPool.query(
+      `INSERT INTO deployments (id, project_id, status, url)
+       VALUES ($1, $2, $3, $4)`,
+      [deployId, parsed.data.projectId, "QUEUED", null],
+    );
+  }
+
+  logger.info(
+    {
+      service: "platform-core",
+      event: "deploy.started",
+      requestId,
+      deployId,
+      projectId: parsed.data.projectId,
+      timestamp: Date.now(),
+    },
+    "deploy.started",
+  );
+
+  return res.status(202).json({ ok: true, status: "QUEUED", deployId });
   const { userId, tenantId } = requireUserContext(req);
   const limits = await checkLimits(userId);
   const tenantDeployments = deployments.filter((entry) => entry.tenantId === tenantId).length;
@@ -166,17 +216,38 @@ app.post("/orgs/:orgId/members", (req, res) => {
   }
 });
 
+async function initDatabase() {
+  if (!dbPool) {
+    logger.warn("DATABASE_URL is not configured; deployment persistence is disabled");
+    return;
+  }
+
+  await dbPool.query(`
+    CREATE TABLE IF NOT EXISTS deployments (
+      id UUID PRIMARY KEY,
+      project_id TEXT NOT NULL,
+      status TEXT NOT NULL,
+      url TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+}
+
 async function start() {
   try {
     await producer.connect();
+    await initDatabase();
 
     const server = app.listen(port, () => {
-      logger.info({ port }, "platform-core started");
+      logger.info({ port, kafkaBrokers }, "platform-core.started");
     });
 
     const shutdown = async (signal: string) => {
-      logger.info({ signal }, "Shutting down platform-core");
+      logger.info({ signal }, "platform-core.shutdown");
       await producer.disconnect();
+      if (dbPool) {
+        await dbPool.end();
+      }
       server.close(() => process.exit(0));
     };
 
