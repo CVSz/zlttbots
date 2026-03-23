@@ -98,6 +98,12 @@ bash scripts/zttato-manager.sh upgrade
 bash scripts/zttato-manager.sh deploy
 ```
 
+Or use the full-stack installer workflow:
+
+```bash
+bash installer/full-stack-installer.sh deploy
+```
+
 ### 3) Verify health
 
 ```bash
@@ -154,6 +160,7 @@ bash scripts/zttato-node.sh status
 - Installation: `docs/installation.md`
 - Quick start: `docs/quick-start.md`
 - Configuration: `docs/configuration.md`
+- Full-stack installer guide: `docs/full-stack-installation.md`
 
 ### Manuals
 - User manual: `docs/manuals/user-manual.md`
