@@ -2,6 +2,10 @@ import express from "express";
 import { Kafka } from "kafkajs";
 import pino from "pino";
 import { z } from "zod";
+import { checkLimits } from "./limits.js";
+import { createOrg, addMember, getOrg, requireRole } from "./org.js";
+import { generatePublicUrl } from "./public.js";
+import { getRepos } from "./github.js";
 
 const logger = pino({ level: process.env.LOG_LEVEL ?? "info" });
 const port = Number(process.env.PLATFORM_CORE_PORT ?? "4000");
@@ -18,16 +22,58 @@ const deployPayloadSchema = z.object({
   projectId: z.string().min(1).max(128),
   branch: z.string().min(1).max(128).optional(),
   actor: z.string().min(1).max(128).optional(),
+  repo: z.string().min(1).max(500).optional(),
 });
 
+const githubDeploySchema = z.object({
+  repo: z.string().min(1).max(500),
+});
+
+const createOrgSchema = z.object({
+  name: z.string().min(1).max(120),
+});
+
+const addMemberSchema = z.object({
+  userId: z.string().min(1).max(128),
+  role: z.enum(["ADMIN", "MEMBER"]).default("MEMBER"),
+});
+
+type DeployRecord = {
+  projectId: string;
+  url: string;
+  isPublic: boolean;
+  createdAt: string;
+  tenantId: string;
+};
+
+const deployments: DeployRecord[] = [];
 const app = express();
 app.use(express.json({ limit: "1mb" }));
 
 const kafka = new Kafka({ brokers: kafkaBrokers });
 const producer = kafka.producer();
 
+function requireUserContext(req: express.Request): { userId: string; tenantId: string } {
+  const userId = req.header("x-user-id");
+  const tenantId = req.header("x-tenant-id");
+  if (!userId || !tenantId) {
+    throw new Error("Missing user context");
+  }
+  return { userId, tenantId };
+}
+
 app.get("/healthz", (_req, res) => {
   res.status(200).json({ ok: true, service: "platform-core" });
+});
+
+app.get("/github/repos", async (req, res) => {
+  const token = req.header("x-github-token");
+  if (!token) {
+    return res.status(400).json({ ok: false, error: "x-github-token header required" });
+  }
+
+  const repos = await getRepos(token);
+  return res.status(200).json({ ok: true, repos });
 });
 
 app.post("/deploy", async (req, res) => {
@@ -41,13 +87,83 @@ app.post("/deploy", async (req, res) => {
     });
   }
 
+  const { userId, tenantId } = requireUserContext(req);
+  const limits = await checkLimits(userId);
+  const tenantDeployments = deployments.filter((entry) => entry.tenantId === tenantId).length;
+  if (tenantDeployments >= limits.maxDeploys) {
+    return res.status(403).json({ ok: false, error: "Deploy limit reached. Upgrade required." });
+  }
+
   await producer.send({
     topic: process.env.DEPLOY_TOPIC ?? "deploy.started",
-    messages: [{ value: JSON.stringify(parsed.data) }],
+    messages: [{ value: JSON.stringify({ ...parsed.data, tenantId, userId }) }],
   });
 
-  logger.info({ projectId: parsed.data.projectId }, "Deployment event published");
-  return res.status(202).json({ ok: true, status: "QUEUED" });
+  const record: DeployRecord = {
+    projectId: parsed.data.projectId,
+    url: generatePublicUrl(parsed.data.projectId),
+    isPublic: true,
+    createdAt: new Date().toISOString(),
+    tenantId,
+  };
+  deployments.push(record);
+
+  logger.info({ projectId: parsed.data.projectId, tenantId }, "Deployment event published");
+  return res.status(202).json({ ok: true, status: "QUEUED", deploy: record });
+});
+
+app.post("/deploy/github", async (req, res) => {
+  const parsed = githubDeploySchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ ok: false, error: "Invalid GitHub deploy payload" });
+  }
+
+  const { userId, tenantId } = requireUserContext(req);
+  await producer.send({
+    topic: process.env.DEPLOY_TOPIC ?? "deploy.started",
+    messages: [{ value: JSON.stringify({ repo: parsed.data.repo, tenantId, userId }) }],
+  });
+
+  logger.info({ repo: parsed.data.repo, tenantId }, "GitHub deployment queued");
+  return res.status(202).json({ ok: true, status: "BUILD_STARTED" });
+});
+
+app.get("/projects/public", (_req, res) => {
+  const publicProjects = deployments.filter((item) => item.isPublic);
+  return res.status(200).json({ ok: true, projects: publicProjects });
+});
+
+app.post("/orgs", (req, res) => {
+  const parsed = createOrgSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ ok: false, error: "Invalid organization payload" });
+  }
+
+  const { userId } = requireUserContext(req);
+  const org = createOrg(parsed.data.name, userId);
+  return res.status(201).json({ ok: true, org });
+});
+
+app.post("/orgs/:orgId/members", (req, res) => {
+  const parsed = addMemberSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ ok: false, error: "Invalid membership payload" });
+  }
+
+  const { userId } = requireUserContext(req);
+  const org = getOrg(req.params.orgId);
+  if (!org) {
+    return res.status(404).json({ ok: false, error: "Organization not found" });
+  }
+
+  try {
+    requireRole(userId, org, ["OWNER", "ADMIN"]);
+    const updatedOrg = addMember(req.params.orgId, parsed.data.userId, parsed.data.role);
+    return res.status(200).json({ ok: true, org: updatedOrg });
+  } catch (error) {
+    logger.warn({ error, orgId: req.params.orgId, userId }, "Organization role check failed");
+    return res.status(403).json({ ok: false, error: "Forbidden" });
+  }
 });
 
 async function start() {
