@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Literal
 from urllib.parse import quote
 
@@ -6,6 +7,11 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, HttpUrl
 
+from deployment_controller import (
+    DeploymentCreateRequest,
+    DeploymentEventRequest,
+    DeploymentStore,
+)
 from distributed_loop import run_cycle
 from economy_loop import run_economy
 from federated_loop import run_global_task
@@ -13,10 +19,12 @@ from kafka_producer import emit_decision
 
 app = FastAPI(title="Master Orchestrator")
 TIMEOUT = 10
+logging.basicConfig(level=logging.INFO)
 
 
 CLICK_TRACKER_URL = "http://click-tracker:8080"
 PAYMENT_GATEWAY_URL = "http://payment-gateway:8000"
+deployment_store = DeploymentStore()
 
 
 class PaymentConfig(BaseModel):
@@ -105,6 +113,54 @@ class FederatedTaskRequest(BaseModel):
 @app.get("/healthz")
 def healthz() -> dict[str, Any]:
     return {"status": "ok", "service": "master-orchestrator"}
+
+
+@app.post("/deployments")
+def create_deployment(payload: DeploymentCreateRequest) -> dict[str, Any]:
+    deployment = deployment_store.create(payload)
+    emit_decision(
+        {
+            "event_type": "deploy.requested",
+            "deployment_id": deployment.deployment_id,
+            "project_id": deployment.project_id,
+            "environment": deployment.environment,
+            "state": deployment.state,
+            "created_at": deployment.created_at,
+        }
+    )
+    return deployment.model_dump()
+
+
+@app.get("/deployments/{deployment_id}")
+def get_deployment(deployment_id: str) -> dict[str, Any]:
+    try:
+        deployment = deployment_store.get(deployment_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="deployment not found") from exc
+    return deployment.model_dump()
+
+
+@app.post("/deployments/events")
+def handle_deployment_event(payload: DeploymentEventRequest) -> dict[str, Any]:
+    try:
+        deployment = deployment_store.apply_event(payload)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="deployment not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    emit_decision(
+        {
+            "event_type": payload.event_type,
+            "deployment_id": deployment.deployment_id,
+            "project_id": deployment.project_id,
+            "environment": deployment.environment,
+            "state": deployment.state,
+            "updated_at": deployment.updated_at,
+            "source": payload.source,
+        }
+    )
+    return deployment.model_dump()
 
 
 
