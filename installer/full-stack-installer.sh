@@ -43,6 +43,17 @@ require_cmd() {
   command -v "$cmd" >/dev/null 2>&1 || fail "Missing required command: $cmd"
 }
 
+file_has_pattern() {
+  local pattern="$1"
+  local file="$2"
+
+  if command -v rg >/dev/null 2>&1; then
+    rg -q "$pattern" "$file"
+  else
+    grep -Eq "$pattern" "$file"
+  fi
+}
+
 compose_cmd() {
   if docker compose version >/dev/null 2>&1; then
     docker compose "$@"
@@ -86,11 +97,11 @@ validate_env_security() {
     fail "Missing .env. Run 'config' command first."
   fi
 
-  if rg -q '^AFFILIATE_WEBHOOK_SECRET=change-me$' "$ENV_FILE"; then
+  if file_has_pattern '^AFFILIATE_WEBHOOK_SECRET=change-me$' "$ENV_FILE"; then
     fail "AFFILIATE_WEBHOOK_SECRET is using default 'change-me'. Update .env before deploy."
   fi
 
-  if rg -q '^PLATFORM_API_KEY=$' "$ENV_FILE"; then
+  if file_has_pattern '^PLATFORM_API_KEY=$' "$ENV_FILE"; then
     log "PLATFORM_API_KEY is empty; external execution-engine integrations may fail until configured."
   fi
 
