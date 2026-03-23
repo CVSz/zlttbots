@@ -1,23 +1,17 @@
 from __future__ import annotations
 
-from pathlib import Path
-import sys
 from typing import Any
 
-import uvicorn
-from fastapi import FastAPI
-from pydantic import BaseModel, Field
+from pathlib import Path
+import sys
 
 CURRENT_DIR = Path(__file__).resolve().parent
 if str(CURRENT_DIR) not in sys.path:
     sys.path.insert(0, str(CURRENT_DIR))
 
-REPO_ROOT = CURRENT_DIR.parents[2]
-RL_TRAINER_SRC = REPO_ROOT / "services" / "rl-trainer" / "src"
-ANALYTICS_DIR = REPO_ROOT / "services" / "analytics"
-for extra_path in (RL_TRAINER_SRC, ANALYTICS_DIR):
-    if str(extra_path) not in sys.path:
-        sys.path.insert(0, str(extra_path))
+import uvicorn
+from fastapi import FastAPI
+from pydantic import BaseModel, Field
 
 from causal_rl import doubly_robust
 from hierarchical_rl import HierarchicalRL
