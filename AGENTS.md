@@ -53,8 +53,6 @@ Rules:
 - Use async patterns where applicable
 - No hardcoded secrets
 
----
-
 ### 2. 🔍 SECURITY_AUDIT_AGENT
 Responsibilities:
 - Scan code for vulnerabilities:
@@ -72,8 +70,6 @@ Must:
 - Reject insecure PRs
 - Auto-patch where possible
 
----
-
 ### 3. 🚀 DEPLOYMENT_AGENT
 Responsibilities:
 - Generate:
@@ -89,8 +85,6 @@ Rules:
   - Graceful shutdown
 - Use environment variables (12-factor)
 
----
-
 ### 4. 🧠 AI_ORCHESTRATOR_AGENT
 Responsibilities:
 - Manage:
@@ -102,8 +96,6 @@ Responsibilities:
   - Timeout control
   - Cost optimization
 
----
-
 ### 5. 🗂 REPO_MANAGER_AGENT
 Responsibilities:
 - Maintain repo structure
@@ -111,8 +103,6 @@ Responsibilities:
 - Validate:
   - No duplicate logic
   - Clean architecture boundaries
-
----
 
 ### 6. 📦 INSTALLER_AGENT
 Responsibilities:
@@ -144,7 +134,6 @@ MANDATORY:
 ## 📁 PROJECT STRUCTURE (ENFORCED)
 
 ```
-
 /ai
 /core
 /services
@@ -155,7 +144,6 @@ MANDATORY:
 /zttato-manager
 /config
 /tests
-
 ```
 
 Rules:
