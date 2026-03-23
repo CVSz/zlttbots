@@ -2,7 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on Keep a Changelog and this project follows Semantic Versioning.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.0.1] - 2026-03-23
+
+### Changed
+
+- Refined root `.gitignore` to cover Python/Node caches, local temp output, and report artifacts while preserving `.env.example` tracking.
+- Updated the root agent governance specification to include final output and conflict-resolution directives.
+- Updated README operational guidance, support links, and license alignment for easier onboarding.
+- Replaced the placeholder security policy template with a concrete reporting and response process.
+- Standardized repository legal and support metadata in root documentation files.
 
 ## [2.0.0] - 2026-03-12
 
