@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Landing from "./Landing";
 
 type DeployResponse = {
   ok: boolean;
@@ -10,6 +11,7 @@ export default function App() {
   const [project, setProject] = useState("");
   const [status, setStatus] = useState("Idle");
   const [isDeploying, setIsDeploying] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
 
   const deploy = async () => {
     if (!project.trim()) {
@@ -40,27 +42,48 @@ export default function App() {
   };
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif", maxWidth: 680 }}>
-      <h1 style={{ fontSize: "1.8rem" }}>ZTTATO Dashboard</h1>
-      <p>Deploy your project to the platform orchestration pipeline.</p>
+    <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif", maxWidth: 760, margin: "0 auto" }}>
+      <Landing onStartFree={() => setShowSignup(true)} />
 
-      <input
-        style={{ width: "100%", padding: "0.6rem", marginTop: "1rem" }}
-        placeholder="Project ID"
-        onChange={(e) => setProject(e.target.value)}
-      />
-
-      <button
-        style={{ marginTop: "1rem", padding: "0.6rem 1rem" }}
-        onClick={deploy}
-        disabled={isDeploying}
+      <section
+        style={{
+          marginTop: "1.5rem",
+          background: "#f9fafb",
+          borderRadius: "12px",
+          padding: "1rem",
+          border: "1px solid #e5e7eb",
+        }}
       >
-        {isDeploying ? "Deploying..." : "Deploy"}
-      </button>
+        <h2 style={{ marginTop: 0 }}>Live AI Demo</h2>
+        <p style={{ marginBottom: 0 }}>❌ Build failed → 🤖 AI analyzing... → ✅ Fixed & deployed</p>
+      </section>
 
-      <div style={{ marginTop: "1rem" }}>
-        <strong>Status:</strong> {status}
-      </div>
+      <section style={{ marginTop: "1.5rem" }}>
+        <h2 style={{ fontSize: "1.3rem" }}>Deploy Console</h2>
+        {showSignup ? (
+          <p style={{ color: "#111827" }}>
+            Signup step simulated. Connect GitHub, then deploy your first app.
+          </p>
+        ) : null}
+
+        <input
+          style={{ width: "100%", padding: "0.6rem", marginTop: "1rem" }}
+          placeholder="Project ID"
+          onChange={(e) => setProject(e.target.value)}
+        />
+
+        <button
+          style={{ marginTop: "1rem", padding: "0.6rem 1rem" }}
+          onClick={deploy}
+          disabled={isDeploying}
+        >
+          {isDeploying ? "Deploying..." : "Deploy"}
+        </button>
+
+        <div style={{ marginTop: "1rem" }}>
+          <strong>Status:</strong> {status}
+        </div>
+      </section>
     </div>
   );
 }
