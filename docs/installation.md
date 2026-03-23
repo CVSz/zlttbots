@@ -25,6 +25,23 @@ Use this if you want:
 ### Path C — Node application fleet
 Use this when you specifically need the admin panel or the separate Node services.
 
+### Path D — dedicated single-file SaaS installer (new)
+Use this when you need the ZEAZ-style one-shot provisioning flow adapted for zTTato on a fresh Ubuntu 24.04 VM. It provisions `/opt/zttato-platform`, generates secrets, creates TLS certs, writes Docker/K8s artifacts, configures UFW, and installs cron/systemd jobs.
+
+Run:
+
+```bash
+sudo bash installer/zttato-ai-full-stack-installer.sh --domain your-domain
+```
+
+Optional flags:
+
+```bash
+--cert-email admin@your-domain
+--export-zip
+--skip-full-pack
+```
+
 ## 2) Prerequisites
 
 ### Required for baseline Compose
