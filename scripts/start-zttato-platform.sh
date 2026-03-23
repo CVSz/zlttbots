@@ -7,6 +7,19 @@ cd "$ROOT_DIR"
 log(){ printf '[start] %s\n' "$*"; }
 fail(){ printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 
+readonly CORE_SERVICES=(
+  postgres
+  redis
+  viral-predictor
+  market-crawler
+  arbitrage-engine
+  gpu-renderer
+  crawler-worker
+  arbitrage-worker
+  renderer-worker
+  nginx
+)
+
 compose_cmd(){
   if docker compose version >/dev/null 2>&1; then
     docker compose "$@"
@@ -21,6 +34,45 @@ ensure_env(){
   [[ -f .env ]] || bash "$ROOT_DIR/scripts/install-zttato-platform.sh"
 }
 
+print_usage(){
+  cat <<'USAGE'
+Usage: start-zttato-platform.sh [--core|--full]
+
+Modes:
+  --core  Start only core runtime services to reduce build/storage usage.
+  --full  Start the full platform stack (default).
+
+Environment override:
+  ZTTATO_STACK_MODE=core|full
+USAGE
+}
+
+STACK_MODE=""
+
+resolve_mode(){
+  STACK_MODE="${ZTTATO_STACK_MODE:-full}"
+
+  while (($#)); do
+    case "$1" in
+      --core) STACK_MODE="core" ;;
+      --full) STACK_MODE="full" ;;
+      -h|--help)
+        print_usage
+        exit 0
+        ;;
+      *)
+        fail "unknown argument: $1 (use --help)"
+        ;;
+    esac
+    shift
+  done
+
+  case "$STACK_MODE" in
+    core|full) ;;
+    *) fail "invalid ZTTATO_STACK_MODE '$STACK_MODE' (allowed: core|full)" ;;
+  esac
+}
+
 smoke_check(){
   local url="$1"
   local name="$2"
@@ -31,11 +83,17 @@ smoke_check(){
   fi
 }
 
+resolve_mode "$@"
 ensure_env
 log "Validating compose configuration"
 compose_cmd config >/dev/null
-log "Building and starting compose stack"
-compose_cmd up -d --build --remove-orphans
+if [[ "$STACK_MODE" == "core" ]]; then
+  log "Building and starting CORE compose stack (reduced footprint)"
+  compose_cmd up -d --build --remove-orphans "${CORE_SERVICES[@]}"
+else
+  log "Building and starting FULL compose stack"
+  compose_cmd up -d --build --remove-orphans
+fi
 log "Current compose status"
 compose_cmd ps
 

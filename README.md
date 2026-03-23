@@ -88,7 +88,10 @@ Or use the repository bootstrap helper:
 
 ```bash
 bash start.sh
+bash scripts/start-zttato-platform.sh --core   # reduced footprint mode
 ```
+
+> `--core` starts only the essential runtime services (postgres, redis, API edge and workers) so low-disk hosts avoid building the full 30+ image stack.
 
 Or use the new platform manager flows:
 
