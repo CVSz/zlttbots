@@ -1,5 +1,5 @@
 {
-  "name": "@zttato/platform-core",
+  "name": "@zttato/auth-service",
   "private": true,
   "type": "module",
   "scripts": {
@@ -7,14 +7,15 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "axios": "^1.11.0",
+    "argon2": "^0.44.0",
     "express": "^4.21.2",
-    "kafkajs": "^2.2.4",
+    "jsonwebtoken": "^9.0.2",
     "pino": "^9.7.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.10",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2"
   }

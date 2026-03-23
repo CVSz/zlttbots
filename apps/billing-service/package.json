@@ -1,5 +1,5 @@
 {
-  "name": "@zttato/platform-core",
+  "name": "@zttato/billing-service",
   "private": true,
   "type": "module",
   "scripts": {
@@ -7,10 +7,9 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "axios": "^1.11.0",
     "express": "^4.21.2",
-    "kafkajs": "^2.2.4",
     "pino": "^9.7.0",
+    "stripe": "^18.4.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
