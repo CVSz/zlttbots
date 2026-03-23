@@ -1,4 +1,4 @@
-FROM python:3.11-slim-bullseye
+FROM python:3.11-bookworm
 
 WORKDIR /app
 
@@ -10,13 +10,6 @@ ENV OMP_NUM_THREADS=1 \
     ORT_ENABLE_CPU_MEM_ARENA=1 \
     PYTHONUNBUFFERED=1 \
     ENABLE_SGX=${ENABLE_SGX}
-
-RUN set -eux; \
-    export DEBIAN_FRONTEND=noninteractive; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends \
-      libgomp1; \
-    rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 
