@@ -1,7 +1,7 @@
 from collections import defaultdict
-from engine.commission import commission_rate
 
-def detect(products):
+
+def detect(products, payout_lookup):
 
     grouped = defaultdict(list)
 
@@ -10,7 +10,7 @@ def detect(products):
 
     opportunities = []
 
-    for name,items in grouped.items():
+    for name, items in grouped.items():
 
         if len(items) < 2:
             continue
@@ -25,7 +25,10 @@ def detect(products):
                 buy_price = buy["price"]
                 sell_price = sell["price"]
 
-                commission = commission_rate(sell["source"])
+                product_id = str(sell.get("id", ""))
+                commission = payout_lookup(sell["source"], product_id)
+                if commission is None:
+                    continue
 
                 revenue = sell_price * commission
 
@@ -33,13 +36,16 @@ def detect(products):
 
                 if profit > 1:
 
-                    opportunities.append({
-                        "product": name,
-                        "buy": buy["source"],
-                        "sell": sell["source"],
-                        "buy_price": buy_price,
-                        "sell_price": sell_price,
-                        "profit": profit
-                    })
+                    opportunities.append(
+                        {
+                            "product": name,
+                            "buy": buy["source"],
+                            "sell": sell["source"],
+                            "buy_price": buy_price,
+                            "sell_price": sell_price,
+                            "profit": profit,
+                            "commission_rate": commission,
+                        }
+                    )
 
     return opportunities

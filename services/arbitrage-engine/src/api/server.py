@@ -1,17 +1,81 @@
+from __future__ import annotations
+
 import os
 import time
+from datetime import date
 
 import psycopg2
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, HTTPException, Response
+from pydantic import BaseModel, Field
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
+from connectors.client import UnifiedAffiliateClient
+from connectors.contracts import AffiliateNetwork, ProductCommission
+from core.database import (
+    MEMORY_STORE,
+    ProductPayoutRecord,
+    PublishingJob,
+    get_daily_counter,
+    get_posted_product_reporting,
+    record_performance,
+    record_video,
+    upsert_product_payout,
+)
 from metrics import request_counter, request_latency
+from publishing.controller import DailyPublishingController
 
 app = FastAPI()
+client = UnifiedAffiliateClient()
+controller = DailyPublishingController()
+
+
+class PayoutIngestRequest(BaseModel):
+    network: AffiliateNetwork
+    product_id: str = Field(min_length=1, max_length=128)
+    payout_rate: float = Field(ge=0, le=1)
+    currency: str = Field(default="USD", min_length=3, max_length=3)
+
+
+class AffiliateSyncRequest(BaseModel):
+    network: AffiliateNetwork
+    auth_token: str = Field(min_length=16)
+
+
+class PublishJobRequest(BaseModel):
+    tenant_id: str = Field(min_length=1)
+    product_id: str = Field(min_length=1)
+    video_id: str = Field(min_length=1)
+    destination_url: str = Field(min_length=1)
+
+
+class DailyRunRequest(BaseModel):
+    tenant_id: str = Field(min_length=1)
+    simulation: "PublishSimulationResult"
+
+
+class PerformanceIngestRequest(BaseModel):
+    tenant_id: str = Field(min_length=1)
+    product_id: str = Field(min_length=1)
+    clicks: int = Field(ge=0)
+    conversions: int = Field(ge=0)
+    revenue: float = Field(ge=0)
+
+
+class VideoIngestRequest(BaseModel):
+    video_id: str = Field(min_length=1)
+    tenant_id: str = Field(min_length=1)
+    product_id: str = Field(min_length=1)
+    title: str = Field(min_length=1, max_length=256)
+
+
+class PublishSimulationResult(BaseModel):
+    status: str = Field(default="submitted")
+    external_id: str | None = None
+    network: AffiliateNetwork = AffiliateNetwork.TIKTOK
 
 
 def get_db():
-    return psycopg2.connect(os.environ['DB_URL'])
+    return psycopg2.connect(os.environ["DB_URL"])
 
 
 @app.get('/healthz')
@@ -70,3 +134,95 @@ def list_events():
     request_counter.inc()
     request_latency.observe(time.perf_counter() - start)
     return result
+
+
+@app.post('/affiliate/payouts/ingest')
+def ingest_payout(payload: PayoutIngestRequest):
+    record = ProductCommission(
+        network=payload.network,
+        product_id=payload.product_id,
+        payout_rate=payload.payout_rate,
+        currency=payload.currency,
+    )
+    upsert_product_payout(
+        ProductPayoutRecord(
+            network=record.network.value,
+            product_id=record.product_id,
+            payout_rate=record.payout_rate,
+            currency=record.currency,
+            freshness_ts=record.fetched_at,
+        )
+    )
+    return {"ok": True, "freshness_ts": record.fetched_at.isoformat()}
+
+
+@app.post('/affiliate/sync')
+def sync_affiliate(payload: AffiliateSyncRequest):
+    snapshot = client.fetch_network_snapshot(payload.network, payload.auth_token)
+    for commission in snapshot.commissions:
+        upsert_product_payout(
+            ProductPayoutRecord(
+                network=commission.network.value,
+                product_id=commission.product_id,
+                payout_rate=commission.payout_rate,
+                currency=commission.currency,
+                freshness_ts=commission.fetched_at,
+            )
+        )
+    return {
+        "ok": True,
+        "network": payload.network,
+        "commissions": len(snapshot.commissions),
+        "orders": len(snapshot.orders),
+        "fetched_at": snapshot.fetched_at.isoformat(),
+    }
+
+
+@app.post('/publishing/jobs')
+def enqueue_publish_job(payload: PublishJobRequest):
+    from core.database import enqueue_publish_job as queue_push
+
+    queue_push(PublishingJob(**payload.model_dump()))
+    return {"ok": True}
+
+
+@app.post('/publishing/run-daily')
+def run_daily(payload: DailyRunRequest):
+    def publish_fn(job: PublishingJob) -> dict:
+        return payload.simulation.model_dump()
+
+    result = controller.run_for_tenant(payload.tenant_id, publish_fn)
+    return result
+
+
+@app.get('/publishing/counters/{tenant_id}')
+def get_counter(tenant_id: str):
+    day_key = date.today().isoformat()
+    return {"tenant_id": tenant_id, "day": day_key, "published": get_daily_counter(tenant_id, day_key)}
+
+
+@app.post('/videos')
+def ingest_video(payload: VideoIngestRequest):
+    record_video(payload.video_id, payload.model_dump())
+    return {"ok": True}
+
+
+@app.post('/performance')
+def ingest_performance(payload: PerformanceIngestRequest):
+    record_performance(
+        tenant_id=payload.tenant_id,
+        product_id=payload.product_id,
+        payload={"clicks": payload.clicks, "conversions": payload.conversions, "revenue": payload.revenue},
+    )
+    return {"ok": True}
+
+
+@app.get('/reporting/posted-products/{tenant_id}')
+def posted_product_reporting(tenant_id: str):
+    if not tenant_id:
+        raise HTTPException(status_code=400, detail="tenant_id required")
+    return {
+        "tenant_id": tenant_id,
+        "rows": get_posted_product_reporting(tenant_id),
+        "dead_letters": [entry for entry in MEMORY_STORE.dead_letters if entry["tenant_id"] == tenant_id],
+    }
