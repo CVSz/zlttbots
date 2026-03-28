@@ -4,6 +4,6 @@ boto3==1.40.30
 ray[rllib]==2.54.0
 scikit-learn==1.7.1
 
-cryptography==46.0.5
+cryptography==46.0.6
 fastapi==0.116.1
 pydantic==2.11.7
