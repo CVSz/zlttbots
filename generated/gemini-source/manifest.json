@@ -1,0 +1,22 @@
+{
+  "artifacts": [
+    {
+      "digest": "d9bae99148808a78",
+      "kind": "patch",
+      "source_index": 1,
+      "suggested_path": "patches/patch_0001.diff"
+    },
+    {
+      "digest": "b1fbde7f0f6e86c2",
+      "kind": "heredoc_file",
+      "source_index": 1,
+      "suggested_path": "files/zttato-enterprise-fix.patch"
+    }
+  ],
+  "counts": {
+    "heredoc_file": 1,
+    "hinted_file": 0,
+    "patch": 1
+  },
+  "total": 2
+}
