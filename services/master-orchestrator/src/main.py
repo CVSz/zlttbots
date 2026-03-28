@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Any, Literal
 from urllib.parse import quote
 
@@ -20,12 +21,18 @@ from federated_loop import run_global_task
 from kafka_producer import emit_decision
 
 app = FastAPI(title="Master Orchestrator")
-TIMEOUT = 10
+TIMEOUT = float(os.getenv("HTTP_TIMEOUT_SECONDS", "10"))
+HTTP_RETRY_TOTAL = int(os.getenv("HTTP_RETRY_TOTAL", "3"))
+HTTP_RETRY_BACKOFF = float(os.getenv("HTTP_RETRY_BACKOFF", "0.5"))
 logging.basicConfig(level=logging.INFO)
 
 
-CLICK_TRACKER_URL = "http://click-tracker:8080"
-PAYMENT_GATEWAY_URL = "http://payment-gateway:8000"
+CLICK_TRACKER_URL = os.getenv("CLICK_TRACKER_URL", "http://click-tracker:8080")
+PAYMENT_GATEWAY_URL = os.getenv("PAYMENT_GATEWAY_URL", "http://payment-gateway:8000")
+FEATURE_STORE_URL = os.getenv("FEATURE_STORE_URL", "http://feature-store:8000")
+MODEL_SERVICE_URL = os.getenv("MODEL_SERVICE_URL", "http://model-service:8000")
+EXECUTION_ENGINE_URL = os.getenv("EXECUTION_ENGINE_URL", "http://execution-engine:9600")
+APP_PORT = int(os.getenv("MASTER_ORCHESTRATOR_PORT", "8000"))
 deployment_store = DeploymentStore()
 
 
@@ -70,13 +77,13 @@ def safe_call(method_func, url: str, **kwargs: Any) -> dict[str, Any]:
     kwargs.setdefault("timeout", TIMEOUT)
     session = requests.Session()
     retries = Retry(
-        total=3,
-        connect=3,
-        read=3,
-        status=3,
-        backoff_factor=0.5,
+        total=HTTP_RETRY_TOTAL,
+        connect=HTTP_RETRY_TOTAL,
+        read=HTTP_RETRY_TOTAL,
+        status=HTTP_RETRY_TOTAL,
+        backoff_factor=HTTP_RETRY_BACKOFF,
         status_forcelist=[502, 503, 504],
-        allowed_methods={"DELETE", "GET", "HEAD", "OPTIONS", "POST", "PUT", "TRACE"},
+        allowed_methods={"DELETE", "GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH"},
     )
     adapter = HTTPAdapter(max_retries=retries)
     session.mount("http://", adapter)
@@ -227,10 +234,10 @@ def create_checkout(request: ProfitModeRequest, tracked_destination_url: str) ->
 @app.post("/campaign/run", response_model=CampaignDecision)
 def run_campaign(offer: Offer) -> CampaignDecision:
     cycle = run_cycle(offer.id)
-    model = safe_call(requests.post, "http://model-service:8000/predict", json=cycle["features"])
+    model = safe_call(requests.post, f"{MODEL_SERVICE_URL}/predict", json=cycle["features"])
     execution = safe_call(
         requests.post,
-        "http://execution-engine:9600/publish",
+        f"{EXECUTION_ENGINE_URL}/publish",
         json={
             "campaign_id": offer.id,
             "video_url": offer.video_url,
@@ -269,7 +276,7 @@ def run_campaign(offer: Offer) -> CampaignDecision:
 def activate_profit_mode(request: ProfitModeRequest) -> ProfitModeResponse:
     safe_call(
         requests.post,
-        f"http://feature-store:8000/features/{request.campaign_id}",
+        f"{FEATURE_STORE_URL}/features/{request.campaign_id}",
         json={
             "max_budget": request.max_budget,
             "daily_cap": request.daily_cap,
@@ -278,7 +285,7 @@ def activate_profit_mode(request: ProfitModeRequest) -> ProfitModeResponse:
         },
     )
     cycle = run_cycle(request.campaign_id)
-    model = safe_call(requests.post, "http://model-service:8000/predict", json=cycle["features"])
+    model = safe_call(requests.post, f"{MODEL_SERVICE_URL}/predict", json=cycle["features"])
     tracked_destination_url = build_tracked_destination(
         request.campaign_id,
         str(request.landing_url),
@@ -286,7 +293,7 @@ def activate_profit_mode(request: ProfitModeRequest) -> ProfitModeResponse:
     )
     execution = safe_call(
         requests.post,
-        "http://execution-engine:9600/publish",
+        f"{EXECUTION_ENGINE_URL}/publish",
         json={
             "campaign_id": request.campaign_id,
             "video_url": str(request.video_url),
@@ -331,4 +338,4 @@ def activate_profit_mode(request: ProfitModeRequest) -> ProfitModeResponse:
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=APP_PORT)
