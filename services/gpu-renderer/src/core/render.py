@@ -10,11 +10,12 @@ def _should_use_cuda() -> bool:
     if hwaccel_mode in {"none", "cpu", "off", "false", "0"}:
         return False
 
-    if hwaccel_mode in {"cuda", "nvidia", "gpu", "on", "true", "1"}:
+    # Strict check: Even if requested, verify binary presence to prevent crash.
+    has_nvidia = shutil.which("nvidia-smi") is not None
+    if hwaccel_mode in {"cuda", "nvidia", "gpu", "on", "true", "1"} and has_nvidia:
         return True
 
-    # auto mode
-    return shutil.which("nvidia-smi") is not None
+    return has_nvidia if hwaccel_mode == "auto" else False
 
 
 def build_ffmpeg_command(job):

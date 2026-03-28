@@ -12,7 +12,9 @@ app = FastAPI(title="jwt-auth", version="1.0.0")
 
 JWT_ISSUER = os.getenv("JWT_ISSUER", "https://jwt-auth.platform.svc.cluster.local")
 JWT_AUDIENCE = os.getenv("JWT_AUDIENCE", "zttato-platform")
-JWT_SECRET = os.getenv("JWT_SECRET", "change-me-in-production")
+JWT_SECRET = os.getenv("JWT_SECRET")
+if not JWT_SECRET or JWT_SECRET == "change-me-in-production":
+    raise RuntimeError("CRITICAL: JWT_SECRET is not set or uses insecure default.")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 DEFAULT_TOKEN_TTL_MINUTES = int(os.getenv("JWT_TTL_MINUTES", "30"))
 
