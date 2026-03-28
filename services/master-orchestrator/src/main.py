@@ -6,6 +6,8 @@ import requests
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, HttpUrl
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from deployment_controller import (
     DeploymentCreateRequest,
@@ -64,10 +66,27 @@ class ProfitModeResponse(BaseModel):
     audit: dict[str, Any]
 
 
-def safe_call(method, url: str, **kwargs: Any) -> dict[str, Any]:
+def safe_call(method_func, url: str, **kwargs: Any) -> dict[str, Any]:
     kwargs.setdefault("timeout", TIMEOUT)
+    session = requests.Session()
+    retries = Retry(
+        total=3,
+        connect=3,
+        read=3,
+        status=3,
+        backoff_factor=0.5,
+        status_forcelist=[502, 503, 504],
+        allowed_methods={"DELETE", "GET", "HEAD", "OPTIONS", "POST", "PUT", "TRACE"},
+    )
+    adapter = HTTPAdapter(max_retries=retries)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+
+    method_name = getattr(method_func, "__name__", "").lower()
+    if method_name not in {"get", "post", "put", "patch", "delete", "head", "options"}:
+        raise HTTPException(status_code=500, detail=f"Unsupported HTTP method callable: {method_func}")
     try:
-        response = method(url, **kwargs)
+        response = getattr(session, method_name)(url, **kwargs)
         response.raise_for_status()
         return response.json()
     except requests.RequestException as exc:
