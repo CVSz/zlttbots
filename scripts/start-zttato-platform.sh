@@ -30,6 +30,38 @@ compose_cmd(){
   fi
 }
 
+is_snapshot_cache_error(){
+  local log_file="$1"
+  grep -Eq 'failed to prepare extraction snapshot|parent snapshot .* does not exist' "$log_file"
+}
+
+compose_up_with_recovery(){
+  local -a compose_args=("$@")
+  local tmp_log
+  tmp_log="$(mktemp)"
+
+  set +e
+  compose_cmd up -d --build --remove-orphans "${compose_args[@]}" 2>&1 | tee "$tmp_log"
+  local up_status=${PIPESTATUS[0]}
+  set -e
+
+  if [[ $up_status -eq 0 ]]; then
+    rm -f "$tmp_log"
+    return 0
+  fi
+
+  if is_snapshot_cache_error "$tmp_log"; then
+    log "Detected corrupted Docker BuildKit snapshot cache; pruning builder cache and retrying once"
+    docker builder prune -af >/dev/null
+    compose_cmd up -d --build --remove-orphans "${compose_args[@]}"
+    rm -f "$tmp_log"
+    return 0
+  fi
+
+  rm -f "$tmp_log"
+  return "$up_status"
+}
+
 ensure_env(){
   [[ -f .env ]] || bash "$ROOT_DIR/scripts/install-zttato-platform.sh"
 }
@@ -89,10 +121,10 @@ log "Validating compose configuration"
 compose_cmd config >/dev/null
 if [[ "$STACK_MODE" == "core" ]]; then
   log "Building and starting CORE compose stack (reduced footprint)"
-  compose_cmd up -d --build --remove-orphans "${CORE_SERVICES[@]}"
+  compose_up_with_recovery "${CORE_SERVICES[@]}"
 else
   log "Building and starting FULL compose stack"
-  compose_cmd up -d --build --remove-orphans
+  compose_up_with_recovery
 fi
 log "Current compose status"
 compose_cmd ps
