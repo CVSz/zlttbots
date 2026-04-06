@@ -4,7 +4,7 @@ import logging
 import os
 import re
 import shlex
-import subprocess
+import asyncio
 from dataclasses import dataclass
 from typing import Iterable
 
@@ -39,7 +39,7 @@ class Replicator:
         ssh_target = f"{target.user}@{target.host}"
         cmd = ["ssh", ssh_target, remote_command]
         log.info("deploying autonomous node to %s with runtime=%s", ssh_target, target.runtime)
-        completed = subprocess.run(cmd, check=False, capture_output=True, text=True)  # nosec B603
+        completed = asyncio.run(_execute_ssh_command(cmd))
         if completed.returncode != 0:
             log.warning("deployment to %s failed: %s", ssh_target, completed.stderr.strip())
         return completed.returncode
@@ -102,3 +102,23 @@ def _validate_runtime(runtime: str) -> None:
 def _validate_image(image: str) -> None:
     if not _IMAGE_PATTERN.fullmatch(image):
         raise ValueError("invalid container image reference")
+
+
+@dataclass(frozen=True)
+class CommandResult:
+    returncode: int
+    stdout: str
+    stderr: str
+
+
+async def _execute_ssh_command(cmd: list[str]) -> CommandResult:
+    process = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout_bytes, stderr_bytes = await process.communicate()
+    stdout = stdout_bytes.decode("utf-8", errors="replace")
+    stderr = stderr_bytes.decode("utf-8", errors="replace")
+    returncode = process.returncode if process.returncode is not None else 1
+    return CommandResult(returncode=returncode, stdout=stdout, stderr=stderr)
