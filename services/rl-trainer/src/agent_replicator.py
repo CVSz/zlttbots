@@ -2,12 +2,18 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import shlex
 import subprocess
 from dataclasses import dataclass
 from typing import Iterable
 
 log = logging.getLogger("rl-trainer.agent-replicator")
+
+_ALLOWED_RUNTIMES = {"docker-compose", "k8s"}
+_HOST_PATTERN = re.compile(r"^[A-Za-z0-9._-]{1,255}$")
+_USER_PATTERN = re.compile(r"^[a-z_][a-z0-9_-]{0,31}$")
+_IMAGE_PATTERN = re.compile(r"^[a-z0-9]+(?:[._/-][a-z0-9]+)*(?::[A-Za-z0-9._-]+)?$")
 
 
 @dataclass(frozen=True)
@@ -33,7 +39,7 @@ class Replicator:
         ssh_target = f"{target.user}@{target.host}"
         cmd = ["ssh", ssh_target, remote_command]
         log.info("deploying autonomous node to %s with runtime=%s", ssh_target, target.runtime)
-        completed = subprocess.run(cmd, check=False, capture_output=True, text=True)
+        completed = subprocess.run(cmd, check=False, capture_output=True, text=True)  # nosec B603
         if completed.returncode != 0:
             log.warning("deployment to %s failed: %s", ssh_target, completed.stderr.strip())
         return completed.returncode
@@ -56,18 +62,21 @@ def parse_targets(raw_targets: str) -> list[DeploymentTarget]:
         if not raw:
             continue
         runtime = "docker-compose"
-        user_host = raw
         if "@" in raw:
             user, host = raw.split("@", 1)
         else:
             user, host = "root", raw
         if ":" in host:
             host, runtime = host.split(":", 1)
-        targets.append(DeploymentTarget(host=host, user=user, runtime=runtime or "docker-compose"))
+        normalized_runtime = runtime or "docker-compose"
+        _validate_target_inputs(host=host, user=user, runtime=normalized_runtime)
+        targets.append(DeploymentTarget(host=host, user=user, runtime=normalized_runtime))
     return targets
 
 
 def build_remote_command(runtime: str, image: str) -> str:
+    _validate_runtime(runtime)
+    _validate_image(image)
     quoted_image = shlex.quote(image)
     if runtime == "k8s":
         return (
@@ -75,3 +84,21 @@ def build_remote_command(runtime: str, image: str) -> str:
             f"{quoted_image} --record && kubectl rollout status deployment/zttato"
         )
     return f"docker pull {quoted_image} && docker compose up -d"
+
+
+def _validate_target_inputs(host: str, user: str, runtime: str) -> None:
+    if not _HOST_PATTERN.fullmatch(host):
+        raise ValueError(f"invalid deployment host: {host!r}")
+    if not _USER_PATTERN.fullmatch(user):
+        raise ValueError(f"invalid deployment user: {user!r}")
+    _validate_runtime(runtime)
+
+
+def _validate_runtime(runtime: str) -> None:
+    if runtime not in _ALLOWED_RUNTIMES:
+        raise ValueError(f"unsupported runtime: {runtime!r}")
+
+
+def _validate_image(image: str) -> None:
+    if not _IMAGE_PATTERN.fullmatch(image):
+        raise ValueError("invalid container image reference")
