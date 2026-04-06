@@ -1,4 +1,6 @@
 import express from "express";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
 import http from "node:http";
 import pino from "pino";
 import { WebSocket, WebSocketServer } from "ws";
@@ -12,6 +14,16 @@ const logPostSchema = z.object({
 });
 
 const app = express();
+app.disable("x-powered-by");
+app.use(helmet());
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: Number(process.env.LOG_RATE_LIMIT_MAX ?? "180"),
+    standardHeaders: true,
+    legacyHeaders: false,
+  }),
+);
 app.use(express.json({ limit: "1mb" }));
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });

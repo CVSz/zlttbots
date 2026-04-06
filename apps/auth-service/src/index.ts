@@ -1,5 +1,7 @@
 import argon2 from "argon2";
 import express from "express";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
 import jwt from "jsonwebtoken";
 import pino from "pino";
 import { randomUUID } from "node:crypto";
@@ -30,6 +32,16 @@ type User = {
 const usersByEmail = new Map<string, User>();
 
 const app = express();
+app.disable("x-powered-by");
+app.use(helmet());
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: Number(process.env.AUTH_RATE_LIMIT_MAX ?? "120"),
+    standardHeaders: true,
+    legacyHeaders: false,
+  }),
+);
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/healthz", (_req, res) => {

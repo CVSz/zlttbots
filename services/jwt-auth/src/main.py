@@ -1,11 +1,8 @@
-from base64 import urlsafe_b64decode, urlsafe_b64encode
 from datetime import datetime, timedelta, timezone
-import hashlib
-import hmac
-import json
 import os
 from typing import Any, Dict, Optional
 
+import jwt
 from fastapi import Depends, FastAPI, Header, HTTPException
 
 app = FastAPI(title="jwt-auth", version="1.0.0")
@@ -19,49 +16,10 @@ if not JWT_SECRET and IS_TEST_RUNTIME:
 if not JWT_SECRET or JWT_SECRET == "change-me-in-production":
     raise RuntimeError("CRITICAL: JWT_SECRET is not set or uses insecure default.")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+ALLOWED_ALGORITHMS = {"HS256"}
+if JWT_ALGORITHM not in ALLOWED_ALGORITHMS:
+    raise RuntimeError("CRITICAL: Unsupported JWT_ALGORITHM configured.")
 DEFAULT_TOKEN_TTL_MINUTES = int(os.getenv("JWT_TTL_MINUTES", "30"))
-
-
-def _b64url_encode(payload: bytes) -> str:
-    return urlsafe_b64encode(payload).rstrip(b"=").decode("utf-8")
-
-
-def _b64url_decode(payload: str) -> bytes:
-    padding = "=" * ((4 - len(payload) % 4) % 4)
-    return urlsafe_b64decode((payload + padding).encode("utf-8"))
-
-
-def _encode_token(claims: Dict[str, Any]) -> str:
-    header = {"alg": JWT_ALGORITHM, "typ": "JWT", "kid": "default"}
-    signing_input = f"{_b64url_encode(json.dumps(header, separators=(',', ':')).encode())}.{_b64url_encode(json.dumps(claims, separators=(',', ':')).encode())}"
-    signature = hmac.new(JWT_SECRET.encode("utf-8"), signing_input.encode("utf-8"), hashlib.sha256).digest()
-    return f"{signing_input}.{_b64url_encode(signature)}"
-
-
-def _decode_token(token: str) -> Dict[str, Any]:
-    try:
-        encoded_header, encoded_payload, encoded_signature = token.split(".")
-    except ValueError as exc:
-        raise HTTPException(status_code=401, detail="Invalid token format") from exc
-
-    signing_input = f"{encoded_header}.{encoded_payload}".encode("utf-8")
-    expected_signature = hmac.new(JWT_SECRET.encode("utf-8"), signing_input, hashlib.sha256).digest()
-
-    provided_signature = _b64url_decode(encoded_signature)
-    if not hmac.compare_digest(expected_signature, provided_signature):
-        raise HTTPException(status_code=401, detail="Invalid token signature")
-
-    claims = json.loads(_b64url_decode(encoded_payload))
-    now = int(datetime.now(tz=timezone.utc).timestamp())
-
-    if claims.get("iss") != JWT_ISSUER:
-        raise HTTPException(status_code=401, detail="Invalid issuer")
-    if claims.get("aud") != JWT_AUDIENCE:
-        raise HTTPException(status_code=401, detail="Invalid audience")
-    if int(claims.get("exp", 0)) < now:
-        raise HTTPException(status_code=401, detail="Token expired")
-
-    return claims
 
 
 @app.get("/healthz")
@@ -94,7 +52,7 @@ def issue_token(subject: str, scopes: Optional[str] = "") -> Dict[str, str]:
         "iat": int(now.timestamp()),
         "exp": int((now + timedelta(minutes=DEFAULT_TOKEN_TTL_MINUTES)).timestamp()),
     }
-    token = _encode_token(payload)
+    token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM, headers={"kid": "default"})
     return {"access_token": token, "token_type": "Bearer"}
 
 
@@ -103,7 +61,23 @@ def verify_bearer_token(authorization: Optional[str] = Header(default=None)) -> 
         raise HTTPException(status_code=401, detail="Missing bearer token")
 
     token = authorization.replace("Bearer ", "", 1)
-    return _decode_token(token)
+    try:
+        return jwt.decode(
+            token,
+            JWT_SECRET,
+            audience=JWT_AUDIENCE,
+            issuer=JWT_ISSUER,
+            algorithms=[JWT_ALGORITHM],
+            options={"require": ["exp", "iat", "sub", "iss", "aud"]},
+        )
+    except jwt.ExpiredSignatureError as exc:
+        raise HTTPException(status_code=401, detail="Token expired") from exc
+    except jwt.InvalidAudienceError as exc:
+        raise HTTPException(status_code=401, detail="Invalid audience") from exc
+    except jwt.InvalidIssuerError as exc:
+        raise HTTPException(status_code=401, detail="Invalid issuer") from exc
+    except jwt.InvalidTokenError as exc:
+        raise HTTPException(status_code=401, detail="Invalid token") from exc
 
 
 @app.get("/introspect")

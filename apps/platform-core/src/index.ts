@@ -1,5 +1,7 @@
 import express from "express";
+import rateLimit from "express-rate-limit";
 import { Kafka } from "kafkajs";
+import helmet from "helmet";
 import pino from "pino";
 import { z } from "zod";
 import crypto from "node:crypto";
@@ -28,12 +30,18 @@ const deployPayloadSchema = z.object({
 });
 
 const databaseUrl = process.env.DATABASE_URL;
+const dbSslMode = process.env.DB_SSL_MODE;
 const dbPool = databaseUrl
   ? new Pool({
       connectionString: databaseUrl,
       max: Number(process.env.DB_POOL_MAX ?? "10"),
       idleTimeoutMillis: Number(process.env.DB_IDLE_TIMEOUT_MS ?? "30000"),
-      ssl: process.env.DB_SSL_MODE === "require" ? { rejectUnauthorized: false } : undefined,
+      ssl:
+        dbSslMode === "require"
+          ? {
+              rejectUnauthorized: true,
+            }
+          : undefined,
     })
   : null;
 
@@ -56,11 +64,21 @@ type DeployRecord = {
   isPublic: boolean;
   createdAt: string;
   tenantId: string;
+  deployId: string;
 };
 
 const deployments: DeployRecord[] = [];
 const app = express();
 app.disable("x-powered-by");
+app.use(helmet());
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: Number(process.env.PLATFORM_CORE_RATE_LIMIT_MAX ?? "120"),
+    standardHeaders: true,
+    legacyHeaders: false,
+  }),
+);
 app.use(express.json({ limit: "1mb" }));
 
 app.use((req, res, next) => {
@@ -68,6 +86,20 @@ app.use((req, res, next) => {
   res.setHeader("x-request-id", requestId);
   req.headers["x-request-id"] = requestId;
   next();
+});
+
+app.use((req, res, next) => {
+  const internalServiceToken = process.env.INTERNAL_SERVICE_TOKEN;
+  if (!internalServiceToken) {
+    return next();
+  }
+
+  const providedToken = req.header("x-internal-token");
+  if (providedToken !== internalServiceToken) {
+    return res.status(401).json({ ok: false, error: "Unauthorized internal service request" });
+  }
+
+  return next();
 });
 
 const kafka = new Kafka({ brokers: kafkaBrokers });
@@ -109,11 +141,17 @@ app.post("/deploy", async (req, res) => {
     });
   }
 
-  const deployId = crypto.randomUUID();
+  const { userId, tenantId } = requireUserContext(req);
+  const limits = await checkLimits(userId);
+  const tenantDeployments = deployments.filter((entry) => entry.tenantId === tenantId).length;
+  if (tenantDeployments >= limits.maxDeploys) {
+    return res.status(403).json({ ok: false, error: "Deploy limit reached. Upgrade required." });
+  }
 
+  const deployId = crypto.randomUUID();
   await producer.send({
     topic: process.env.DEPLOY_TOPIC ?? "deploy.started",
-    messages: [{ value: JSON.stringify({ deployId, ...parsed.data, requestId }) }],
+    messages: [{ value: JSON.stringify({ deployId, ...parsed.data, requestId, tenantId, userId }) }],
   });
 
   if (dbPool) {
@@ -124,32 +162,8 @@ app.post("/deploy", async (req, res) => {
     );
   }
 
-  logger.info(
-    {
-      service: "platform-core",
-      event: "deploy.started",
-      requestId,
-      deployId,
-      projectId: parsed.data.projectId,
-      timestamp: Date.now(),
-    },
-    "deploy.started",
-  );
-
-  return res.status(202).json({ ok: true, status: "QUEUED", deployId });
-  const { userId, tenantId } = requireUserContext(req);
-  const limits = await checkLimits(userId);
-  const tenantDeployments = deployments.filter((entry) => entry.tenantId === tenantId).length;
-  if (tenantDeployments >= limits.maxDeploys) {
-    return res.status(403).json({ ok: false, error: "Deploy limit reached. Upgrade required." });
-  }
-
-  await producer.send({
-    topic: process.env.DEPLOY_TOPIC ?? "deploy.started",
-    messages: [{ value: JSON.stringify({ ...parsed.data, tenantId, userId }) }],
-  });
-
   const record: DeployRecord = {
+    deployId,
     projectId: parsed.data.projectId,
     url: generatePublicUrl(parsed.data.projectId),
     isPublic: true,
@@ -158,7 +172,19 @@ app.post("/deploy", async (req, res) => {
   };
   deployments.push(record);
 
-  logger.info({ projectId: parsed.data.projectId, tenantId }, "Deployment event published");
+  logger.info(
+    {
+      service: "platform-core",
+      event: "deploy.started",
+      requestId,
+      deployId,
+      projectId: parsed.data.projectId,
+      tenantId,
+      timestamp: Date.now(),
+    },
+    "deploy.started",
+  );
+
   return res.status(202).json({ ok: true, status: "QUEUED", deploy: record });
 });
 
