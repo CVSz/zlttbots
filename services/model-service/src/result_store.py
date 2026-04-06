@@ -14,6 +14,10 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 REDIS_CLUSTER_URL = os.getenv("REDIS_CLUSTER_URL", "")
 
 
+def _sanitize_log_value(value: str) -> str:
+    return value.replace("\r", " ").replace("\n", " ").strip()
+
+
 class ResultStore:
     def __init__(self) -> None:
         self._client = self._build_client()
@@ -58,7 +62,7 @@ class ResultStore:
             if isinstance(decoded, dict):
                 return decoded
         except Exception:  # pragma: no cover - defensive fallback
-            log.warning("Failed to decode result for job_id=%s", job_id, exc_info=True)
+            log.warning("Failed to decode result for job_id=%s", _sanitize_log_value(job_id), exc_info=True)
         return None
 
 

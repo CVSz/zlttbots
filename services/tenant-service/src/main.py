@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import os
 import secrets
@@ -12,6 +13,27 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://zttato:zttato@postgres:54
 DEFAULT_DAILY_SPEND_LIMIT = float(os.getenv("DEFAULT_DAILY_SPEND_LIMIT", "100.0"))
 SERVICE_HOST = os.getenv("SERVICE_HOST", "127.0.0.1")
 SERVICE_PORT = int(os.getenv("SERVICE_PORT", "8000"))
+SCRYPT_N = int(os.getenv("API_KEY_SCRYPT_N", str(2**14)))
+SCRYPT_R = int(os.getenv("API_KEY_SCRYPT_R", "8"))
+SCRYPT_P = int(os.getenv("API_KEY_SCRYPT_P", "1"))
+SCRYPT_DKLEN = int(os.getenv("API_KEY_SCRYPT_DKLEN", "32"))
+
+
+def hash_api_key(api_key: str) -> str:
+    salt = secrets.token_bytes(16)
+    digest = hashlib.scrypt(
+        api_key.encode("utf-8"),
+        salt=salt,
+        n=SCRYPT_N,
+        r=SCRYPT_R,
+        p=SCRYPT_P,
+        dklen=SCRYPT_DKLEN,
+    )
+    return (
+        f"scrypt${SCRYPT_N}${SCRYPT_R}${SCRYPT_P}$"
+        f"{base64.urlsafe_b64encode(salt).decode('utf-8')}$"
+        f"{base64.urlsafe_b64encode(digest).decode('utf-8')}"
+    )
 
 
 def db_connection():
@@ -50,7 +72,7 @@ def healthz() -> dict[str, Any]:
 @app.post("/tenant", response_model=TenantCreateResponse)
 def create_tenant(payload: TenantCreateRequest) -> TenantCreateResponse:
     api_key = f"zt_{secrets.token_urlsafe(24)}"
-    api_key_hash = hashlib.sha256(api_key.encode("utf-8")).hexdigest()
+    api_key_hash = hash_api_key(api_key)
 
     try:
         with db_connection() as conn:

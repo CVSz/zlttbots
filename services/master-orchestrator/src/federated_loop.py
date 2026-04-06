@@ -6,6 +6,7 @@ import hmac
 import json
 import os
 from typing import Any
+from urllib.parse import urlparse
 
 import requests
 from fastapi import HTTPException
@@ -15,9 +16,18 @@ FEDERATION_SECRET = os.getenv("FEDERATION_SECRET", "change-me")
 DEFAULT_REGION = os.getenv("FEDERATED_DEFAULT_REGION", "asia")
 DEFAULT_TENANT = os.getenv("FEDERATED_DEFAULT_TENANT", "default")
 DEFAULT_MAX_BUDGET = float(os.getenv("FEDERATED_MAX_BUDGET", "100"))
+ALLOWED_INTERNAL_HOSTS = {"feature-store", "rl-coordinator", "capital-allocator", "scheduler"}
+
+
+def _assert_internal_url(url: str) -> str:
+    parsed = urlparse(url)
+    if parsed.scheme != "http" or parsed.hostname not in ALLOWED_INTERNAL_HOSTS:
+        raise HTTPException(status_code=400, detail="upstream url is not allowed")
+    return url
 
 
 def safe_call(method, url: str, **kwargs: Any) -> dict[str, Any]:
+    url = _assert_internal_url(url)
     kwargs.setdefault("timeout", TIMEOUT)
     try:
         response = method(url, **kwargs)

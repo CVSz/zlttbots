@@ -5,7 +5,7 @@ import logging
 import os
 import time
 import uuid
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import RedirectResponse
@@ -13,6 +13,7 @@ from fastapi.responses import RedirectResponse
 logger = logging.getLogger("tracking.server")
 
 AFFILIATE_BASE_URL = os.getenv("AFFILIATE_BASE_URL", "")
+AFFILIATE_ALLOWED_HOSTS = {host.strip() for host in os.getenv("AFFILIATE_ALLOWED_HOSTS", "").split(",") if host.strip()}
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 app = FastAPI(title="Tracking Service")
 
@@ -37,6 +38,21 @@ def _assert_campaign_id(campaign_id: str) -> str:
     return cid
 
 
+def _sanitize_log_value(value: str) -> str:
+    return value.replace("\r", " ").replace("\n", " ").strip()
+
+
+def _validated_affiliate_base_url() -> str:
+    parsed = urlparse(AFFILIATE_BASE_URL)
+    if parsed.scheme not in {"http", "https"}:
+        raise HTTPException(status_code=500, detail="affiliate base url must be http or https")
+    if not parsed.netloc:
+        raise HTTPException(status_code=500, detail="affiliate base url host is required")
+    if AFFILIATE_ALLOWED_HOSTS and parsed.hostname not in AFFILIATE_ALLOWED_HOSTS:
+        raise HTTPException(status_code=500, detail="affiliate base url host is not allowed")
+    return AFFILIATE_BASE_URL
+
+
 @app.get("/healthz")
 def healthz() -> dict[str, str]:
     return {"status": "ok", "service": "tracking"}
@@ -47,6 +63,7 @@ async def track(campaign_id: str, request: Request) -> RedirectResponse:
     if not AFFILIATE_BASE_URL:
         raise HTTPException(status_code=500, detail="affiliate base url not configured")
 
+    affiliate_base_url = _validated_affiliate_base_url()
     cid = _assert_campaign_id(campaign_id)
     click_id = str(uuid.uuid4())
     ip = request.client.host if request.client else "unknown"
@@ -64,6 +81,14 @@ async def track(campaign_id: str, request: Request) -> RedirectResponse:
         conn.commit()
 
     query = urlencode({"cid": cid, "click_id": click_id})
-    target = f"{AFFILIATE_BASE_URL}?{query}"
-    logger.info(json.dumps({"event": "click_tracked", "campaign_id": cid, "click_id": click_id}))
+    target = f"{affiliate_base_url}?{query}"
+    logger.info(
+        json.dumps(
+            {
+                "event": "click_tracked",
+                "campaign_id": _sanitize_log_value(cid),
+                "click_id": _sanitize_log_value(click_id),
+            }
+        )
+    )
     return RedirectResponse(target, status_code=307)
