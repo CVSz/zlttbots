@@ -22,6 +22,8 @@ def allow(environment: str) -> bool:
 
 
 def sample_payload(seed: str) -> dict[str, int]:
+    if not seed:
+        raise ValueError("seed must be a non-empty string")
     digest = hashlib.sha256(seed.encode("utf-8")).digest()
     views = int.from_bytes(digest[0:4], "big") % 1_000_001
     clicks = int.from_bytes(digest[4:8], "big") % 1_001
