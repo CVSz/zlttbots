@@ -14,6 +14,7 @@ _ALLOWED_RUNTIMES = {"docker-compose", "k8s"}
 _HOST_PATTERN = re.compile(r"^[A-Za-z0-9._-]{1,255}$")
 _USER_PATTERN = re.compile(r"^[a-z_][a-z0-9_-]{0,31}$")
 _IMAGE_PATTERN = re.compile(r"^[a-z0-9]+(?:[._/-][a-z0-9]+)*(?::[A-Za-z0-9._-]+)?$")
+_SSH_TIMEOUT_SECONDS = 60
 
 
 @dataclass(frozen=True)
@@ -37,7 +38,15 @@ class Replicator:
     def deploy(self, target: DeploymentTarget) -> int:
         remote_command = build_remote_command(target.runtime, self.image)
         ssh_target = f"{target.user}@{target.host}"
-        cmd = ["ssh", ssh_target, remote_command]
+        cmd = [
+            "ssh",
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "StrictHostKeyChecking=yes",
+            ssh_target,
+            remote_command,
+        ]
         log.info("deploying autonomous node to %s with runtime=%s", ssh_target, target.runtime)
         completed = asyncio.run(_execute_ssh_command(cmd))
         if completed.returncode != 0:
@@ -117,7 +126,16 @@ async def _execute_ssh_command(cmd: list[str]) -> CommandResult:
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-    stdout_bytes, stderr_bytes = await process.communicate()
+    try:
+        stdout_bytes, stderr_bytes = await asyncio.wait_for(process.communicate(), timeout=_SSH_TIMEOUT_SECONDS)
+    except asyncio.TimeoutError:
+        process.kill()
+        await process.wait()
+        return CommandResult(
+            returncode=124,
+            stdout="",
+            stderr=f"ssh command timed out after {_SSH_TIMEOUT_SECONDS} seconds",
+        )
     stdout = stdout_bytes.decode("utf-8", errors="replace")
     stderr = stderr_bytes.decode("utf-8", errors="replace")
     returncode = process.returncode if process.returncode is not None else 1
