@@ -192,3 +192,28 @@ Before real deployment outside local development:
 - confirm renderer CPU/GPU mode intentionally
 - enable monitoring and centralized logging
 - review Cloudflare, Kubernetes, and mesh configs for parity with actual runtime
+
+## 11) Interactive domain env generator (`*.zeaz.dev`)
+
+To generate a domain env file that maps the standard edge services under one base domain (for example `*.zeaz.dev`), run:
+
+```bash
+bash scripts/generate-domain-env.sh
+```
+
+You can also run non-interactively:
+
+```bash
+bash scripts/generate-domain-env.sh --domain zeaz.dev --output configs/env/domain.env --yes
+```
+
+Generated keys include:
+- `WILDCARD_DOMAIN=*.{domain}`
+- `API_BASE_URL=https://api.{domain}`
+- `ADMIN_BASE_URL=https://admin.{domain}`
+- `AUTH_BASE_URL=https://auth.{domain}`
+- `AI_BASE_URL=https://ai.{domain}`
+- `CRAWL_BASE_URL=https://crawl.{domain}`
+- `PREDICT_BASE_URL=https://predict.{domain}`
+- `GRAFANA_BASE_URL=https://grafana.{domain}`
+- `KAFKA_BASE_URL=https://kafka.{domain}`
