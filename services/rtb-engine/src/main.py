@@ -132,8 +132,24 @@ def openrtb_bid(request: OpenRTBBidRequest) -> dict[str, Any]:
     }
 
 
+def _env_flag(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def resolve_bind_host() -> str:
+    host = os.getenv("RTB_HOST", "127.0.0.1").strip()
+    if not host:
+        return "127.0.0.1"
+    if host in {"0.0.0.0", "::"} and not _env_flag("RTB_ALLOW_WILDCARD_BIND"):
+        return "127.0.0.1"
+    return host
+
+
 if __name__ == "__main__":
     import uvicorn
-    host = os.getenv("RTB_HOST", "127.0.0.1")
+    host = resolve_bind_host()
     port = int(os.getenv("RTB_PORT", "8000"))
     uvicorn.run(app, host=host, port=port)
