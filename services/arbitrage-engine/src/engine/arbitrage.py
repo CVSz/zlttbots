@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-def detect(products, payout_lookup):
+def detect(products, payout_lookup, min_profit: float = 1.0):
     grouped = defaultdict(list)
     for p in products:
         # Normalize names to improve matching precision
@@ -33,7 +33,7 @@ def detect(products, payout_lookup):
                 profit = revenue - buy_price
 
                 # Thresholding for business viability
-                if profit > 1.0:
+                if profit > min_profit:
                     opportunities.append(
                         {
                             "product": name,
