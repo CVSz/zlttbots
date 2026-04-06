@@ -38,3 +38,10 @@ def test_global_deploy_script_includes_multi_region_and_worker_steps():
     assert "infrastructure/k8s/multi-region/asia.yaml" in text
     assert "infrastructure/k8s/multi-region/eu.yaml" in text
     assert "wrangler deploy" in text
+
+
+def test_interactive_domain_env_generator_supports_wildcard_zeaz_domain():
+    text = Path("scripts/generate-domain-env.sh").read_text()
+    assert "WILDCARD_DOMAIN=*." in text
+    assert "Base domain [${DOMAIN}]:" in text
+    assert "API_BASE_URL=https://api.${DOMAIN}" in text
