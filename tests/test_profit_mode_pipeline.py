@@ -74,6 +74,69 @@ def test_feature_store_supports_budget_and_revenue_updates(monkeypatch):
     assert latest.json()['max_budget'] == 150.0
 
 
+def test_feature_store_can_replace_all_campaign_features(monkeypatch):
+    redis_stub = FakeRedis()
+    import redis
+
+    monkeypatch.setattr(redis.Redis, 'from_url', staticmethod(lambda *args, **kwargs: redis_stub))
+    module = load_module('test_feature_store_replace_all', 'services/feature-store/src/main.py')
+    client = TestClient(module.app)
+
+    payload = {
+        'cmp-a': {
+            'views': 11,
+            'clicks': 3,
+            'conversions': 1,
+            'revenue': 4.2,
+            'spend': 1.4,
+            'max_budget': 25.0,
+            'daily_cap': 10.0,
+            'base_bid': 0.15,
+        },
+        'cmp-b': {
+            'views': 23,
+            'clicks': 5,
+            'conversions': 2,
+            'revenue': 6.3,
+            'spend': 2.1,
+            'max_budget': 45.0,
+            'daily_cap': 20.0,
+            'base_bid': 0.2,
+        },
+    }
+    response = client.put('/features', json=payload)
+    assert response.status_code == 200
+    assert response.json() == payload
+
+    cmp_a = client.get('/features/cmp-a')
+    assert cmp_a.status_code == 200
+    assert cmp_a.json()['views'] == 11
+    cmp_b = client.get('/features/cmp-b')
+    assert cmp_b.status_code == 200
+    assert cmp_b.json()['clicks'] == 5
+
+
+def test_feature_store_rejects_daily_cap_above_budget(monkeypatch):
+    redis_stub = FakeRedis()
+    import redis
+
+    monkeypatch.setattr(redis.Redis, 'from_url', staticmethod(lambda *args, **kwargs: redis_stub))
+    module = load_module('test_feature_store_budget_validation', 'services/feature-store/src/main.py')
+    client = TestClient(module.app)
+
+    response = client.put('/features/cmp-risky', json={
+        'views': 5,
+        'clicks': 1,
+        'conversions': 0,
+        'revenue': 1.0,
+        'spend': 0.5,
+        'max_budget': 10.0,
+        'daily_cap': 20.0,
+        'base_bid': 0.1,
+    })
+    assert response.status_code == 422
+
+
 def test_affiliate_webhook_updates_feature_store_and_reward_collector(monkeypatch):
     monkeypatch.setenv('AFFILIATE_WEBHOOK_SECRET', 'topsecret')
     calls: list[tuple[str, dict[str, object]]] = []
