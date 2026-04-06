@@ -4,9 +4,11 @@ import json
 import os
 from typing import Any
 
-import psycopg2
+try:
+    import psycopg2
+except ModuleNotFoundError:  # pragma: no cover - dependency optional in unit tests
+    psycopg2 = None
 import requests
-import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field
 
@@ -36,6 +38,8 @@ def verify(signature: str, body: bytes) -> bool:
 
 
 def db_connection():
+    if psycopg2 is None:
+        raise RuntimeError("psycopg2 is not installed")
     return psycopg2.connect(DB_URL)
 
 
@@ -110,4 +114,5 @@ async def conversion(req: Request) -> dict[str, bool]:
 
 
 if __name__ == "__main__":
+    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=9700)

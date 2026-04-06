@@ -4,7 +4,6 @@ from typing import Any, Literal
 from urllib.parse import quote
 
 import requests
-import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, HttpUrl
 from requests.adapters import HTTPAdapter
@@ -338,4 +337,5 @@ def activate_profit_mode(request: ProfitModeRequest) -> ProfitModeResponse:
 
 
 if __name__ == "__main__":
+    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=APP_PORT)

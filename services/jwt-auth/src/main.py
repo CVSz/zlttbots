@@ -1,9 +1,88 @@
 from datetime import datetime, timedelta, timezone
+import base64
+import hashlib
+import hmac
+import json
 import os
 import re
 from typing import Any, Dict, Optional
 
-import jwt
+try:
+    import jwt
+except ModuleNotFoundError:  # pragma: no cover - dependency optional in unit tests
+    class _SimpleJWT:
+        class InvalidTokenError(Exception):
+            pass
+
+        class ExpiredSignatureError(InvalidTokenError):
+            pass
+
+        class InvalidAudienceError(InvalidTokenError):
+            pass
+
+        class InvalidIssuerError(InvalidTokenError):
+            pass
+
+        @staticmethod
+        def _b64encode(raw: bytes) -> str:
+            return base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
+
+        @staticmethod
+        def _b64decode(data: str) -> bytes:
+            padding = "=" * (-len(data) % 4)
+            return base64.urlsafe_b64decode((data + padding).encode())
+
+        @classmethod
+        def encode(cls, payload: Dict[str, Any], secret: str, algorithm: str, headers: Optional[Dict[str, Any]] = None) -> str:
+            if algorithm != "HS256":
+                raise cls.InvalidTokenError("Unsupported algorithm")
+            token_headers = {"typ": "JWT", "alg": algorithm, **(headers or {})}
+            header_part = cls._b64encode(json.dumps(token_headers, separators=(",", ":")).encode())
+            payload_part = cls._b64encode(json.dumps(payload, separators=(",", ":")).encode())
+            signing_input = f"{header_part}.{payload_part}".encode()
+            signature = hmac.new(secret.encode(), signing_input, hashlib.sha256).digest()
+            return f"{header_part}.{payload_part}.{cls._b64encode(signature)}"
+
+        @classmethod
+        def decode(
+            cls,
+            token: str,
+            secret: str,
+            audience: str,
+            issuer: str,
+            algorithms: list[str],
+            options: Optional[Dict[str, Any]] = None,
+        ) -> Dict[str, Any]:
+            if "HS256" not in algorithms:
+                raise cls.InvalidTokenError("Unsupported algorithm")
+
+            try:
+                header_part, payload_part, signature_part = token.split(".")
+            except ValueError as exc:
+                raise cls.InvalidTokenError("Malformed token") from exc
+
+            signing_input = f"{header_part}.{payload_part}".encode()
+            expected_signature = hmac.new(secret.encode(), signing_input, hashlib.sha256).digest()
+            provided_signature = cls._b64decode(signature_part)
+            if not hmac.compare_digest(expected_signature, provided_signature):
+                raise cls.InvalidTokenError("Invalid signature")
+
+            payload = json.loads(cls._b64decode(payload_part).decode())
+            required = set((options or {}).get("require", []))
+            missing = [claim for claim in required if claim not in payload]
+            if missing:
+                raise cls.InvalidTokenError(f"Missing required claims: {','.join(missing)}")
+
+            now_ts = int(datetime.now(tz=timezone.utc).timestamp())
+            if int(payload.get("exp", 0)) <= now_ts:
+                raise cls.ExpiredSignatureError("Token expired")
+            if payload.get("aud") != audience:
+                raise cls.InvalidAudienceError("Invalid audience")
+            if payload.get("iss") != issuer:
+                raise cls.InvalidIssuerError("Invalid issuer")
+            return payload
+
+    jwt = _SimpleJWT()
 from fastapi import Depends, FastAPI, Header, HTTPException
 
 app = FastAPI(title="jwt-auth", version="1.0.0")

@@ -9,7 +9,6 @@ CURRENT_DIR = Path(__file__).resolve().parent
 if str(CURRENT_DIR) not in sys.path:
     sys.path.insert(0, str(CURRENT_DIR))
 
-import uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
@@ -133,4 +132,5 @@ def openrtb_bid(request: OpenRTBBidRequest) -> dict[str, Any]:
 
 
 if __name__ == "__main__":
+    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

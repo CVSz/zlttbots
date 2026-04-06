@@ -10,7 +10,6 @@ from typing import Any
 TOKEN_TTL_SECONDS = int(os.getenv("FEDERATION_TOKEN_TTL", "3600"))
 
 import psycopg2
-import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
@@ -198,4 +197,5 @@ def register(node: NodeRegister) -> dict[str, Any]:
 
 
 if __name__ == "__main__":
+    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

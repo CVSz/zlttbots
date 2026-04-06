@@ -4,7 +4,6 @@ import secrets
 from typing import Any
 
 import psycopg2
-import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
@@ -78,4 +77,5 @@ def create_tenant(payload: TenantCreateRequest) -> TenantCreateResponse:
 
 
 if __name__ == "__main__":
+    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

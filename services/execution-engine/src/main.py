@@ -6,7 +6,6 @@ from typing import Any
 from typing import Optional
 
 import requests
-import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
@@ -116,4 +115,5 @@ def status(external_id: str) -> dict[str, Any]:
 
 
 if __name__ == "__main__":
+    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=9600)

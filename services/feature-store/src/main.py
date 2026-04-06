@@ -1,14 +1,41 @@
 import os
 from typing import Any
 
-import redis
-import uvicorn
+try:
+    import redis
+except ModuleNotFoundError:  # pragma: no cover - dependency optional in unit tests
+    redis = None
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
 app = FastAPI(title="Feature Store")
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
-REDIS = redis.Redis.from_url(REDIS_URL, decode_responses=True)
+class _InMemoryRedis:
+    def __init__(self) -> None:
+        self._db: dict[str, dict[str, str]] = {}
+
+    def hgetall(self, key: str) -> dict[str, str]:
+        return dict(self._db.get(key, {}))
+
+    def hset(self, key: str, mapping: dict[str, Any]) -> None:
+        self._db[key] = {k: str(v) for k, v in mapping.items()}
+
+    def ping(self) -> bool:
+        return True
+
+
+class _RedisError(Exception):
+    pass
+
+
+if redis is None:
+    class _RedisNamespace:  # pragma: no cover - used only when redis package is missing
+        RedisError = _RedisError
+
+    redis = _RedisNamespace()
+    REDIS = _InMemoryRedis()
+else:
+    REDIS = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 
 class CampaignFeatures(BaseModel):
@@ -155,4 +182,5 @@ def replace_all_campaign_features(request: dict[str, CampaignFeatures]) -> dict[
 
 
 if __name__ == "__main__":
+    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
