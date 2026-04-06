@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from pathlib import Path
+import os
 import sys
 
 CURRENT_DIR = Path(__file__).resolve().parent
@@ -133,4 +134,6 @@ def openrtb_bid(request: OpenRTBBidRequest) -> dict[str, Any]:
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    host = os.getenv("RTB_HOST", "127.0.0.1")
+    port = int(os.getenv("RTB_PORT", "8000"))
+    uvicorn.run(app, host=host, port=port)
