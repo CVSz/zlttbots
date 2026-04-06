@@ -32,5 +32,5 @@ def fail(now: float | None = None) -> None:
     global FAILS, OPEN, LAST_FAIL
     FAILS += 1
     LAST_FAIL = time.time() if now is None else now
-    if FAILS > MAX_FAILURES:
+    if FAILS >= MAX_FAILURES:
         OPEN = True
