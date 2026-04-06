@@ -1,22 +1,86 @@
+import ipaddress
+import logging
 import time
+from collections.abc import Mapping
+from urllib.parse import urlparse
 
 import requests
 
+logger = logging.getLogger(__name__)
+
 
 class SafeHttpClient:
-    def __init__(self, timeout: int = 10, retries: int = 3, backoff: float = 0.5):
+    """HTTP client with deterministic retry behavior and SSRF guardrails."""
+
+    def __init__(
+        self,
+        timeout: int = 10,
+        retries: int = 3,
+        backoff: float = 0.5,
+        allowed_hosts: set[str] | None = None,
+    ):
+        if timeout <= 0:
+            raise ValueError("timeout must be > 0")
+        if retries <= 0:
+            raise ValueError("retries must be > 0")
+        if backoff < 0:
+            raise ValueError("backoff must be >= 0")
         self.timeout = timeout
         self.retries = retries
         self.backoff = backoff
+        self.allowed_hosts = {host.lower() for host in allowed_hosts} if allowed_hosts else None
 
-    def post(self, url, json=None, headers=None):
-        for attempt in range(self.retries):
+    def _validate_url(self, url: str) -> None:
+        parsed = urlparse(url)
+        if parsed.scheme not in {"http", "https"}:
+            raise ValueError("url must use http or https")
+        if not parsed.hostname:
+            raise ValueError("url hostname is required")
+
+        hostname = parsed.hostname.lower()
+        if self.allowed_hosts is not None and hostname not in self.allowed_hosts:
+            raise ValueError(f"url host '{hostname}' is not allowed")
+
+        try:
+            host_ip = ipaddress.ip_address(hostname)
+        except ValueError:
+            # Non-IP hostnames are allowed and resolved by network policy.
+            return
+
+        if host_ip.is_loopback or host_ip.is_private or host_ip.is_link_local:
+            raise ValueError("private or loopback host targets are not allowed")
+
+    def post(
+        self,
+        url: str,
+        json: dict | list | None = None,
+        headers: Mapping[str, str] | None = None,
+    ) -> requests.Response:
+        self._validate_url(url)
+        last_error: Exception | None = None
+        last_response: requests.Response | None = None
+
+        for attempt in range(1, self.retries + 1):
             try:
                 response = requests.post(url, json=json, headers=headers, timeout=self.timeout)
                 if response.status_code < 500:
                     return response
-            except requests.RequestException:
-                pass
-            time.sleep(self.backoff * (2 ** attempt))
+                last_response = response
+                logger.warning(
+                    "Transient upstream response",
+                    extra={"url": url, "attempt": attempt, "status_code": response.status_code},
+                )
+            except requests.RequestException as exc:
+                last_error = exc
+                logger.warning(
+                    "Network request failed",
+                    extra={"url": url, "attempt": attempt, "error": str(exc)},
+                )
+            if attempt < self.retries:
+                time.sleep(self.backoff * (2 ** (attempt - 1)))
 
-        raise RuntimeError("request failed after retries")
+        if last_response is not None:
+            raise RuntimeError(
+                f"request failed after retries with status {last_response.status_code}: {url}"
+            )
+        raise RuntimeError(f"request failed after retries: {url}") from last_error
