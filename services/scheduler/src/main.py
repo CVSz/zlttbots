@@ -7,7 +7,6 @@ import os
 from typing import Any
 
 import requests
-import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
@@ -129,4 +128,5 @@ def assign(task: Task) -> Assignment:
 
 
 if __name__ == "__main__":
+    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -10,7 +10,6 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 import torch
-import uvicorn
 from confluent_kafka import Producer
 from fastapi import FastAPI, Header, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response
@@ -188,4 +187,5 @@ async def ws_result(websocket: WebSocket, job_id: str) -> None:
 
 
 if __name__ == "__main__":
+    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

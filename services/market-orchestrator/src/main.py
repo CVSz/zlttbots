@@ -2,7 +2,6 @@ import os
 from typing import Any
 
 import requests
-import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
@@ -47,4 +46,5 @@ def launch(payload: LaunchRequest) -> dict[str, Any]:
 
 
 if __name__ == "__main__":
+    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

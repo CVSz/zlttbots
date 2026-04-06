@@ -4,7 +4,6 @@ from typing import Any
 
 import numpy as np
 import redis
-import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -166,4 +165,5 @@ def update(request: UpdateRequest) -> UpdateResponse:
 
 
 if __name__ == "__main__":
+    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
