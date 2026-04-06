@@ -8,8 +8,8 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, HttpUrl
 
-from adapter import send
-from audit import log
+from .adapter import send
+from .audit import log
 
 app = FastAPI(title="Payment Gateway")
 STRIPE_ENDPOINT = os.getenv("PAYMENT_STRIPE_ENDPOINT", "https://payments.example/stripe")
