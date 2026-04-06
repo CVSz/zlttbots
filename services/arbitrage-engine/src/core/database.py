@@ -103,6 +103,37 @@ def insert_event(event: dict[str, Any]) -> None:
             )
 
 
+def list_events(limit: int = 50) -> list[dict[str, Any]]:
+    if USE_INMEMORY_DB:
+        sorted_events = sorted(MEMORY_STORE.arbitrage_events, key=lambda event: float(event.get("profit", 0)), reverse=True)
+        return [dict(event) for event in sorted_events[:limit]]
+
+    with get_db() as db:
+        with db.cursor() as cur:
+            cur.execute(
+                """
+                select product_name,buy_source,sell_source,buy_price,sell_price,profit
+                from arbitrage_events
+                order by profit desc
+                limit %s
+                """,
+                (limit,),
+            )
+            rows = cur.fetchall()
+
+    return [
+        {
+            "product": row[0],
+            "buy": row[1],
+            "sell": row[2],
+            "buy_price": float(row[3]),
+            "sell_price": float(row[4]),
+            "profit": float(row[5]),
+        }
+        for row in rows
+    ]
+
+
 def upsert_product_payout(record: ProductPayoutRecord) -> None:
     if USE_INMEMORY_DB:
         MEMORY_STORE.product_payouts[(record.network, record.product_id)] = record

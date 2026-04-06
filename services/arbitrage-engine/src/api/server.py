@@ -15,12 +15,17 @@ from core.database import (
     MEMORY_STORE,
     ProductPayoutRecord,
     PublishingJob,
+    fetch_products,
     get_daily_counter,
+    get_product_payout,
     get_posted_product_reporting,
+    insert_event,
+    list_events,
     record_performance,
     record_video,
     upsert_product_payout,
 )
+from engine.arbitrage import detect
 from metrics import request_counter, request_latency
 from publishing.controller import DailyPublishingController
 
@@ -74,6 +79,12 @@ class PublishSimulationResult(BaseModel):
     network: AffiliateNetwork = AffiliateNetwork.TIKTOK
 
 
+class ArbitrageScanRequest(BaseModel):
+    persist: bool = True
+    min_profit: float = Field(default=1.0, ge=0)
+    max_results: int = Field(default=100, ge=1, le=2000)
+
+
 def get_db():
     return psycopg2.connect(os.environ["DB_URL"])
 
@@ -106,34 +117,38 @@ def metrics():
 
 
 @app.get('/arbitrage')
-def list_events():
+def list_arbitrage_events():
     start = time.perf_counter()
-    with get_db() as db:
-        with db.cursor() as cur:
-            cur.execute(
-                '''
-                select product_name,buy_source,sell_source,profit
-                from arbitrage_events
-                order by profit desc
-                limit 50
-                '''
-            )
-            rows = cur.fetchall()
-
-    result = []
-    for r in rows:
-        result.append(
-            {
-                'product': r[0],
-                'buy': r[1],
-                'sell': r[2],
-                'profit': float(r[3]),
-            }
-        )
-
+    result = list_events(limit=50)
     request_counter.inc()
     request_latency.observe(time.perf_counter() - start)
     return result
+
+
+@app.post('/arbitrage/scan')
+def scan_arbitrage(payload: ArbitrageScanRequest):
+    start = time.perf_counter()
+    products = fetch_products()
+    opportunities = detect(products, get_product_payout, min_profit=payload.min_profit)
+    opportunities.sort(key=lambda item: float(item["profit"]), reverse=True)
+    selected = opportunities[: payload.max_results]
+    inserted = 0
+
+    if payload.persist:
+        for event in selected:
+            insert_event(event)
+            inserted += 1
+
+    request_counter.inc()
+    request_latency.observe(time.perf_counter() - start)
+    return {
+        "ok": True,
+        "products_scanned": len(products),
+        "opportunities_found": len(opportunities),
+        "returned": len(selected),
+        "persisted": inserted,
+        "results": selected,
+    }
 
 
 @app.post('/affiliate/payouts/ingest')

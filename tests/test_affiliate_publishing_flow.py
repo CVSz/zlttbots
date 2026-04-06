@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -149,3 +150,43 @@ def test_dead_letter_after_retry_budget(monkeypatch):
     report = client.get("/reporting/posted-products/tenant-b")
     assert report.status_code == 200
     assert len(report.json()["dead_letters"]) == 1
+
+
+def test_arbitrage_scan_and_listing_work_inmemory(monkeypatch):
+    monkeypatch.setenv("USE_INMEMORY_DB", "1")
+    sys.path.insert(0, str(ROOT / "services/arbitrage-engine/src"))
+    server = load_module("test_arb_scan", "services/arbitrage-engine/src/api/server.py")
+    server.MEMORY_STORE.arbitrage_events.clear()
+    server.MEMORY_STORE.product_payouts.clear()
+    server.MEMORY_STORE.seed_products(
+        [
+            {"id": "sku-10", "name": "Keyboard", "price": 8.0, "source": "shopee"},
+            {"id": "sku-11", "name": "Keyboard", "price": 18.0, "source": "lazada"},
+        ]
+    )
+    server.upsert_product_payout(
+        server.ProductPayoutRecord(
+            network="lazada",
+            product_id="sku-11",
+            payout_rate=0.6,
+            currency="USD",
+            freshness_ts=datetime.now(timezone.utc),
+        )
+    )
+
+    client = TestClient(server.app)
+    scan = client.post("/arbitrage/scan", json={"persist": True, "min_profit": 1.0, "max_results": 10})
+    assert scan.status_code == 200
+    payload = scan.json()
+    assert payload["ok"] is True
+    assert payload["opportunities_found"] == 1
+    assert payload["persisted"] == 1
+    assert payload["results"][0]["profit"] == pytest.approx(2.8)
+
+    listed = client.get("/arbitrage")
+    assert listed.status_code == 200
+    listed_payload = listed.json()
+    assert len(listed_payload) == 1
+    assert listed_payload[0]["product"] == "keyboard"
+    assert listed_payload[0]["buy"] == "shopee"
+    assert listed_payload[0]["sell"] == "lazada"
