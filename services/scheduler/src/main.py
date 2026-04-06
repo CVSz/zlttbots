@@ -14,6 +14,8 @@ app = FastAPI(title="Global Scheduler")
 FEDERATION_URL = os.getenv("FEDERATION_URL", "http://federation:8000")
 FEDERATION_SECRET = os.getenv("FEDERATION_SECRET", "change-me")
 TIMEOUT = float(os.getenv("SCHEDULER_TIMEOUT", "3.0"))
+SERVICE_HOST = os.getenv("SERVICE_HOST", "127.0.0.1")
+SERVICE_PORT = int(os.getenv("SERVICE_PORT", "8000"))
 
 
 class Task(BaseModel):
@@ -129,4 +131,4 @@ def assign(task: Task) -> Assignment:
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=SERVICE_HOST, port=SERVICE_PORT)
