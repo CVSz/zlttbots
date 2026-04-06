@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import os
+import re
 from typing import Any, Dict, Optional
 
 import jwt
@@ -15,11 +16,35 @@ if not JWT_SECRET and IS_TEST_RUNTIME:
     JWT_SECRET = "unit-test-secret-do-not-use-in-production"
 if not JWT_SECRET or JWT_SECRET == "change-me-in-production":
     raise RuntimeError("CRITICAL: JWT_SECRET is not set or uses insecure default.")
+if len(JWT_SECRET) < 32 and not IS_TEST_RUNTIME:
+    raise RuntimeError("CRITICAL: JWT_SECRET must be at least 32 characters.")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 ALLOWED_ALGORITHMS = {"HS256"}
 if JWT_ALGORITHM not in ALLOWED_ALGORITHMS:
     raise RuntimeError("CRITICAL: Unsupported JWT_ALGORITHM configured.")
-DEFAULT_TOKEN_TTL_MINUTES = int(os.getenv("JWT_TTL_MINUTES", "30"))
+
+
+def _parse_positive_int_env(name: str, default: int, *, minimum: int, maximum: int) -> int:
+    raw_value = os.getenv(name, str(default))
+    try:
+        parsed = int(raw_value)
+    except ValueError as exc:
+        raise RuntimeError(f"CRITICAL: {name} must be a valid integer.") from exc
+    if parsed < minimum or parsed > maximum:
+        raise RuntimeError(f"CRITICAL: {name} must be between {minimum} and {maximum}.")
+    return parsed
+
+
+DEFAULT_TOKEN_TTL_MINUTES = _parse_positive_int_env(
+    "JWT_TTL_MINUTES",
+    30,
+    minimum=1,
+    maximum=1440,
+)
+MAX_SUBJECT_LENGTH = 128
+MAX_SCOPE_LENGTH = 512
+SUBJECT_PATTERN = re.compile(r"^[A-Za-z0-9:_\-.]+$")
+SCOPE_PATTERN = re.compile(r"^[A-Za-z0-9:_\-. ]*$")
 
 
 @app.get("/healthz")
@@ -43,12 +68,25 @@ def jwks() -> Dict[str, Any]:
 
 @app.post("/token")
 def issue_token(subject: str, scopes: Optional[str] = "") -> Dict[str, str]:
+    normalized_subject = subject.strip()
+    normalized_scopes = (scopes or "").strip()
+    if not normalized_subject:
+        raise HTTPException(status_code=400, detail="Subject is required")
+    if len(normalized_subject) > MAX_SUBJECT_LENGTH:
+        raise HTTPException(status_code=400, detail="Subject is too long")
+    if not SUBJECT_PATTERN.fullmatch(normalized_subject):
+        raise HTTPException(status_code=400, detail="Subject contains invalid characters")
+    if len(normalized_scopes) > MAX_SCOPE_LENGTH:
+        raise HTTPException(status_code=400, detail="Scopes are too long")
+    if not SCOPE_PATTERN.fullmatch(normalized_scopes):
+        raise HTTPException(status_code=400, detail="Scopes contain invalid characters")
+
     now = datetime.now(tz=timezone.utc)
     payload = {
         "iss": JWT_ISSUER,
         "aud": JWT_AUDIENCE,
-        "sub": subject,
-        "scope": scopes,
+        "sub": normalized_subject,
+        "scope": normalized_scopes,
         "iat": int(now.timestamp()),
         "exp": int((now + timedelta(minutes=DEFAULT_TOKEN_TTL_MINUTES)).timestamp()),
     }
