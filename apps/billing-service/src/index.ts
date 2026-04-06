@@ -1,4 +1,6 @@
 import express from "express";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
 import pino from "pino";
 import Stripe from "stripe";
 import { z } from "zod";
@@ -8,12 +10,16 @@ const logger = pino({ level: process.env.LOG_LEVEL ?? "info" });
 const port = Number(process.env.BILLING_SERVICE_PORT ?? "3002");
 const stripeSecretKey = process.env.STRIPE_KEY;
 const stripeProPriceId = process.env.STRIPE_PRO_PRICE_ID;
+const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 if (!stripeSecretKey) {
   throw new Error("STRIPE_KEY is required");
 }
 if (!stripeProPriceId) {
   throw new Error("STRIPE_PRO_PRICE_ID is required");
+}
+if (!stripeWebhookSecret) {
+  throw new Error("STRIPE_WEBHOOK_SECRET is required");
 }
 
 const stripe = new Stripe(stripeSecretKey);
@@ -24,7 +30,24 @@ const checkoutSchema = z.object({
 const userPlans = new Map<string, PlanName>();
 
 const app = express();
-app.use(express.json({ limit: "1mb" }));
+app.disable("x-powered-by");
+app.use(helmet());
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: Number(process.env.BILLING_RATE_LIMIT_MAX ?? "120"),
+    standardHeaders: true,
+    legacyHeaders: false,
+  }),
+);
+
+const jsonParser = express.json({ limit: "1mb" });
+app.use((req, res, next) => {
+  if (req.path === "/webhook") {
+    return next();
+  }
+  return jsonParser(req, res, next);
+});
 
 app.get("/healthz", (_req, res) => {
   res.status(200).json({ ok: true, service: "billing-service" });
@@ -48,19 +71,36 @@ app.post("/checkout", async (req, res) => {
   return res.status(200).json({ ok: true, checkoutUrl: session.url });
 });
 
-app.post("/webhook", (req, res) => {
-  const event = req.body as { type?: string; data?: { object?: { client_reference_id?: string } } };
-
-  if (event.type === "checkout.session.completed") {
-    const userId = event.data?.object?.client_reference_id;
-    if (userId) {
-      userPlans.set(userId, "PRO");
-      logger.info({ userId }, "Upgraded user to PRO");
+app.post(
+  "/webhook",
+  express.raw({ type: "application/json", limit: "512kb" }),
+  (req, res) => {
+    const signature = req.header("stripe-signature");
+    if (!signature) {
+      logger.warn("stripe-signature header missing");
+      return res.status(400).json({ ok: false, error: "Missing Stripe signature" });
     }
-  }
 
-  return res.sendStatus(200);
-});
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(req.body, signature, stripeWebhookSecret);
+    } catch (error) {
+      logger.warn({ error }, "Stripe webhook signature validation failed");
+      return res.status(400).json({ ok: false, error: "Invalid Stripe signature" });
+    }
+
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const userId = session.client_reference_id;
+      if (userId) {
+        userPlans.set(userId, "PRO");
+        logger.info({ userId }, "Upgraded user to PRO");
+      }
+    }
+
+    return res.sendStatus(200);
+  },
+);
 
 app.get("/plan/:userId", (req, res) => {
   const plan = userPlans.get(req.params.userId) ?? "FREE";

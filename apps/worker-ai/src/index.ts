@@ -1,4 +1,6 @@
 import express from "express";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
 import OpenAI from "openai";
 import pino from "pino";
 import { z } from "zod";
@@ -17,6 +19,16 @@ if (!apiKey) {
 const client = new OpenAI({ apiKey });
 
 const app = express();
+app.disable("x-powered-by");
+app.use(helmet());
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: Number(process.env.WORKER_AI_RATE_LIMIT_MAX ?? "60"),
+    standardHeaders: true,
+    legacyHeaders: false,
+  }),
+);
 app.use(express.json({ limit: "2mb" }));
 
 app.get("/healthz", (_req, res) => {
