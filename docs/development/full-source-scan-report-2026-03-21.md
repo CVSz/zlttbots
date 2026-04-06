@@ -32,11 +32,11 @@ This report summarizes a fresh repository scan focused on the current structure,
 rg --files -g 'README*' -g '*.md' -g '!node_modules' -g '!dist' -g '!build' -g '!coverage'
 python - <<'PY'
 import yaml
-with open('docker-compose.yml') as f:
+with open('docker compose.yml') as f:
     data=yaml.safe_load(f)
 print('\\n'.join(data['services'].keys()))
 PY
-sed -n '1,260p' docker-compose.yml
+sed -n '1,260p' docker compose.yml
 sed -n '1,240p' scripts/zttato-node.sh
 sed -n '1,260p' configs/nginx.conf
 pytest

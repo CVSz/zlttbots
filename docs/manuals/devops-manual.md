@@ -117,7 +117,7 @@ docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
 Start separately when needed:
 
 ```bash
-docker compose -f infrastructure/monitoring/docker-compose.monitoring.yml up -d
+docker compose -f infrastructure/monitoring/docker compose.monitoring.yml up -d
 ```
 
 Provides:
@@ -130,7 +130,7 @@ Provides:
 Standalone database compose path:
 
 ```bash
-docker compose -f infrastructure/postgres/docker-compose.postgres.yml up -d
+docker compose -f infrastructure/postgres/docker compose.postgres.yml up -d
 ```
 
 ### Kubernetes

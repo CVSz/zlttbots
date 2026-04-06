@@ -1,6 +1,7 @@
 # zTTato Feature Impact Dive
 
 - Generated from repository sources on 2026-04-06 (UTC).
+- Canonical admin-panel path: **nextjs-app-router**
 - Compose services discovered: **43**
 - Node app features discovered: **7**
 - Runtime service modules discovered: **46**
@@ -126,8 +127,45 @@
 - tiktok-uploader: TikTok Uploader Service
 - viral-predictor: Viral Predictor Service
 
-## Recommended Fixes
+## Write Endpoint Security Policy Surface
 
-1. Consolidate duplicated feature naming between compose services, runtime services, and docs/services into a single source-of-truth manifest.
-2. Add this script to CI to detect undocumented apps, runtime modules, or routes drift.
-3. Review all write endpoints and enforce tenant/auth middleware and schema validation at service level.
+- account-farm: 1 write endpoint policies
+- affiliate-webhook: 1 write endpoint policies
+- ai-orchestrator: 1 write endpoint policies
+- arbitrage-engine: 6 write endpoint policies
+- auth-service: 2 write endpoint policies
+- billing-service: 3 write endpoint policies
+- budget-allocator: 1 write endpoint policies
+- campaign-optimizer: 1 write endpoint policies
+- capital-allocator: 1 write endpoint policies
+- exchange: 1 write endpoint policies
+- execution-engine: 1 write endpoint policies
+- feature-store: 3 write endpoint policies
+- federation: 1 write endpoint policies
+- gpu-renderer: 1 write endpoint policies
+- jwt-auth: 1 write endpoint policies
+- log-service: 1 write endpoint policies
+- market-crawler: 1 write endpoint policies
+- market-orchestrator: 1 write endpoint policies
+- master-orchestrator: 7 write endpoint policies
+- model-registry: 1 write endpoint policies
+- model-service: 2 write endpoint policies
+- platform-core: 4 write endpoint policies
+- product-generator: 1 write endpoint policies
+- reward-collector: 1 write endpoint policies
+- rl-coordinator: 2 write endpoint policies
+- rl-engine: 2 write endpoint policies
+- rl-policy: 1 write endpoint policies
+- rtb-engine: 2 write endpoint policies
+- scaling-engine: 1 write endpoint policies
+- scheduler: 1 write endpoint policies
+- tenant-service: 1 write endpoint policies
+- tiktok-farm: 1 write endpoint policies
+- viral-predictor: 1 write endpoint policies
+- worker-ai: 1 write endpoint policies
+
+## Follow-ups
+
+1. Keep this report refreshed whenever significant source or dependency changes are merged.
+2. Expose additional internal services only after documenting auth and ownership.
+3. Re-run pytest and service-specific frontend builds whenever UI/runtime changes accompany future documentation updates.

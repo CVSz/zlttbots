@@ -7,7 +7,7 @@
 **Goal:** ให้ stack ที่มีอยู่รันซ้ำได้, debug ได้, และไม่พังง่าย.
 
 ### Action checklist
-- Validate both compose files in CI (`docker-compose.yml` and `docker-compose.enterprise.yml`).
+- Validate both compose files in CI (`docker compose.yml` and `docker compose.enterprise.yml`).
 - Ensure every HTTP-facing service exposes `/healthz` and Compose health checks.
 - Standardize external API calls with timeout, retry, and backoff.
 - Emit structured JSON logs so Loki/Promtail can ingest all services consistently.
@@ -73,6 +73,6 @@ Long-horizon phases such as multi-region, self-improving agents, DAO/governance,
 ## What changed in this repository now
 
 This repository update supports Stage 0 directly:
-- `docker-compose.enterprise.yml` now keeps enterprise services under `services:` instead of accidentally nesting them under `volumes:`.
+- `docker compose.enterprise.yml` now keeps enterprise services under `services:` instead of accidentally nesting them under `volumes:`.
 - `product-discovery` now has `/healthz`, retry/timeout handling, structured JSON logging, and global exception handling.
 - The service Dockerfile now installs pinned dependencies from `requirements.txt` for repeatable builds.

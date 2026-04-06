@@ -119,7 +119,7 @@ Before restore:
 ### Monitoring stack
 
 ```bash
-docker compose -f infrastructure/monitoring/docker-compose.monitoring.yml up -d
+docker compose -f infrastructure/monitoring/docker compose.monitoring.yml up -d
 ```
 
 ### Node-service lifecycle

@@ -40,8 +40,17 @@ jobs:
       - name: IaC policy checks
         run: bash infrastructure/scripts/check-iac-policy.sh
 
-      - name: Python unit tests
-        run: pytest -q
+      - name: Feature/drift manifest validation
+        run: |
+          python scripts/feature_impact_dive.py --write-manifest
+          git diff --exit-code config/service-surface-manifest.json
+          python scripts/feature_impact_dive.py --validate-manifest
+
+      - name: Documentation snippet and command-style validation
+        run: python scripts/validate_docs_snippets.py
+
+      - name: Python unit tests (warnings treated as errors)
+        run: pytest -q -W error
 
       - name: SAST (Python)
         run: bandit -r enterprise_maturity services -x services/admin-panel

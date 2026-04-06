@@ -15,7 +15,7 @@ The safest starting point is the baseline Compose environment used for local val
 6. **Stateful storage** via PostgreSQL and Redis.
 
 ### B. Expanded Compose control plane
-The same `docker-compose.yml` also declares a larger product/launch/reward/ML control plane. This extends the platform with:
+The same `docker compose.yml` also declares a larger product/launch/reward/ML control plane. This extends the platform with:
 
 - tenant onboarding and API key issuance
 - affiliate conversion ingestion
@@ -130,6 +130,7 @@ This signals a platform design that spans discovery, enrichment, media operation
 
 ### Baseline-first rule
 For setup, smoke checks, incident triage, and onboarding, start with the baseline runtime. It is the narrowest and most predictable path.
+Use `docs/operations/startup-path-comparison-matrix.md` as the command and scope matrix before choosing baseline vs extended startup paths.
 
 ### Extended-runtime caution
 The broader Compose file contains services that are present and buildable, but not all are fully surfaced through public routes or documented for first-day use. Treat them as internal platform components unless your environment explicitly enables them.

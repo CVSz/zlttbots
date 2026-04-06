@@ -3,6 +3,38 @@ set -Eeuo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 status=0
+FALLBACK_ON_AUDIT_UNAVAILABLE="${FALLBACK_ON_AUDIT_UNAVAILABLE:-1}"
+
+run_outdated_fallback() {
+  local package_dir="$1"
+  echo "Falling back to npm outdated for $package_dir"
+  (
+    cd "$package_dir"
+    npm outdated --long || true
+  )
+}
+
+run_audit() {
+  local package_dir="$1"
+  local audit_output
+  set +e
+  audit_output="$(cd "$package_dir" && npm audit --omit=dev --audit-level=high 2>&1)"
+  local audit_rc=$?
+  set -e
+
+  if [[ $audit_rc -eq 0 ]]; then
+    echo "$audit_output"
+    return 0
+  fi
+
+  echo "$audit_output"
+  if [[ "$FALLBACK_ON_AUDIT_UNAVAILABLE" == "1" ]] && grep -Eq "ENOAUDIT|audit endpoint returned an error|503 Service Unavailable|EAI_AGAIN|ECONNREFUSED|ETIMEDOUT" <<<"$audit_output"; then
+    run_outdated_fallback "$package_dir"
+    return 0
+  fi
+
+  return "$audit_rc"
+}
 
 while IFS= read -r package; do
   package_dir="$(dirname "$package")"
@@ -15,10 +47,7 @@ while IFS= read -r package; do
   fi
 
   echo "Scanning $package_dir"
-  (
-    cd "$package_dir"
-    npm audit --omit=dev --audit-level=high
-  ) || status=1
+  run_audit "$package_dir" || status=1
 done < <(
   {
     find "$ROOT" -maxdepth 1 -name package.json

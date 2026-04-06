@@ -16,7 +16,7 @@ Required commands:
 
 - `bash`
 - `docker`
-- Docker Compose v2 plugin (`docker compose`) or `docker-compose`
+- Docker Compose v2 plugin (`docker compose`) or `docker compose`
 - `curl`
 - `python3`
 - `git`

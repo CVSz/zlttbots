@@ -153,7 +153,7 @@ bash scripts/zttato-node.sh start
 ### Start the monitoring stack
 
 ```bash
-docker compose -f infrastructure/monitoring/docker-compose.monitoring.yml up -d
+docker compose -f infrastructure/monitoring/docker compose.monitoring.yml up -d
 ```
 
 ### Read deeper docs

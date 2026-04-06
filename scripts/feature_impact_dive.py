@@ -1,28 +1,30 @@
 #!/usr/bin/env python3
-"""Generate a deterministic feature inventory and impact report for the repository."""
+"""Generate and validate a deterministic feature inventory for the repository."""
 
 from __future__ import annotations
 
 import argparse
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterable
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = REPO_ROOT / "docs" / "development" / "feature-impact-dive-2026-04-06.md"
+DEFAULT_MANIFEST = REPO_ROOT / "config" / "service-surface-manifest.json"
 
 JS_ENDPOINT_RE = re.compile(
-    r'\b(?:app|router)\.(get|post|put|patch|delete|options|head)\(\s*[\'"]([^\'"]+)[\'"]',
+    r'\b(?:app|router)\.(get|post|put|patch|delete|options|head)\(\s*[\'\"]([^\'\"]+)[\'\"]',
     flags=re.IGNORECASE,
 )
 PY_DECORATOR_ENDPOINT_RE = re.compile(
-    r'@\w+\.(get|post|put|patch|delete|options|head)\(\s*[\'"]([^\'"]+)[\'"]',
+    r'@\w+\.(get|post|put|patch|delete|options|head)\(\s*[\'\"]([^\'\"]+)[\'\"]',
     flags=re.IGNORECASE,
 )
 DOC_HEADING_RE = re.compile(r"^#\s+(.+?)\s*$")
 SERVICE_NAME_RE = re.compile(r"^\s{2}([a-zA-Z0-9_.-]+):\s*$")
+WRITE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
 
 @dataclass(frozen=True)
@@ -59,6 +61,35 @@ class ImpactReport:
             + len(self.runtime_services)
             + len(self.documented_features)
         )
+
+
+@dataclass(frozen=True)
+class EndpointPolicy:
+    endpoint: str
+    auth: str
+    tenant: str
+    schema: str
+
+
+@dataclass(frozen=True)
+class ServiceManifestRecord:
+    name: str
+    compose: bool
+    runtime: bool
+    app: bool
+    docs: bool
+    docs_path: str | None
+    runtime_language: str | None
+    endpoints: tuple[str, ...]
+    write_policies: tuple[EndpointPolicy, ...]
+
+
+@dataclass(frozen=True)
+class SurfaceManifest:
+    canonical_admin_panel: str
+    baseline_runtime_services: tuple[str, ...]
+    extended_runtime_services: tuple[str, ...]
+    services: tuple[ServiceManifestRecord, ...]
 
 
 def _read_lines(path: Path) -> list[str]:
@@ -182,15 +213,111 @@ def build_impact_report(repo_root: Path = REPO_ROOT) -> ImpactReport:
     )
 
 
+def build_surface_manifest(report: ImpactReport) -> SurfaceManifest:
+    app_map = {feature.name: feature for feature in report.app_features}
+    runtime_map = {feature.name: feature for feature in report.runtime_services}
+    docs_map = {feature.slug: feature for feature in report.documented_features}
+
+    all_names = sorted(set(report.compose_services) | set(app_map) | set(runtime_map) | set(docs_map))
+    records: list[ServiceManifestRecord] = []
+
+    for name in all_names:
+        endpoints = sorted(set(app_map.get(name, AppFeature(name, tuple())).endpoints) | set(runtime_map.get(name, RuntimeServiceFeature(name, "unknown", tuple())).api_endpoints))
+        write_policies = tuple(
+            EndpointPolicy(endpoint=endpoint, auth="required", tenant="required", schema="required")
+            for endpoint in endpoints
+            if endpoint.split(" ", maxsplit=1)[0] in WRITE_METHODS
+        )
+        records.append(
+            ServiceManifestRecord(
+                name=name,
+                compose=name in report.compose_services,
+                runtime=name in runtime_map,
+                app=name in app_map,
+                docs=name in docs_map,
+                docs_path=f"docs/services/{name}.md" if name in docs_map else None,
+                runtime_language=runtime_map[name].language if name in runtime_map else None,
+                endpoints=tuple(endpoints),
+                write_policies=write_policies,
+            )
+        )
+
+    baseline = tuple(
+        sorted(
+            service
+            for service in report.compose_services
+            if service
+            in {
+                "nginx",
+                "postgres",
+                "redis",
+                "viral-predictor",
+                "market-crawler",
+                "arbitrage-engine",
+                "gpu-renderer",
+                "tiktok-uploader",
+                "analytics",
+                "click-tracker",
+                "account-farm",
+                "ai-video-generator",
+                "admin-panel",
+            }
+        )
+    )
+    extended = tuple(sorted(service for service in report.compose_services if service not in set(baseline)))
+
+    return SurfaceManifest(
+        canonical_admin_panel="nextjs-app-router",
+        baseline_runtime_services=baseline,
+        extended_runtime_services=extended,
+        services=tuple(records),
+    )
+
+
+def manifest_to_dict(manifest: SurfaceManifest) -> dict[str, object]:
+    return {
+        "canonical_admin_panel": manifest.canonical_admin_panel,
+        "baseline_runtime_services": manifest.baseline_runtime_services,
+        "extended_runtime_services": manifest.extended_runtime_services,
+        "services": [
+            {
+                **asdict(record),
+                "write_policies": [asdict(policy) for policy in record.write_policies],
+            }
+            for record in manifest.services
+        ],
+    }
+
+
+def write_manifest(manifest: SurfaceManifest, output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(manifest_to_dict(manifest), indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def validate_manifest(report: ImpactReport, manifest_path: Path) -> list[str]:
+    if not manifest_path.exists():
+        return [f"manifest not found: {manifest_path}"]
+
+    expected = json.loads(json.dumps(manifest_to_dict(build_surface_manifest(report))))
+    actual = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    errors: list[str] = []
+    if expected != actual:
+        errors.append("service surface manifest drift detected; run scripts/feature_impact_dive.py --write-manifest")
+
+    return errors
+
+
 def _render_section(title: str, rows: Iterable[str]) -> str:
     formatted_rows = "\n".join(f"- {row}" for row in rows)
     return f"## {title}\n\n{formatted_rows if formatted_rows else '- (none)'}\n"
 
 
-def format_markdown(report: ImpactReport) -> str:
+def format_markdown(report: ImpactReport, manifest: SurfaceManifest) -> str:
     summary = (
         f"# zTTato Feature Impact Dive\n\n"
         f"- Generated from repository sources on 2026-04-06 (UTC).\n"
+        f"- Canonical admin-panel path: **{manifest.canonical_admin_panel}**\n"
         f"- Compose services discovered: **{len(report.compose_services)}**\n"
         f"- Node app features discovered: **{len(report.app_features)}**\n"
         f"- Runtime service modules discovered: **{len(report.runtime_services)}**\n"
@@ -210,6 +337,11 @@ def format_markdown(report: ImpactReport) -> str:
         for feature in report.runtime_services
     )
     doc_rows = tuple(f"{doc.slug}: {doc.title}" for doc in report.documented_features)
+    policy_rows = tuple(
+        f"{record.name}: {len(record.write_policies)} write endpoint policies"
+        for record in manifest.services
+        if record.write_policies
+    )
 
     return "\n".join(
         [
@@ -218,36 +350,42 @@ def format_markdown(report: ImpactReport) -> str:
             _render_section("Application API Surface", app_rows),
             _render_section("Runtime Service API Surface", runtime_rows),
             _render_section("Documented Product Feature Surface", doc_rows),
-            "## Recommended Fixes\n\n"
-            "1. Consolidate duplicated feature naming between compose services, runtime services, and docs/services into a single source-of-truth manifest.\n"
-            "2. Add this script to CI to detect undocumented apps, runtime modules, or routes drift.\n"
-            "3. Review all write endpoints and enforce tenant/auth middleware and schema validation at service level.\n",
+            _render_section("Write Endpoint Security Policy Surface", policy_rows),
+            "## Follow-ups\n\n"
+            "1. Keep this report refreshed whenever significant source or dependency changes are merged.\n"
+            "2. Expose additional internal services only after documenting auth and ownership.\n"
+            "3. Re-run pytest and service-specific frontend builds whenever UI/runtime changes accompany future documentation updates.\n",
         ]
     )
 
 
-def write_report(report: ImpactReport, output_path: Path) -> None:
+def write_report(report: ImpactReport, manifest: SurfaceManifest, output_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(format_markdown(report), encoding="utf-8")
+    output_path.write_text(format_markdown(report, manifest), encoding="utf-8")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate repository feature impact dive report")
-    parser.add_argument(
-        "--output",
-        type=Path,
-        default=DEFAULT_OUTPUT,
-        help="Markdown output file path",
-    )
-    parser.add_argument(
-        "--json",
-        action="store_true",
-        help="Print machine-readable JSON to stdout",
-    )
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="Markdown output file path")
+    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST, help="Service surface manifest path")
+    parser.add_argument("--json", action="store_true", help="Print machine-readable JSON to stdout")
+    parser.add_argument("--write-manifest", action="store_true", help="Write manifest from discovered source-of-truth")
+    parser.add_argument("--validate-manifest", action="store_true", help="Validate discovered surface against committed manifest")
     args = parser.parse_args()
 
     report = build_impact_report(REPO_ROOT)
-    write_report(report, args.output)
+    manifest = build_surface_manifest(report)
+    write_report(report, manifest, args.output)
+
+    if args.write_manifest:
+        write_manifest(manifest, args.manifest)
+
+    if args.validate_manifest:
+        errors = validate_manifest(report, args.manifest)
+        if errors:
+            for error in errors:
+                print(error)
+            return 1
 
     if args.json:
         payload = {
@@ -269,9 +407,8 @@ def main() -> int:
                 }
                 for feature in report.runtime_services
             ],
-            "documented_features": [
-                {"slug": doc.slug, "title": doc.title} for doc in report.documented_features
-            ],
+            "documented_features": [{"slug": doc.slug, "title": doc.title} for doc in report.documented_features],
+            "manifest": manifest_to_dict(manifest),
             "total_features": report.total_features,
         }
         print(json.dumps(payload, indent=2))
