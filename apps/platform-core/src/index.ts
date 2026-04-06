@@ -105,13 +105,28 @@ app.use((req, res, next) => {
 const kafka = new Kafka({ brokers: kafkaBrokers });
 const producer = kafka.producer();
 
-function requireUserContext(req: express.Request): { userId: string; tenantId: string } {
+function getUserContext(req: express.Request): { userId: string; tenantId: string } | null {
   const userId = req.header("x-user-id");
   const tenantId = req.header("x-tenant-id");
   if (!userId || !tenantId) {
-    throw new Error("Missing user context");
+    return null;
   }
   return { userId, tenantId };
+}
+
+function requireUserContextOrRespond(
+  req: express.Request,
+  res: express.Response,
+): { userId: string; tenantId: string } | null {
+  const context = getUserContext(req);
+  if (!context) {
+    const requestId = req.header("x-request-id");
+    logger.warn({ requestId, path: req.path }, "missing user context");
+    res.status(401).json({ ok: false, error: "Unauthorized" });
+    return null;
+  }
+
+  return context;
 }
 
 app.get("/healthz", (_req, res) => {
@@ -141,7 +156,11 @@ app.post("/deploy", async (req, res) => {
     });
   }
 
-  const { userId, tenantId } = requireUserContext(req);
+  const userContext = requireUserContextOrRespond(req, res);
+  if (!userContext) {
+    return;
+  }
+  const { userId, tenantId } = userContext;
   const limits = await checkLimits(userId);
   const tenantDeployments = deployments.filter((entry) => entry.tenantId === tenantId).length;
   if (tenantDeployments >= limits.maxDeploys) {
@@ -194,7 +213,11 @@ app.post("/deploy/github", async (req, res) => {
     return res.status(400).json({ ok: false, error: "Invalid GitHub deploy payload" });
   }
 
-  const { userId, tenantId } = requireUserContext(req);
+  const userContext = requireUserContextOrRespond(req, res);
+  if (!userContext) {
+    return;
+  }
+  const { userId, tenantId } = userContext;
   await producer.send({
     topic: process.env.DEPLOY_TOPIC ?? "deploy.started",
     messages: [{ value: JSON.stringify({ repo: parsed.data.repo, tenantId, userId }) }],
@@ -215,7 +238,11 @@ app.post("/orgs", (req, res) => {
     return res.status(400).json({ ok: false, error: "Invalid organization payload" });
   }
 
-  const { userId } = requireUserContext(req);
+  const userContext = requireUserContextOrRespond(req, res);
+  if (!userContext) {
+    return;
+  }
+  const { userId } = userContext;
   const org = createOrg(parsed.data.name, userId);
   return res.status(201).json({ ok: true, org });
 });
@@ -226,7 +253,11 @@ app.post("/orgs/:orgId/members", (req, res) => {
     return res.status(400).json({ ok: false, error: "Invalid membership payload" });
   }
 
-  const { userId } = requireUserContext(req);
+  const userContext = requireUserContextOrRespond(req, res);
+  if (!userContext) {
+    return;
+  }
+  const { userId } = userContext;
   const org = getOrg(req.params.orgId);
   if (!org) {
     return res.status(404).json({ ok: false, error: "Organization not found" });
