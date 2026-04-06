@@ -1,14 +1,31 @@
 import json
+import importlib.util
 import logging
 import os
+from pathlib import Path
 import threading
 import time
 from typing import Any, Callable
 
 from confluent_kafka import Consumer, Producer
 
-from metrics import ASYNC_DLQ_TOTAL, ASYNC_RESULTS_TOTAL
 from result_store import result_store
+
+
+def _load_local_metrics_module():
+    module_path = Path(__file__).with_name("metrics.py")
+    spec = importlib.util.spec_from_file_location("model_service_metrics", module_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load metrics module from {module_path}")
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_metrics = _load_local_metrics_module()
+ASYNC_DLQ_TOTAL = _metrics.ASYNC_DLQ_TOTAL
+ASYNC_RESULTS_TOTAL = _metrics.ASYNC_RESULTS_TOTAL
 
 log = logging.getLogger("model-service.queue")
 KAFKA_BROKER = os.getenv("KAFKA_BROKER", "redpanda:9092")

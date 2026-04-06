@@ -1,7 +1,9 @@
 import asyncio
+import importlib.util
 import json
 import logging
 import os
+from pathlib import Path
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -15,10 +17,25 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
-from metrics import ASYNC_REQUESTS_TOTAL, RESULT_LOOKUP_LATENCY
 from onnx_model import ONNXModel
 from queue_runtime import REQUEST_TOPIC, start_background_consumers
 from result_store import result_store
+
+
+def _load_local_metrics_module():
+    module_path = Path(__file__).with_name("metrics.py")
+    spec = importlib.util.spec_from_file_location("model_service_metrics", module_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load metrics module from {module_path}")
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_metrics = _load_local_metrics_module()
+ASYNC_REQUESTS_TOTAL = _metrics.ASYNC_REQUESTS_TOTAL
+RESULT_LOOKUP_LATENCY = _metrics.RESULT_LOOKUP_LATENCY
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("model-service")
