@@ -7,8 +7,8 @@ type DeployResponse = { ok: boolean; status?: string; error?: string; deploy?: {
 type GalleryResponse = { ok: boolean; projects?: Array<{ projectId: string; url: string }> };
 
 export default function App() {
-  const [email, setEmail] = useState("founder@zttato.dev");
-  const [password, setPassword] = useState("ChangeMe123456");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [project, setProject] = useState("");
   const [repo, setRepo] = useState("");
   const [status, setStatus] = useState("Idle");
@@ -20,19 +20,29 @@ export default function App() {
   const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
   const register = async () => {
+    if (!email.trim() || !password) {
+      setStatus("Registration requires both email and password.");
+      return;
+    }
+
     const res = await fetch("/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email: email.trim(), password }),
     });
     setStatus(res.ok ? "Registered. Now login." : "Registration failed.");
   };
 
   const login = async () => {
+    if (!email.trim() || !password) {
+      setStatus("Login requires both email and password.");
+      return;
+    }
+
     const res = await fetch("/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email: email.trim(), password }),
     });
     const data = (await res.json()) as LoginResponse;
 
