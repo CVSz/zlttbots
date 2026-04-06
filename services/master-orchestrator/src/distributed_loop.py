@@ -1,14 +1,24 @@
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import urlparse
 
 import requests
 from fastapi import HTTPException
 
 TIMEOUT = 10
+ALLOWED_INTERNAL_HOSTS = {"feature-store", "rl-coordinator", "budget-allocator", "rtb-engine", "scaling-engine"}
+
+
+def _assert_internal_url(url: str) -> str:
+    parsed = urlparse(url)
+    if parsed.scheme != "http" or parsed.hostname not in ALLOWED_INTERNAL_HOSTS:
+        raise HTTPException(status_code=400, detail="upstream url is not allowed")
+    return url
 
 
 def safe_call(method, url: str, **kwargs: Any) -> dict[str, Any]:
+    url = _assert_internal_url(url)
     kwargs.setdefault("timeout", TIMEOUT)
     try:
         response = method(url, **kwargs)

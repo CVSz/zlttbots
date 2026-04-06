@@ -15,6 +15,10 @@ from pydantic import BaseModel, Field
 logger = logging.getLogger("deployment-controller")
 
 
+def _sanitize_log_value(value: str) -> str:
+    return value.replace("\r", " ").replace("\n", " ").strip()
+
+
 class DeploymentState(str, Enum):
     queued = "queued"
     building = "building"
@@ -150,8 +154,8 @@ class DeploymentStore:
 
     def _log(self, event_type: str, deployment_id: str, context: dict[str, Any]) -> None:
         message = {
-            "event_type": event_type,
-            "deployment_id": deployment_id,
+            "event_type": _sanitize_log_value(event_type),
+            "deployment_id": _sanitize_log_value(deployment_id),
             "context": context,
             "timestamp": self._now_iso(),
         }

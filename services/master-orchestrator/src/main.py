@@ -2,6 +2,7 @@ import logging
 import os
 from typing import Any, Literal
 from urllib.parse import quote
+from urllib.parse import urlparse
 
 import requests
 from fastapi import FastAPI, HTTPException
@@ -33,6 +34,14 @@ MODEL_SERVICE_URL = os.getenv("MODEL_SERVICE_URL", "http://model-service:8000")
 EXECUTION_ENGINE_URL = os.getenv("EXECUTION_ENGINE_URL", "http://execution-engine:9600")
 APP_PORT = int(os.getenv("MASTER_ORCHESTRATOR_PORT", "8000"))
 deployment_store = DeploymentStore()
+ALLOWED_UPSTREAM_HOSTS = {
+    "click-tracker",
+    "payment-gateway",
+    "feature-store",
+    "model-service",
+    "execution-engine",
+    "scheduler",
+}
 
 
 class PaymentConfig(BaseModel):
@@ -73,6 +82,10 @@ class ProfitModeResponse(BaseModel):
 
 
 def safe_call(method_func, url: str, **kwargs: Any) -> dict[str, Any]:
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"} or parsed.hostname not in ALLOWED_UPSTREAM_HOSTS:
+        raise HTTPException(status_code=400, detail="upstream url is not allowed")
+
     kwargs.setdefault("timeout", TIMEOUT)
     session = requests.Session()
     retries = Retry(
@@ -96,9 +109,9 @@ def safe_call(method_func, url: str, **kwargs: Any) -> dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except requests.RequestException as exc:
-        raise HTTPException(status_code=502, detail=f"Upstream call failed for {url}: {exc}") from exc
+        raise HTTPException(status_code=502, detail=f"Upstream call failed: {exc}") from exc
     except ValueError as exc:
-        raise HTTPException(status_code=502, detail=f"Invalid JSON response from {url}: {exc}") from exc
+        raise HTTPException(status_code=502, detail=f"Invalid JSON response from upstream: {exc}") from exc
 
 
 class Offer(BaseModel):

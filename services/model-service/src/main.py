@@ -109,7 +109,7 @@ def healthz() -> dict[str, Any]:
         "status": "ok",
         "service": "model-service",
         "model_version": MODEL_VERSION,
-        "kafka_broker": KAFKA_BROKER,
+        "kafka_configured": bool(KAFKA_BROKER),
         "onnx_ready": model.ready,
     }
 
