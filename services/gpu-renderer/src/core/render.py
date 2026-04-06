@@ -10,9 +10,8 @@ def _should_use_cuda() -> bool:
     if hwaccel_mode in {"none", "cpu", "off", "false", "0"}:
         return False
 
-    # Strict check: Even if requested, verify binary presence to prevent crash.
     has_nvidia = shutil.which("nvidia-smi") is not None
-    if hwaccel_mode in {"cuda", "nvidia", "gpu", "on", "true", "1"} and has_nvidia:
+    if hwaccel_mode in {"cuda", "nvidia", "gpu", "on", "true", "1"}:
         return True
 
     return has_nvidia if hwaccel_mode == "auto" else False
