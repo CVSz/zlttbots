@@ -1,15 +1,18 @@
 from __future__ import annotations
 
-import random
 from typing import Iterable
 
 
 class HierarchicalRL:
+    @staticmethod
+    def _initial_weights(dim: int) -> list[float]:
+        return [((index + 1) / (dim + 1)) * 2.0 - 1.0 for index in range(dim)]
+
     def __init__(self, dim: int = 2, lr: float = 0.01) -> None:
-        self.lr = lr
-        self.campaign_w = [random.uniform(-1.0, 1.0) for _ in range(dim)]
-        self.adset_w = [random.uniform(-1.0, 1.0) for _ in range(dim)]
-        self.creative_w = [random.uniform(-1.0, 1.0) for _ in range(dim)]
+        self.lr = float(lr)
+        self.campaign_w = self._initial_weights(dim)
+        self.adset_w = self._initial_weights(dim)
+        self.creative_w = self._initial_weights(dim)
 
     @staticmethod
     def _dot(lhs: list[float], rhs: list[float]) -> float:

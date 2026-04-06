@@ -7,16 +7,17 @@ from typing import Iterable
 
 
 class P2PAgent:
-    def __init__(self, weights: Iterable[float], port: int = 9000) -> None:
+    def __init__(self, weights: Iterable[float], port: int = 9000, host: str = "127.0.0.1") -> None:
         self.weights = [float(value) for value in weights]
-        self.port = port
+        self.port = int(port)
+        self.host = host
 
     def start_server(self) -> None:
         def run() -> None:
             sock = socket.socket()
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
-                sock.bind(("0.0.0.0", self.port))
+                sock.bind((self.host, self.port))
             except OSError:
                 sock.close()
                 return
