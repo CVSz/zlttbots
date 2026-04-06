@@ -26,3 +26,12 @@ def test_token_and_introspect_round_trip() -> None:
     claims = introspect.json()['claims']
     assert claims['sub'] == 'svc-analytics'
     assert claims['scope'] == 'read:events'
+
+
+def test_token_rejects_invalid_subject() -> None:
+    app = _load_jwt_auth_app()
+    client = TestClient(app)
+
+    response = client.post('/token', params={'subject': 'svc analytics'})
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'Subject contains invalid characters'
