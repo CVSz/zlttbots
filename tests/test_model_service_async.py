@@ -81,7 +81,7 @@ class NoopMetric:
 
 
 def load_main_module():
-    base = Path("/workspace/zttato-platform/services/model-service/src")
+    base = Path(__file__).resolve().parents[1] / "services" / "model-service" / "src"
     sys.path.insert(0, str(base))
     sys.modules["torch"] = FakeTorch()
     sys.modules["confluent_kafka"] = types.SimpleNamespace(Producer=FakeProducer, Consumer=FakeConsumer)
