@@ -10,6 +10,8 @@ from pydantic import BaseModel, Field
 app = FastAPI(title="Tenant Service")
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://zttato:zttato@postgres:5432/zttato")
 DEFAULT_DAILY_SPEND_LIMIT = float(os.getenv("DEFAULT_DAILY_SPEND_LIMIT", "100.0"))
+SERVICE_HOST = os.getenv("SERVICE_HOST", "127.0.0.1")
+SERVICE_PORT = int(os.getenv("SERVICE_PORT", "8000"))
 
 
 def db_connection():
@@ -78,4 +80,4 @@ def create_tenant(payload: TenantCreateRequest) -> TenantCreateResponse:
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=SERVICE_HOST, port=SERVICE_PORT)

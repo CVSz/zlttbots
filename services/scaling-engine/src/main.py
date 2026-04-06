@@ -1,9 +1,12 @@
+import os
 from typing import Any
 
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
 app = FastAPI(title="Scaling Engine")
+SERVICE_HOST = os.getenv("SERVICE_HOST", "127.0.0.1")
+SERVICE_PORT = int(os.getenv("SERVICE_PORT", "8000"))
 
 
 class ScaleRequest(BaseModel):
@@ -39,4 +42,4 @@ def scale(request: ScaleRequest) -> ScaleResponse:
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=SERVICE_HOST, port=SERVICE_PORT)
