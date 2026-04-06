@@ -11,8 +11,21 @@ from pydantic import BaseModel, Field
 app = FastAPI(title="Model Registry")
 BASE = Path(os.getenv("MODEL_REGISTRY_PATH", "/models"))
 SHARED = Path(os.getenv("MODEL_REGISTRY_SHARED_PATH", "/shared-models"))
-BASE.mkdir(parents=True, exist_ok=True)
-SHARED.mkdir(parents=True, exist_ok=True)
+
+
+def _ensure_writable_directory(path: Path, env_override_name: str) -> Path:
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+    except PermissionError:
+        fallback = Path("/tmp/zttato-model-registry") / path.name
+        fallback.mkdir(parents=True, exist_ok=True)
+        os.environ.setdefault(env_override_name, str(fallback))
+        return fallback
+
+
+BASE = _ensure_writable_directory(BASE, "MODEL_REGISTRY_PATH")
+SHARED = _ensure_writable_directory(SHARED, "MODEL_REGISTRY_SHARED_PATH")
 
 
 class Register(BaseModel):
