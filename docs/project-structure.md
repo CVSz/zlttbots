@@ -19,8 +19,8 @@ zttato-platform/
 ├── scripts/                        # Day-2 ops, install, deploy, repair, edge and node helpers
 ├── services/                       # Python and Node services / apps
 ├── tests/                          # Pytest validation for runtime and maturity modules
-├── docker-compose.yml              # Main local + extended platform compose definition
-├── docker-compose.enterprise.yml   # Additional enterprise deployment variant
+├── docker compose.yml              # Main local + extended platform compose definition
+├── docker compose.enterprise.yml   # Additional enterprise deployment variant
 ├── start.sh                        # Fast bootstrap helper for Compose baseline
 ├── start-zttato.sh                 # Full bootstrap helper with node/python install flow
 └── stop.sh                         # Stop helper
@@ -154,7 +154,7 @@ The pytest suite validates multiple repository layers, not just one service. Exa
 Start with these before making changes:
 
 1. `README.md`
-2. `docker-compose.yml`
+2. `docker compose.yml`
 3. `configs/nginx.conf`
 4. `docs/system-overview.md`
 5. `docs/installation.md`

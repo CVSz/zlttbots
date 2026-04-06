@@ -4,7 +4,7 @@
 
 - [ ] Configure production `.env` (JWT secret, CORS allow-list, database URL).
 - [ ] Provision PostgreSQL (Supabase or managed Postgres).
-- [ ] Run `docker-compose up -d` and verify all core services are healthy.
+- [ ] Run `docker compose up -d` and verify all core services are healthy.
 - [ ] Verify TLS and DNS are configured for the primary domain.
 
 ## Hour 4–8 (Core Flow Validation)

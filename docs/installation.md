@@ -241,7 +241,7 @@ This is a separate lifecycle from the nginx-routed Compose baseline. Treat it as
 ## 12) Optional monitoring installation
 
 ```bash
-docker compose -f infrastructure/monitoring/docker-compose.monitoring.yml up -d
+docker compose -f infrastructure/monitoring/docker compose.monitoring.yml up -d
 ```
 
 Expected local endpoints:

@@ -47,4 +47,4 @@ docker compose exec -T nginx wget -qO- http://gpu-renderer:9300/healthz
 
 ## Enterprise stack note
 
-สำหรับ `docker-compose.enterprise.yml` ตอนนี้ `product-discovery` มี health endpoint และ Compose healthcheck แล้ว ดังนั้นสามารถใช้ `docker compose -f docker-compose.enterprise.yml ps` เพื่อตรวจสถานะได้โดยตรง.
+สำหรับ `docker compose.enterprise.yml` ตอนนี้ `product-discovery` มี health endpoint และ Compose healthcheck แล้ว ดังนั้นสามารถใช้ `docker compose -f docker compose.enterprise.yml ps` เพื่อตรวจสถานะได้โดยตรง.

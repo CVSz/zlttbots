@@ -1,0 +1,1301 @@
+{
+  "baseline_runtime_services": [
+    "arbitrage-engine",
+    "gpu-renderer",
+    "market-crawler",
+    "nginx",
+    "postgres",
+    "redis",
+    "viral-predictor"
+  ],
+  "canonical_admin_panel": "nextjs-app-router",
+  "extended_runtime_services": [
+    "affiliate-webhook",
+    "arbitrage-worker",
+    "billing-service",
+    "budget-allocator",
+    "capital-allocator",
+    "crawler-worker",
+    "drift-detector",
+    "execution-engine",
+    "feature-store",
+    "federation",
+    "landing-service",
+    "market-orchestrator",
+    "master-orchestrator",
+    "model-registry",
+    "model-service",
+    "model-sync",
+    "p2p-node",
+    "payment-gateway",
+    "product-generator",
+    "ray-head",
+    "ray-worker",
+    "redpanda",
+    "renderer-worker",
+    "retraining-loop",
+    "reward-collector",
+    "rl-agent-1",
+    "rl-agent-2",
+    "rl-coordinator",
+    "rl-engine",
+    "rl-policy",
+    "rl-trainer",
+    "rtb-engine",
+    "scaling-engine",
+    "scheduler",
+    "stream-consumer",
+    "tenant-service"
+  ],
+  "services": [
+    {
+      "app": false,
+      "compose": false,
+      "docs": true,
+      "docs_path": "docs/services/account-farm.md",
+      "endpoints": [
+        "GET /farm/health",
+        "POST /farm/run"
+      ],
+      "name": "account-farm",
+      "runtime": true,
+      "runtime_language": "node",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /farm/run",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": false,
+      "docs": true,
+      "docs_path": "docs/services/admin-panel.md",
+      "endpoints": [],
+      "name": "admin-panel",
+      "runtime": false,
+      "runtime_language": null,
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "POST /conversion"
+      ],
+      "name": "affiliate-webhook",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /conversion",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /health",
+        "POST /run-growth-cycle"
+      ],
+      "name": "ai-orchestrator",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /run-growth-cycle",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": false,
+      "docs": true,
+      "docs_path": "docs/services/ai-video-generator.md",
+      "endpoints": [],
+      "name": "ai-video-generator",
+      "runtime": true,
+      "runtime_language": "node",
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": false,
+      "docs": true,
+      "docs_path": "docs/services/analytics.md",
+      "endpoints": [
+        "GET /analytics/campaigns",
+        "GET /analytics/conversion",
+        "GET /analytics/products",
+        "GET /analytics/revenue",
+        "GET /analytics/summary",
+        "GET /healthz"
+      ],
+      "name": "analytics",
+      "runtime": true,
+      "runtime_language": "node",
+      "write_policies": []
+    },
+    {
+      "app": true,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz"
+      ],
+      "name": "api-gateway",
+      "runtime": false,
+      "runtime_language": null,
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": true,
+      "docs_path": "docs/services/arbitrage-engine.md",
+      "endpoints": [
+        "GET /arbitrage",
+        "GET /healthz",
+        "GET /metrics",
+        "GET /publishing/counters/{tenant_id}",
+        "GET /reporting/posted-products/{tenant_id}",
+        "POST /affiliate/payouts/ingest",
+        "POST /affiliate/sync",
+        "POST /performance",
+        "POST /publishing/jobs",
+        "POST /publishing/run-daily",
+        "POST /videos"
+      ],
+      "name": "arbitrage-engine",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /affiliate/payouts/ingest",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /affiliate/sync",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /performance",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /publishing/jobs",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /publishing/run-daily",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /videos",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "arbitrage-worker",
+      "runtime": false,
+      "runtime_language": null,
+      "write_policies": []
+    },
+    {
+      "app": true,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "POST /login",
+        "POST /register"
+      ],
+      "name": "auth-service",
+      "runtime": false,
+      "runtime_language": null,
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /login",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /register",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": true,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "GET /plan/:userId",
+        "POST /charge",
+        "POST /checkout",
+        "POST /webhook"
+      ],
+      "name": "billing-service",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /charge",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /checkout",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /webhook",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "POST /allocate"
+      ],
+      "name": "budget-allocator",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /allocate",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "POST /optimize"
+      ],
+      "name": "campaign-optimizer",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /optimize",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "POST /allocate"
+      ],
+      "name": "capital-allocator",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /allocate",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": false,
+      "docs": true,
+      "docs_path": "docs/services/click-tracker.md",
+      "endpoints": [],
+      "name": "click-tracker",
+      "runtime": true,
+      "runtime_language": "node",
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "crawler-worker",
+      "runtime": false,
+      "runtime_language": null,
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "creative-generator",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "drift-detector",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "POST /order"
+      ],
+      "name": "exchange",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /order",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "GET /status/{external_id}",
+        "POST /publish"
+      ],
+      "name": "execution-engine",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /publish",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /features/{campaign_id}",
+        "GET /healthz",
+        "POST /features/{campaign_id}",
+        "PUT /features",
+        "PUT /features/{campaign_id}"
+      ],
+      "name": "feature-store",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /features/{campaign_id}",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "PUT /features",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "PUT /features/{campaign_id}",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "GET /nodes",
+        "POST /register"
+      ],
+      "name": "federation",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /register",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": true,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "frontend",
+      "runtime": false,
+      "runtime_language": null,
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": true,
+      "docs_path": "docs/services/gpu-renderer.md",
+      "endpoints": [
+        "GET /healthz",
+        "GET /metrics",
+        "POST /render"
+      ],
+      "name": "gpu-renderer",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /render",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /.well-known/jwks.json",
+        "GET /healthz",
+        "GET /introspect",
+        "POST /token"
+      ],
+      "name": "jwt-auth",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /token",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "GET /landing/{product_id}"
+      ],
+      "name": "landing-service",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": []
+    },
+    {
+      "app": true,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "POST /log"
+      ],
+      "name": "log-service",
+      "runtime": false,
+      "runtime_language": null,
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /log",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": true,
+      "docs_path": "docs/services/market-crawler.md",
+      "endpoints": [
+        "GET /healthz",
+        "GET /metrics",
+        "POST /crawl"
+      ],
+      "name": "market-crawler",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /crawl",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "POST /launch"
+      ],
+      "name": "market-orchestrator",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /launch",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": true,
+      "docs_path": "docs/services/master-orchestrator.md",
+      "endpoints": [
+        "GET /deployments/{deployment_id}",
+        "GET /healthz",
+        "POST /campaign/run",
+        "POST /deployments",
+        "POST /deployments/events",
+        "POST /economy/run",
+        "POST /federation/run",
+        "POST /profit-mode/activate",
+        "POST /run-cycle"
+      ],
+      "name": "master-orchestrator",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /campaign/run",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /deployments",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /deployments/events",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /economy/run",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /federation/run",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /profit-mode/activate",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /run-cycle",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "GET /latest/{name}",
+        "POST /register"
+      ],
+      "name": "model-registry",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /register",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "GET /metrics",
+        "GET /result/{job_id}",
+        "GET /result/{job_id}/wait",
+        "POST /predict",
+        "POST /predict_async"
+      ],
+      "name": "model-service",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /predict",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /predict_async",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "model-sync",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "network-egress",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "nginx",
+      "runtime": false,
+      "runtime_language": null,
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "p2p-node",
+      "runtime": true,
+      "runtime_language": "node",
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "payment-gateway",
+      "runtime": false,
+      "runtime_language": null,
+      "write_policies": []
+    },
+    {
+      "app": true,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /github/repos",
+        "GET /healthz",
+        "GET /projects/public",
+        "POST /deploy",
+        "POST /deploy/github",
+        "POST /orgs",
+        "POST /orgs/:orgId/members"
+      ],
+      "name": "platform-core",
+      "runtime": false,
+      "runtime_language": null,
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /deploy",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /deploy/github",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /orgs",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /orgs/:orgId/members",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "postgres",
+      "runtime": false,
+      "runtime_language": null,
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /discover",
+        "GET /healthz"
+      ],
+      "name": "product-discovery",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "POST /generate"
+      ],
+      "name": "product-generator",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /generate",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "ray-head",
+      "runtime": false,
+      "runtime_language": null,
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "ray-worker",
+      "runtime": false,
+      "runtime_language": null,
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "redis",
+      "runtime": false,
+      "runtime_language": null,
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "redpanda",
+      "runtime": false,
+      "runtime_language": null,
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "renderer-worker",
+      "runtime": false,
+      "runtime_language": null,
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "retraining-loop",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "POST /reward"
+      ],
+      "name": "reward-collector",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /reward",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "rl-agent-1",
+      "runtime": false,
+      "runtime_language": null,
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "rl-agent-2",
+      "runtime": false,
+      "runtime_language": null,
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "POST /decide",
+        "POST /update"
+      ],
+      "name": "rl-coordinator",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /decide",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /update",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "POST /select",
+        "POST /update"
+      ],
+      "name": "rl-engine",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /select",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /update",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "POST /train"
+      ],
+      "name": "rl-policy",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /train",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "rl-trainer",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "POST /bid",
+        "POST /openrtb/bid"
+      ],
+      "name": "rtb-engine",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /bid",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /openrtb/bid",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "POST /scale"
+      ],
+      "name": "scaling-engine",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /scale",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "POST /assign"
+      ],
+      "name": "scheduler",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /assign",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "shopee-crawler",
+      "runtime": true,
+      "runtime_language": "node",
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "stream-consumer",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "POST /tenant"
+      ],
+      "name": "tenant-service",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /tenant",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /farm/status",
+        "POST /farm/job"
+      ],
+      "name": "tiktok-farm",
+      "runtime": true,
+      "runtime_language": "node",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /farm/job",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "tiktok-shop-miner",
+      "runtime": true,
+      "runtime_language": "node",
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": false,
+      "docs": true,
+      "docs_path": "docs/services/tiktok-uploader.md",
+      "endpoints": [],
+      "name": "tiktok-uploader",
+      "runtime": true,
+      "runtime_language": "node",
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": true,
+      "docs": true,
+      "docs_path": "docs/services/viral-predictor.md",
+      "endpoints": [
+        "GET /healthz",
+        "GET /metrics",
+        "POST /predict"
+      ],
+      "name": "viral-predictor",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /predict",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": true,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "POST /fix"
+      ],
+      "name": "worker-ai",
+      "runtime": false,
+      "runtime_language": null,
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /fix",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    }
+  ]
+}

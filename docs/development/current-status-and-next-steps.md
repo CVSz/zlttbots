@@ -5,7 +5,7 @@ This document is a practical review of the current `zttato-platform` repository 
 ## 1) Current snapshot (what we already have)
 
 ### Platform and runtime foundation
-- Central orchestration with `docker-compose.yml` including PostgreSQL, Redis, API services, workers, and NGINX reverse proxy.
+- Central orchestration with `docker compose.yml` including PostgreSQL, Redis, API services, workers, and NGINX reverse proxy.
 - Service-level health checks are already configured in Compose for critical services.
 - Startup and shutdown scripts exist at repository root (`start.sh`, `stop.sh`) and in `scripts/`.
 

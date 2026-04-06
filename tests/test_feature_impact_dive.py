@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from scripts.feature_impact_dive import (
@@ -5,11 +6,15 @@ from scripts.feature_impact_dive import (
     ImpactReport,
     RuntimeServiceFeature,
     ServiceDocFeature,
+    build_surface_manifest,
+    format_markdown,
     extract_app_features,
     extract_compose_services,
     extract_documented_features,
     extract_runtime_service_features,
-    format_markdown,
+    manifest_to_dict,
+    validate_manifest,
+    write_manifest,
 )
 
 
@@ -83,6 +88,40 @@ def test_extract_documented_features_reads_titles(tmp_path: Path) -> None:
     assert docs[0].title == "Analytics Service"
 
 
+def test_build_surface_manifest_contains_write_endpoint_policy() -> None:
+    report = ImpactReport(
+        compose_services=("platform",),
+        app_features=(AppFeature(name="platform", endpoints=("POST /deploy",)),),
+        runtime_services=(),
+        documented_features=(ServiceDocFeature(slug="platform", title="Platform"),),
+    )
+
+    manifest = build_surface_manifest(report)
+    record = manifest.services[0]
+    assert record.name == "platform"
+    assert record.write_policies[0].endpoint == "POST /deploy"
+    assert record.write_policies[0].auth == "required"
+
+
+def test_validate_manifest_detects_drift(tmp_path: Path) -> None:
+    report = ImpactReport(
+        compose_services=("platform",),
+        app_features=(AppFeature(name="platform", endpoints=("GET /healthz",)),),
+        runtime_services=(),
+        documented_features=(ServiceDocFeature(slug="platform", title="Platform"),),
+    )
+    manifest = build_surface_manifest(report)
+    manifest_path = tmp_path / "manifest.json"
+    write_manifest(manifest, manifest_path)
+
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    payload["services"][0]["endpoints"] = []
+    manifest_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    errors = validate_manifest(report, manifest_path)
+    assert errors
+
+
 def test_format_markdown_contains_counts() -> None:
     report = ImpactReport(
         compose_services=("api",),
@@ -97,8 +136,22 @@ def test_format_markdown_contains_counts() -> None:
         documented_features=(ServiceDocFeature(slug="analytics", title="Analytics Service"),),
     )
 
-    markdown = format_markdown(report)
+    manifest = build_surface_manifest(report)
+    markdown = format_markdown(report, manifest)
     assert "Compose services discovered: **1**" in markdown
     assert "Application API Surface" in markdown
     assert "Runtime Service API Surface" in markdown
     assert "platform (1 endpoints): GET /healthz" in markdown
+    assert "Canonical admin-panel path" in markdown
+
+
+def test_manifest_to_dict_is_json_serializable() -> None:
+    report = ImpactReport(
+        compose_services=("api",),
+        app_features=(),
+        runtime_services=(),
+        documented_features=(),
+    )
+    manifest = build_surface_manifest(report)
+    payload = manifest_to_dict(manifest)
+    json.dumps(payload)

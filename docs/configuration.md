@@ -6,7 +6,7 @@ This document is the full configuration reference for the current zTTato reposit
 
 ### Root runtime files
 - `.env` — primary source for Compose-local environment values
-- `docker-compose.yml` — service wiring, dependency graph, build contexts, health checks, environment propagation
+- `docker compose.yml` — service wiring, dependency graph, build contexts, health checks, environment propagation
 - `configs/nginx.conf` — gateway routes exposed on port `80`
 - `configs/env/production.env` — template/default source used by bootstrap flows when `.env` is missing
 
