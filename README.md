@@ -1,27 +1,41 @@
 # zTTato Platform
 
-zTTato Platform is a multi-service social-commerce and affiliate-operations workspace. The repository combines a runnable Docker Compose stack, a larger AI/automation control plane, operational shell tooling, enterprise-maturity reference modules, and an admin-panel UI for operators.
+zTTato Platform is an enterprise-focused AI + DevOps platform for social commerce, affiliate operations, and automation workloads. This repository combines runnable services, shared TypeScript packages, infrastructure assets, operational scripts, and deep technical documentation.
 
-## Repository goals
+## Platform at a glance
 
-The current repository supports four related usage modes:
+- **Multi-service runtime**: Docker Compose stack for local development and service orchestration.
+- **Application workspaces**: Node/TypeScript services in `apps/*` and shared contracts/types in `packages/*`.
+- **Operational tooling**: lifecycle, bootstrap, deployment, repair, and diagnostics scripts in `scripts/` and `installer/`.
+- **Infrastructure assets**: Terraform, Compose, and deployment support under `infra/` and `docs/infrastructure/`.
+- **Reference architecture and audits**: enterprise maturity modules, runbooks, and security/operations reports in `docs/`.
 
-1. **Baseline local platform** for product discovery, virality scoring, arbitrage review, rendering, PostgreSQL, Redis, and nginx.
-2. **Expanded automation platform** with tenant onboarding, affiliate conversion intake, execution, market orchestration, billing, landing generation, and ML-oriented services defined in `docker-compose.yml`.
-3. **Standalone Node application layer** for admin, analytics, click tracking, account automation, uploaders, miners, and marketplace helpers.
-4. **Enterprise blueprint and validation layer** in `enterprise_maturity/` and `tests/` for service discovery, queueing, autoscaling, GPU scheduling, resilience, and governance patterns.
+## Repository layout
 
-## What is in this repository
+| Path | Purpose |
+| --- | --- |
+| `apps/` | API gateway, auth, billing, frontend, worker, and platform-core workspaces |
+| `packages/` | Shared TypeScript definitions and reusable package code |
+| `services/` | Additional platform services and runtime modules |
+| `scripts/` | Install/start/stop/deploy/recovery automation scripts |
+| `installer/` | Guided installation and bootstrap flows |
+| `infra/` | Infrastructure artifacts (including Compose/Terraform) |
+| `docs/` | Architecture, API docs, operations runbooks, installation manuals |
+| `tests/` | Automated tests and validation assets |
 
-- **Compose runtime**: `docker-compose.yml` and root launcher scripts.
-- **Services**: Python and Node services under `services/`.
-- **Infrastructure assets**: PostgreSQL migrations, monitoring stack, Kubernetes manifests, Cloudflare helpers, CI, and bootstrap scripts.
-- **Operational scripts**: install, deploy, repair, monitoring, and recovery utilities under `scripts/` and `infrastructure/scripts/`.
-- **Documentation**: platform docs, manuals, API docs, runbooks, and development scan reports under `docs/`.
+## Quick start (local)
 
-## Fastest start
+### 1. Prerequisites
 
-### 1) Create `.env`
+- Docker 24+
+- Docker Compose v2+
+- Node.js 20+
+- npm 10+
+- Python 3.12+ (for Python service/tooling flows)
+
+### 2. Configure environment
+
+Create a `.env` file in the repository root:
 
 ```env
 DB_NAME=zttato
@@ -38,14 +52,14 @@ PLATFORM_API_KEY=
 AFFILIATE_WEBHOOK_SECRET=change-me
 ```
 
-### 2) Build and start
+### 3. Start core services
 
 ```bash
 docker compose build
 docker compose up -d
 ```
 
-Or use helper workflows:
+Alternative managed startup commands:
 
 ```bash
 bash start.sh
@@ -54,49 +68,78 @@ bash scripts/zttato-manager.sh install
 bash scripts/zttato-manager.sh status
 ```
 
-### 3) Verify health
+### 4. Verify platform health
 
 ```bash
 docker compose ps
 curl -i http://localhost/
 ```
 
-### 4) Run tests
+## Node workspace development
+
+Install dependencies once:
 
 ```bash
-pytest
+npm install
+```
+
+Run all main workspace dev processes:
+
+```bash
+npm run dev
+```
+
+Build all workspaces:
+
+```bash
+npm run build
+```
+
+Run a specific workspace:
+
+```bash
+npm --workspace apps/frontend run dev
+npm --workspace apps/api-gateway run dev
+npm --workspace apps/platform-core run dev
 ```
 
 ## Common operations
 
-### View logs
+### Logs
 
 ```bash
 docker compose logs --tail=200 <service-name>
 ```
 
-### Restart one service
+### Restart a service
 
 ```bash
 docker compose restart <service-name>
 ```
 
-### Scale worker replicas
+### Scale workers
 
 ```bash
 docker compose up -d --scale crawler-worker=3 --scale renderer-worker=2 --scale arbitrage-worker=2
 ```
 
-## Documentation map
+### Run test suites
+
+```bash
+pytest
+```
+
+## Documentation index
 
 - System overview: `docs/system-overview.md`
-- Installation: `docs/installation.md`
-- Quick start: `docs/quick-start.md`
-- Configuration: `docs/configuration.md`
-- Manuals: `docs/manuals/`
-- UI/UX guide: `docs/ux-ui/admin-panel-ux-ui.md`
+- Installation guide: `docs/installation.md`
+- Quick-start guide: `docs/quick-start.md`
+- Configuration reference: `docs/configuration.md`
+- API documentation: `docs/api/`
+- Operations runbooks: `docs/operations/runbooks/`
+- Developer standards: `docs/development/coding-standards.md`
 
-## Security and support
+## Security and release information
 
 - Security policy and reporting process: [`SECURITY.md`](SECURITY.md)
 - Changelog and release history: [`CHANGELOG.md`](CHANGELOG.md)
