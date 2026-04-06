@@ -38,15 +38,7 @@ class Replicator:
     def deploy(self, target: DeploymentTarget) -> int:
         remote_command = build_remote_command(target.runtime, self.image)
         ssh_target = f"{target.user}@{target.host}"
-        cmd = [
-            "ssh",
-            "-o",
-            "BatchMode=yes",
-            "-o",
-            "StrictHostKeyChecking=yes",
-            ssh_target,
-            remote_command,
-        ]
+        cmd = build_ssh_command(target=target, remote_command=remote_command)
         log.info("deploying autonomous node to %s with runtime=%s", ssh_target, target.runtime)
         completed = asyncio.run(_execute_ssh_command(cmd))
         if completed.returncode != 0:
@@ -95,6 +87,23 @@ def build_remote_command(runtime: str, image: str) -> str:
     return f"docker pull {quoted_image} && docker compose up -d"
 
 
+def build_ssh_command(target: DeploymentTarget, remote_command: str) -> list[str]:
+    if not remote_command:
+        raise ValueError("remote command must not be empty")
+    ssh_target = f"{target.user}@{target.host}"
+    return [
+        "ssh",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=yes",
+        "-o",
+        f"ConnectTimeout={_SSH_TIMEOUT_SECONDS}",
+        ssh_target,
+        remote_command,
+    ]
+
+
 def _validate_target_inputs(host: str, user: str, runtime: str) -> None:
     if not _HOST_PATTERN.fullmatch(host):
         raise ValueError(f"invalid deployment host: {host!r}")
@@ -125,7 +134,7 @@ async def _execute_ssh_command(cmd: list[str]) -> CommandResult:
         *cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
-    )
+    )  # nosec B603 - command is assembled through allowlists and regex-validated inputs.
     try:
         stdout_bytes, stderr_bytes = await asyncio.wait_for(process.communicate(), timeout=_SSH_TIMEOUT_SECONDS)
     except asyncio.TimeoutError:
