@@ -30,6 +30,13 @@ SHARED = _ensure_writable_directory(SHARED, "MODEL_REGISTRY_SHARED_PATH")
 SAFE_NAME_RE = re.compile(r"^[A-Za-z0-9._-]+$")
 
 
+def _allowed_source_roots() -> tuple[Path, ...]:
+    raw_roots = os.getenv("MODEL_REGISTRY_ALLOWED_SOURCE_ROOTS", "/tmp")
+    configured = [item.strip() for item in raw_roots.split(":") if item.strip()]
+    resolved_configured = [Path(item).expanduser().resolve(strict=False) for item in configured]
+    return tuple(dict.fromkeys([BASE.resolve(strict=False), SHARED.resolve(strict=False), *resolved_configured]))
+
+
 def _safe_model_component(value: str, field_name: str) -> str:
     cleaned = value.strip()
     if not SAFE_NAME_RE.fullmatch(cleaned):
@@ -42,9 +49,8 @@ def _resolve_source_file(model_path: str) -> Path:
     if not candidate.exists() or not candidate.is_file():
         raise HTTPException(status_code=400, detail="model path not found")
 
-    base_allowed = BASE.resolve(strict=False)
-    shared_allowed = SHARED.resolve(strict=False)
-    if not (candidate.is_relative_to(base_allowed) or candidate.is_relative_to(shared_allowed)):
+    allowed_roots = _allowed_source_roots()
+    if not any(candidate.is_relative_to(allowed_root) for allowed_root in allowed_roots):
         raise HTTPException(status_code=400, detail="model path is outside allowed registries")
     return candidate
 
