@@ -177,6 +177,7 @@
         "GET /reporting/posted-products/{tenant_id}",
         "POST /affiliate/payouts/ingest",
         "POST /affiliate/sync",
+        "POST /arbitrage/scan",
         "POST /performance",
         "POST /publishing/jobs",
         "POST /publishing/run-daily",
@@ -195,6 +196,12 @@
         {
           "auth": "required",
           "endpoint": "POST /affiliate/sync",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /arbitrage/scan",
           "schema": "required",
           "tenant": "required"
         },

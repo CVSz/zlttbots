@@ -71,7 +71,7 @@
 - ai-orchestrator [python] (2 endpoints): GET /health, POST /run-growth-cycle
 - ai-video-generator [node] (0 endpoints): no HTTP routes found
 - analytics [node] (6 endpoints): GET /analytics/campaigns, GET /analytics/conversion, GET /analytics/products, GET /analytics/revenue, GET /analytics/summary, GET /healthz
-- arbitrage-engine [python] (11 endpoints): GET /arbitrage, GET /healthz, GET /metrics, GET /publishing/counters/{tenant_id}, GET /reporting/posted-products/{tenant_id}, POST /affiliate/payouts/ingest, POST /affiliate/sync, POST /performance, POST /publishing/jobs, POST /publishing/run-daily, POST /videos
+- arbitrage-engine [python] (12 endpoints): GET /arbitrage, GET /healthz, GET /metrics, GET /publishing/counters/{tenant_id}, GET /reporting/posted-products/{tenant_id}, POST /affiliate/payouts/ingest, POST /affiliate/sync, POST /arbitrage/scan, POST /performance, POST /publishing/jobs, POST /publishing/run-daily, POST /videos
 - billing-service [python] (2 endpoints): GET /healthz, POST /charge
 - budget-allocator [python] (2 endpoints): GET /healthz, POST /allocate
 - campaign-optimizer [python] (1 endpoints): POST /optimize
@@ -132,7 +132,7 @@
 - account-farm: 1 write endpoint policies
 - affiliate-webhook: 1 write endpoint policies
 - ai-orchestrator: 1 write endpoint policies
-- arbitrage-engine: 6 write endpoint policies
+- arbitrage-engine: 7 write endpoint policies
 - auth-service: 2 write endpoint policies
 - billing-service: 3 write endpoint policies
 - budget-allocator: 1 write endpoint policies
