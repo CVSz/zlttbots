@@ -31,11 +31,14 @@ def _assert_internal_url(url: str) -> str:
     return url
 
 
-def safe_call(method, url: str, **kwargs: Any) -> dict[str, Any]:
+def safe_call(method: str, url: str, **kwargs: Any) -> dict[str, Any]:
     url = _assert_internal_url(url)
     kwargs.setdefault("timeout", TIMEOUT)
+    method_name = method.strip().lower()
+    if method_name not in {"get", "post"}:
+        raise HTTPException(status_code=500, detail="unsupported HTTP method")
     try:
-        response = method(url, allow_redirects=False, **kwargs)
+        response = getattr(requests, method_name)(url, allow_redirects=False, **kwargs)
         response.raise_for_status()
         return response.json()
     except requests.RequestException as exc:
@@ -55,14 +58,14 @@ def build_task_token(campaign_id: str, tenant_id: str, region: str) -> str:
 
 
 def run_global_task(campaign_id: str, tenant_id: str = DEFAULT_TENANT, region: str = DEFAULT_REGION) -> dict[str, Any]:
-    features = safe_call(requests.get, f"http://feature-store:8000/features/{campaign_id}")
+    features = safe_call("get", f"http://feature-store:8000/features/{campaign_id}")
     rl = safe_call(
-        requests.post,
+        "post",
         "http://rl-coordinator:8000/decide",
         json={"campaign_id": campaign_id, "features": features},
     )
     capital = safe_call(
-        requests.post,
+        "post",
         "http://capital-allocator:8000/allocate",
         json={
             "campaign_id": campaign_id,
@@ -73,7 +76,7 @@ def run_global_task(campaign_id: str, tenant_id: str = DEFAULT_TENANT, region: s
         },
     )
     scheduler = safe_call(
-        requests.post,
+        "post",
         "http://scheduler:8000/assign",
         json={
             "task_id": campaign_id,

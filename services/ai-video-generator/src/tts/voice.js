@@ -15,6 +15,17 @@ function resolveOutputPath(output) {
   return normalized
 }
 
+function hasKnownAudioHeader(buffer) {
+  const bytes = new Uint8Array(buffer)
+  if (bytes.length < 4) {
+    return false
+  }
+  const isWav = bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46
+  const isMp3 = bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33
+  const isOgg = bytes[0] === 0x4f && bytes[1] === 0x67 && bytes[2] === 0x67 && bytes[3] === 0x53
+  return isWav || isMp3 || isOgg
+}
+
 export async function generateVoice(text, output){
 
 const url = "https://api.elevenlabs.io/v1/text-to-speech"
@@ -31,6 +42,9 @@ if (!contentType.startsWith("audio/")) {
 }
 if (!response.data || response.data.byteLength > MAX_AUDIO_BYTES) {
   throw new Error("TTS audio response exceeds configured size limit")
+}
+if (!hasKnownAudioHeader(response.data)) {
+  throw new Error("Unexpected audio binary payload returned by TTS provider")
 }
 
 const safeOutputPath = resolveOutputPath(output)

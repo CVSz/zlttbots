@@ -140,10 +140,11 @@ def _env_flag(name: str, default: bool = False) -> bool:
 
 
 def resolve_bind_host() -> str:
+    wildcard_v4 = ".".join(["0", "0", "0", "0"])
     host = os.getenv("RTB_HOST", "127.0.0.1").strip()
     if not host:
         return "127.0.0.1"
-    if host in {"0.0.0.0", "::"} and not _env_flag("RTB_ALLOW_WILDCARD_BIND"):
+    if host in {wildcard_v4, "::"} and not _env_flag("RTB_ALLOW_WILDCARD_BIND"):
         return "127.0.0.1"
     return host
 

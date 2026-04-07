@@ -36,13 +36,15 @@ def test_sample_payload_is_deterministic() -> None:
     seed = "sandbox:model-service:http://model-service:8000/predict"
     first = sample_payload(seed)
     second = sample_payload(seed)
-    assert first == second
+    if first != second:
+        raise AssertionError("sample_payload must be deterministic for identical seeds")
 
 
 def test_plan_uses_deterministic_payloads() -> None:
     first = plan("sandbox")
     second = plan("sandbox")
-    assert first == second
+    if first != second:
+        raise AssertionError("plan output must be deterministic for identical inputs")
 
 
 def test_agent_replicator_does_not_use_subprocess_run() -> None:
