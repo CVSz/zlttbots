@@ -37,7 +37,7 @@ export function auth(req: Request, res: Response, next: NextFunction) {
   try {
     const decoded = jwt.verify(token, jwtSecret, {
       issuer: "zttato-auth-service",
-      audience: "zttato-platform",
+      audience: "zlttbots",
     });
 
     if (!isJwtClaims(decoded)) {

@@ -14,7 +14,7 @@ provider "cloudflare" {
 
 resource "cloudflare_ruleset" "zttato_waf" {
   zone_id = var.cloudflare_zone_id
-  name    = "zttato-platform-waf"
+  name    = "zlttbots-waf"
   kind    = "zone"
   phase   = "http_request_firewall_custom"
 

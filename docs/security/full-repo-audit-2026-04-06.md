@@ -1,6 +1,6 @@
 # Full Repository Security & Reliability Audit
 
-**Repository:** `zttato-platform`  
+**Repository:** `zlttbots`  
 **Audit date (UTC):** 2026-04-06  
 **Auditor:** Codex autonomous agent
 

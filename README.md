@@ -63,7 +63,7 @@ Alternative managed startup commands:
 
 ```bash
 bash start.sh
-bash scripts/start-zttato-platform.sh --core
+bash scripts/start-zlttbots.sh --core
 bash scripts/zttato-manager.sh install
 bash scripts/zttato-manager.sh status
 ```

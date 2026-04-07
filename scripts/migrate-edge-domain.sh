@@ -156,7 +156,7 @@ cf_api -X PUT \
 
 echo "Checking docker network"
 
-NETWORK="zttato-platform_default"
+NETWORK="zlttbots_default"
 
 if docker network inspect "$NETWORK" >/dev/null 2>&1; then
   echo "Network exists: $NETWORK"

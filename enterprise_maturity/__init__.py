@@ -1,4 +1,4 @@
-"""Enterprise production maturity toolkit for zttato-platform."""
+"""Enterprise production maturity toolkit for zlttbots."""
 
 from .security import (
     AccessToken,

@@ -20,7 +20,7 @@ spec:
     - issuer: "https://api.zttato.internal/auth"
       jwksUri: "http://jwt-auth.platform.svc.cluster.local/.well-known/jwks.json"
       audiences:
-        - zttato-platform
+        - zlttbots
 ---
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy

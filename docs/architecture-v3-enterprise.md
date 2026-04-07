@@ -1,4 +1,4 @@
-# zttato-platform v3 Enterprise Upgrade Design
+# zlttbots v3 Enterprise Upgrade Design
 
 This document defines the v3 Enterprise target architecture and migration path for the current v2 production stack.
 
@@ -104,7 +104,7 @@ Target: 100+ crawler workers with autoscaling policies.
 ## 4) Proposed repository layout (v3)
 
 ```text
-zttato-platform-v3
+zlttbots-v3
 |
 +- gateway/
 |  +- traefik/
@@ -235,7 +235,7 @@ Add `n8n` as workflow orchestration for cross-service lifecycle automation:
 
 ## 11) Final capability profile (v3)
 
-With this upgrade, the platform evolves from **zttato-platform v2 production** to **zttato-platform v3 enterprise**, enabling:
+With this upgrade, the platform evolves from **zlttbots v2 production** to **zlttbots v3 enterprise**, enabling:
 
 - Automatic TikTok video generation at scale
 - Account farming and upload automation workflows

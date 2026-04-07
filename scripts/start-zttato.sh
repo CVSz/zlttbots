@@ -59,7 +59,7 @@ log "Waiting Postgres"
 
 for i in {1..30}; do
 
-if docker exec zttato-platform-postgres-1 pg_isready -U zttato >/dev/null 2>&1; then
+if docker exec zlttbots-postgres-1 pg_isready -U zttato >/dev/null 2>&1; then
 log "Postgres ready"
 break
 fi
@@ -165,7 +165,7 @@ if ! docker ps | grep -q cloudflared; then
 docker run -d \
 --name zttato-cloudflared \
 --restart unless-stopped \
---network zttato-platform_default \
+--network zlttbots_default \
 cloudflare/cloudflared \
 tunnel run --token "$CF_TUNNEL_TOKEN"
 

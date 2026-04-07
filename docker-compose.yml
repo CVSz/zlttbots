@@ -1,4 +1,4 @@
-name: zttato-platform
+name: zlttbots
 
 services:
   postgres:

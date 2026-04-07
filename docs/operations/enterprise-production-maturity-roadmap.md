@@ -1,6 +1,6 @@
 # Enterprise Production Maturity Roadmap
 
-This roadmap converts the enterprise checklist into an execution-ready program for `zttato-platform`.
+This roadmap converts the enterprise checklist into an execution-ready program for `zlttbots`.
 
 ## Prioritization model
 

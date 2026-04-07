@@ -220,13 +220,13 @@ echo "Starting cloudflared"
 
 docker rm -f zttato-cloudflared >/dev/null 2>&1 || true
 
-NETWORK="zttato-platform_zttato-net"
+NETWORK="zlttbots_zttato-net"
 if ! docker network inspect "$NETWORK" >/dev/null 2>&1; then
-    NETWORK="zttato-platform_default"
+    NETWORK="zlttbots_default"
 fi
 
 if ! docker network inspect "$NETWORK" >/dev/null 2>&1; then
-    echo "ERROR: Could not find docker network for stack (checked zttato-platform_zttato-net and zttato-platform_default)"
+    echo "ERROR: Could not find docker network for stack (checked zlttbots_zttato-net and zlttbots_default)"
     exit 1
 fi
 

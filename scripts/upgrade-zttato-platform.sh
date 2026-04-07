@@ -18,7 +18,7 @@ compose_cmd(){
 }
 
 log "Running installer prerequisites"
-bash "$ROOT_DIR/scripts/install-zttato-platform.sh"
+bash "$ROOT_DIR/scripts/install-zlttbots.sh"
 
 log "Pulling published base images when available"
 compose_cmd pull --ignore-pull-failures || true

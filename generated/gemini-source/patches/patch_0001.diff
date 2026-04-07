@@ -104,7 +104,7 @@ diff --git a/services/jwt-auth/src/main.py b/services/jwt-auth/src/main.py
 @@ -9,7 +9,11 @@
  
  JWT_ISSUER = os.getenv("JWT_ISSUER", "https://jwt-auth.platform.svc.cluster.local")
- JWT_AUDIENCE = os.getenv("JWT_AUDIENCE", "zttato-platform")
+ JWT_AUDIENCE = os.getenv("JWT_AUDIENCE", "zlttbots")
 -JWT_SECRET = os.getenv("JWT_SECRET", "change-me-in-production")
 +
 +JWT_SECRET = os.getenv("JWT_SECRET")

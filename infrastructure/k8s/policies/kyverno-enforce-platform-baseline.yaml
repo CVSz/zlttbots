@@ -1,7 +1,7 @@
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
-  name: enforce-zttato-platform-baseline
+  name: enforce-zlttbots-baseline
 spec:
   validationFailureAction: Enforce
   background: true

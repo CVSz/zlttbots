@@ -180,7 +180,7 @@ fi
 git add .
 git commit -m "upgrade: zTTato Enterprise v8 autonomous AI growth engine"
 
-git push git@github.com:ZeaZDev/zttato-platform.git
+git push git@github.com:ZeaZDev/zlttbots.git
 
 
 echo "===================================="

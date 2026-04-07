@@ -124,7 +124,7 @@ echo ""
 echo "Internal Service Connectivity"
 echo "--------------------------------------"
 
-TEST_CONTAINER="zttato-platform-market-crawler-1"
+TEST_CONTAINER="zlttbots-market-crawler-1"
 
 SERVICES=(
 "market-crawler:9400"

@@ -88,7 +88,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException
 app = FastAPI(title="jwt-auth", version="1.0.0")
 
 JWT_ISSUER = os.getenv("JWT_ISSUER", "https://jwt-auth.platform.svc.cluster.local")
-JWT_AUDIENCE = os.getenv("JWT_AUDIENCE", "zttato-platform")
+JWT_AUDIENCE = os.getenv("JWT_AUDIENCE", "zlttbots")
 JWT_SECRET = os.getenv("JWT_SECRET")
 IS_TEST_RUNTIME = "PYTEST_CURRENT_TEST" in os.environ
 if not JWT_SECRET and IS_TEST_RUNTIME:

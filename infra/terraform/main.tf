@@ -51,9 +51,9 @@ resource "google_compute_instance" "vm" {
     systemctl enable docker
     systemctl start docker
     cd /opt
-    rm -rf zttato-platform
-    git clone https://github.com/ZeaZDev/zttato-platform.git
-    cd zttato-platform
+    rm -rf zlttbots
+    git clone https://github.com/cvsz/zlttbots.git
+    cd zlttbots
     docker compose -f infra/docker-compose.yml up -d
   EOF
 }

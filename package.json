@@ -1,5 +1,5 @@
 {
-  "name": "zttato-platform",
+  "name": "zlttbots",
   "private": true,
   "workspaces": [
     "apps/*",
