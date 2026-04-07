@@ -1,7 +1,7 @@
 # path: scripts/generate-devops-pack.sh
 #!/usr/bin/env bash
 #
-# Generator: DevOps script pack for zTTato-platform
+# Generator: DevOps script pack for zlttbots
 # Creates production helper scripts under infrastructure/scripts
 #
 # Usage:

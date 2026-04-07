@@ -2,7 +2,7 @@
 
 set -e
 
-PROJECT="zTTato-platform"
+PROJECT="zlttbots"
 
 echo "Creating project structure..."
 
