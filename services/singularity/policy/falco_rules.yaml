@@ -1,0 +1,5 @@
+- rule: Outbound to metadata
+  desc: Detect SSRF reachability to cloud metadata endpoint.
+  condition: evt.type=connect and fd.sip="169.254.169.254"
+  output: "SSRF attempt to metadata"
+  priority: CRITICAL

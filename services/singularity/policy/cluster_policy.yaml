@@ -1,0 +1,19 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: enforce-non-root-rofs
+spec:
+  validationFailureAction: enforce
+  rules:
+    - name: ro-root
+      match:
+        resources:
+          kinds:
+            - Pod
+      validate:
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  runAsNonRoot: true
+                  readOnlyRootFilesystem: true
