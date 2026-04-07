@@ -9,6 +9,7 @@ import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterable
+from json import JSONDecodeError
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = REPO_ROOT / "docs" / "development" / "feature-impact-dive-2026-04-06.md"
@@ -299,9 +300,52 @@ def validate_manifest(report: ImpactReport, manifest_path: Path) -> list[str]:
         return [f"manifest not found: {manifest_path}"]
 
     expected = json.loads(json.dumps(manifest_to_dict(build_surface_manifest(report))))
-    actual = json.loads(manifest_path.read_text(encoding="utf-8"))
+    try:
+        actual = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except JSONDecodeError as exc:
+        return [f"manifest JSON decode error at line {exc.lineno}, column {exc.colno}: {exc.msg}"]
 
     errors: list[str] = []
+
+    services = actual.get("services")
+    if not isinstance(services, list):
+        return ["manifest shape error: services must be an array"]
+
+    for index, service in enumerate(services):
+        if not isinstance(service, dict):
+            errors.append(f"manifest shape error: services[{index}] must be an object")
+            continue
+
+        service_name = service.get("name", f"index-{index}")
+        write_policies = service.get("write_policies")
+        endpoints = service.get("endpoints")
+        if not isinstance(endpoints, list):
+            errors.append(f"manifest shape error: service {service_name} endpoints must be an array")
+            continue
+        if not isinstance(write_policies, list):
+            errors.append(f"manifest shape error: service {service_name} write_policies must be an array")
+            continue
+
+        for policy_index, policy in enumerate(write_policies):
+            if not isinstance(policy, dict):
+                errors.append(
+                    f"manifest shape error: service {service_name} write_policies[{policy_index}] must be an object"
+                )
+                continue
+            for field in ("auth", "tenant", "schema", "endpoint"):
+                if not isinstance(policy.get(field), str):
+                    errors.append(
+                        f"manifest shape error: service {service_name} write_policies[{policy_index}].{field} must be a string"
+                    )
+            policy_endpoint = policy.get("endpoint")
+            if isinstance(policy_endpoint, str) and policy_endpoint not in endpoints:
+                errors.append(
+                    f"manifest integrity error: service {service_name} policy endpoint not listed in endpoints ({policy_endpoint})"
+                )
+
+    if errors:
+        return errors
+
     if expected != actual:
         errors.append("service surface manifest drift detected; run scripts/feature_impact_dive.py --write-manifest")
 
