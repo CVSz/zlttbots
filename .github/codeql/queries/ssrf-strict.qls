@@ -1,0 +1,4 @@
+name: ssrf-strict
+query-filters:
+  - include:
+      tags contain: external/cwe/cwe-918
