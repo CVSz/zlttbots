@@ -49,23 +49,23 @@ USAGE
 
 case "${1:-}" in
   install)
-    bash "$ROOT_DIR/scripts/install-zttato-platform.sh"
+    bash "$ROOT_DIR/scripts/install-zlttbots.sh"
     ;;
   start)
-    bash "$ROOT_DIR/scripts/start-zttato-platform.sh"
+    bash "$ROOT_DIR/scripts/start-zlttbots.sh"
     ;;
   stop)
     compose_cmd down
     ;;
   restart)
     compose_cmd down
-    bash "$ROOT_DIR/scripts/start-zttato-platform.sh"
+    bash "$ROOT_DIR/scripts/start-zlttbots.sh"
     ;;
   deploy)
-    bash "$ROOT_DIR/scripts/deploy-zttato-platform.sh"
+    bash "$ROOT_DIR/scripts/deploy-zlttbots.sh"
     ;;
   upgrade)
-    bash "$ROOT_DIR/scripts/upgrade-zttato-platform.sh"
+    bash "$ROOT_DIR/scripts/upgrade-zlttbots.sh"
     ;;
   status)
     status_cmd

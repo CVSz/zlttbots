@@ -26,7 +26,7 @@ Use this if you want:
 Use this when you specifically need the admin panel or the separate Node services.
 
 ### Path D — dedicated single-file SaaS installer (new)
-Use this when you need the ZEAZ-style one-shot provisioning flow adapted for zTTato on a fresh Ubuntu 24.04 VM. It provisions `/opt/zttato-platform`, generates secrets, creates TLS certs, writes Docker/K8s artifacts, configures UFW, and installs cron/systemd jobs.
+Use this when you need the ZEAZ-style one-shot provisioning flow adapted for zTTato on a fresh Ubuntu 24.04 VM. It provisions `/opt/zlttbots`, generates secrets, creates TLS certs, writes Docker/K8s artifacts, configures UFW, and installs cron/systemd jobs.
 
 Run:
 
@@ -70,7 +70,7 @@ Optional flags:
 
 ```bash
 git clone <repository-url>
-cd zttato-platform
+cd zlttbots
 ```
 
 ## 4) Create the root `.env`

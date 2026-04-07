@@ -2,8 +2,8 @@
 set -e
 
 CONTAINERS=(
-zttato-platform-postgres-1
-zttato-platform-redis-1
+zlttbots-postgres-1
+zlttbots-redis-1
 )
 
 for c in "${CONTAINERS[@]}"

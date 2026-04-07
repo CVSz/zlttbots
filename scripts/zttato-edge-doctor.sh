@@ -177,15 +177,15 @@ echo ""
 echo "Docker Network"
 echo "--------------------------------------"
 
-DOCKER_NETWORK="zttato-platform_zttato-net"
+DOCKER_NETWORK="zlttbots_zttato-net"
 if ! docker network inspect "$DOCKER_NETWORK" >/dev/null 2>&1; then
-  DOCKER_NETWORK="zttato-platform_default"
+  DOCKER_NETWORK="zlttbots_default"
 fi
 
 if docker network inspect "$DOCKER_NETWORK" >/dev/null 2>&1; then
   echo "[OK] $DOCKER_NETWORK exists"
 else
-  echo "[WARN] docker network missing (checked zttato-platform_zttato-net and zttato-platform_default)"
+  echo "[WARN] docker network missing (checked zlttbots_zttato-net and zlttbots_default)"
 fi
 
 ########################################

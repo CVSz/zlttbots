@@ -1,6 +1,6 @@
 # Repository Analysis (2026-03-14)
 
-This document captures a practical technical analysis of the current `zttato-platform` repository state, with emphasis on architecture shape, engineering maturity, and operational risks.
+This document captures a practical technical analysis of the current `zlttbots` repository state, with emphasis on architecture shape, engineering maturity, and operational risks.
 
 ## 1) High-level architecture
 

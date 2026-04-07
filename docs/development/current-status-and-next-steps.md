@@ -1,6 +1,6 @@
 # Current Project Review and What We Need Next
 
-This document is a practical review of the current `zttato-platform` repository and a clear execution plan for the next phase.
+This document is a practical review of the current `zlttbots` repository and a clear execution plan for the next phase.
 
 ## 1) Current snapshot (what we already have)
 

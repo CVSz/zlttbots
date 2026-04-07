@@ -5,7 +5,7 @@ This repository is large enough that a structure map matters. The tree mixes run
 ## Top-level layout
 
 ```text
-zttato-platform/
+zlttbots/
 ├── AGENTS.md
 ├── CHANGELOG.md
 ├── LICENSE

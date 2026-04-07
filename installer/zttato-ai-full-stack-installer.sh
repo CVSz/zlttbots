@@ -2,11 +2,11 @@
 set -euo pipefail
 
 # zTTato adaptation of requested ZEAZ single-file installer.
-# This script generates a production-oriented stack at /opt/zttato-platform.
+# This script generates a production-oriented stack at /opt/zlttbots.
 
 DOMAIN=""
 CERT_EMAIL=""
-APP_DIR="/opt/zttato-platform"
+APP_DIR="/opt/zlttbots"
 EXPORT_ZIP="false"
 BUILD_FULL_PACK="true"
 
@@ -434,10 +434,10 @@ cat > "$APP_DIR/backup/backup.sh" <<'BASH'
 #!/usr/bin/env bash
 set -euo pipefail
 TS=$(date +%F_%H-%M)
-FILE="/opt/zttato-platform/backup/db_${TS}.sql.gz"
+FILE="/opt/zlttbots/backup/db_${TS}.sql.gz"
 ENCRYPTED_FILE="${FILE}.enc"
-BACKUP_KEY_FILE="/opt/zttato-platform/backup/.backup_key"
-DB_CONTAINER=$(docker compose -f /opt/zttato-platform/infra/docker-compose.yml ps -q db)
+BACKUP_KEY_FILE="/opt/zlttbots/backup/.backup_key"
+DB_CONTAINER=$(docker compose -f /opt/zlttbots/infra/docker-compose.yml ps -q db)
 docker exec "$DB_CONTAINER" pg_dump -U zttato zttato | gzip > "$FILE"
 test -s "$FILE"
 if [[ ! -f "$BACKUP_KEY_FILE" ]]; then
@@ -446,7 +446,7 @@ if [[ ! -f "$BACKUP_KEY_FILE" ]]; then
 fi
 openssl enc -aes-256-cbc -pbkdf2 -salt -in "$FILE" -out "$ENCRYPTED_FILE" -pass "file:${BACKUP_KEY_FILE}"
 rm -f "$FILE"
-find /opt/zttato-platform/backup -type f -mtime +7 -delete
+find /opt/zlttbots/backup -type f -mtime +7 -delete
 BASH
 chmod +x "$APP_DIR/backup/backup.sh"
 
@@ -500,7 +500,7 @@ fi
 
 if [[ "$EXPORT_ZIP" == "true" ]]; then
   log "[7/8] Export project archive"
-  (cd /opt && zip -rq zttato-platform.zip zttato-platform)
+  (cd /opt && zip -rq zlttbots.zip zlttbots)
 fi
 
 log "[8/8] Completed"
@@ -521,6 +521,6 @@ NOTE: Set OPENAI_API_KEY in ${APP_DIR}/api/api.env before production usage.
 NOTE: Bootstrap admin user is created with username 'admin' and generated password '${ADMIN_PASS}' (rotate immediately).
 API-specific secrets: ${APP_DIR}/api/api.env
 Worker-specific secrets: ${APP_DIR}/worker/worker.env
-ZIP export: $( [[ "$EXPORT_ZIP" == "true" ]] && echo "/opt/zttato-platform.zip" || echo "disabled (use --export-zip)" )
+ZIP export: $( [[ "$EXPORT_ZIP" == "true" ]] && echo "/opt/zlttbots.zip" || echo "disabled (use --export-zip)" )
 K8s full pack: $( [[ "$BUILD_FULL_PACK" == "true" ]] && echo "${APP_DIR}/k8s (apply with ./deploy.sh)" || echo "disabled (--skip-full-pack used)" )
 MSG

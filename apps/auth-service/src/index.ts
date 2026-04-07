@@ -91,7 +91,7 @@ app.post("/login", async (req, res) => {
   const token = jwt.sign({ userId: user.id, tenantId: user.tenantId }, jwtSecret, {
     expiresIn: "1h",
     issuer: "zttato-auth-service",
-    audience: "zttato-platform",
+    audience: "zlttbots",
   });
 
   return res.status(200).json({ ok: true, token, userId: user.id, tenantId: user.tenantId });

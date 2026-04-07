@@ -1,6 +1,6 @@
 # AGENTS.md
 # Codex Autonomous Agent Specification for zTTato Platform
-# Repository: https://github.com/ZeaZDev/zttato-platform
+# Repository: https://github.com/cvsz/zlttbots
 
 ---
 

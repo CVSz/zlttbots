@@ -63,12 +63,12 @@ compose_up_with_recovery(){
 }
 
 ensure_env(){
-  [[ -f .env ]] || bash "$ROOT_DIR/scripts/install-zttato-platform.sh"
+  [[ -f .env ]] || bash "$ROOT_DIR/scripts/install-zlttbots.sh"
 }
 
 print_usage(){
   cat <<'USAGE'
-Usage: start-zttato-platform.sh [--core|--full]
+Usage: start-zlttbots.sh [--core|--full]
 
 Modes:
   --core  Start only core runtime services to reduce build/storage usage.
