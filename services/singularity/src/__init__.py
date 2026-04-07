@@ -1,0 +1,1 @@
+"""Singularity autonomous cybersecurity package."""

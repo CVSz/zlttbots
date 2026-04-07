@@ -70,6 +70,16 @@ jobs:
             --sarif-dir sarif \
             --report-path security-autofix-report.json
 
+      - name: Run Singularity Engine
+        run: |
+          set -euo pipefail
+          sarif_file="$(find sarif -type f -name '*.sarif' | sort | head -n 1)"
+          if [ -z "$sarif_file" ]; then
+            echo "No SARIF file found for singularity engine."
+            exit 1
+          fi
+          python3 services/singularity/src/run.py --sarif "$sarif_file"
+
       - name: Create fix branch and commit
         id: commit
         env:
