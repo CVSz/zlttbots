@@ -1,12 +1,15 @@
 import ipaddress
 import logging
+import socket
 import time
 from collections.abc import Mapping
+from typing import Union
 from urllib.parse import urlparse
 
 import requests
 
 logger = logging.getLogger(__name__)
+IPAddress = Union[ipaddress.IPv4Address, ipaddress.IPv6Address]
 
 
 class SafeHttpClient:
@@ -29,6 +32,33 @@ class SafeHttpClient:
         self.retries = retries
         self.backoff = backoff
         self.allowed_hosts = {host.lower() for host in allowed_hosts} if allowed_hosts else None
+        self._session = requests.Session()
+        self._session.trust_env = False
+
+    @staticmethod
+    def _is_blocked_address(address: IPAddress) -> bool:
+        return (
+            address.is_private
+            or address.is_loopback
+            or address.is_link_local
+            or address.is_multicast
+            or address.is_unspecified
+            or address.is_reserved
+        )
+
+    def _resolve_host_addresses(self, hostname: str) -> set[IPAddress]:
+        resolved_addresses: set[IPAddress] = set()
+        try:
+            addrinfo = socket.getaddrinfo(hostname, None, proto=socket.IPPROTO_TCP)
+        except socket.gaierror as exc:
+            raise ValueError(f"url host '{hostname}' could not be resolved") from exc
+
+        for _, _, _, _, sockaddr in addrinfo:
+            resolved_addresses.add(ipaddress.ip_address(sockaddr[0]))
+
+        if not resolved_addresses:
+            raise ValueError(f"url host '{hostname}' did not resolve to an address")
+        return resolved_addresses
 
     def _validate_url(self, url: str) -> None:
         parsed = urlparse(url)
@@ -42,12 +72,16 @@ class SafeHttpClient:
             raise ValueError(f"url host '{hostname}' is not allowed")
 
         try:
-            host_ip = ipaddress.ip_address(hostname)
+            literal_ip = ipaddress.ip_address(hostname)
         except ValueError:
-            # Non-IP hostnames are allowed and resolved by network policy.
+            for resolved_ip in self._resolve_host_addresses(hostname):
+                if self._is_blocked_address(resolved_ip):
+                    raise ValueError(
+                        f"url host '{hostname}' resolved to a blocked address: {resolved_ip}"
+                    )
             return
 
-        if host_ip.is_loopback or host_ip.is_private or host_ip.is_link_local:
+        if self._is_blocked_address(literal_ip):
             raise ValueError("private or loopback host targets are not allowed")
 
     def post(
@@ -62,7 +96,7 @@ class SafeHttpClient:
 
         for attempt in range(1, self.retries + 1):
             try:
-                response = requests.post(url, json=json, headers=headers, timeout=self.timeout)
+                response = self._session.post(url, json=json, headers=headers, timeout=self.timeout)
                 if response.status_code < 500:
                     return response
                 last_response = response
