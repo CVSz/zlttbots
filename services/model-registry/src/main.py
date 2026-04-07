@@ -70,7 +70,20 @@ def _resolve_destination(base_dir: Path, file_name: str) -> Path:
     return candidate
 
 
+def _is_within_roots(path: Path, roots: tuple[Path, ...]) -> bool:
+    resolved_path = path.resolve(strict=False)
+    for root in roots:
+        resolved_root = root.resolve(strict=False)
+        if resolved_path == resolved_root or resolved_root in resolved_path.parents:
+            return True
+    return False
+
+
 def _atomic_copy(source: Path, destination: Path) -> None:
+    if not _is_within_roots(source, _allowed_source_roots()):
+        raise HTTPException(status_code=400, detail="invalid source path")
+    if not _is_within_roots(destination.parent, (BASE, SHARED)):
+        raise HTTPException(status_code=400, detail="invalid destination path")
     destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.exists():
         raise HTTPException(status_code=409, detail="model version already exists")
