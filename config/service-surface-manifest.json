@@ -1232,6 +1232,28 @@
         }
       ]
     },
+ {
+ "app": false,
+ "compose": false,
+ "docs": false,
+ "docs_path": null,
+ "endpoints": [
+ "GET /healthz",
+ "GET /scan/{scan_id}",
+ "POST /scan"
+ ],
+ "name": "security-api",
+ "runtime": true,
+ "runtime_language": "python",
+ "write_policies": [
+ {
+ "auth": "required",
+ "endpoint": "POST /scan",
+ "schema": "required",
+ "tenant": "required"
+ }
+ ]
+ },
     {
       "app": false,
       "compose": false,
@@ -1351,6 +1373,17 @@
       "runtime_language": "node",
       "write_policies": []
     },
+ {
+ "app": false,
+ "compose": false,
+ "docs": false,
+ "docs_path": null,
+ "endpoints": [],
+ "name": "singularity",
+ "runtime": true,
+ "runtime_language": "python",
+ "write_policies": []
+ },
     {
       "app": false,
       "compose": true,
