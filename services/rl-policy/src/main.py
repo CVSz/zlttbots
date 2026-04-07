@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Any
 
 import numpy as np
@@ -36,4 +37,4 @@ def train(request: TrainingRequest) -> dict[str, Any]:
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=os.getenv("RL_POLICY_HOST", "127.0.0.1"), port=8000)

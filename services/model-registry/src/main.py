@@ -46,19 +46,19 @@ def _safe_model_component(value: str, field_name: str) -> str:
 
 
 def _resolve_source_file(model_path: str) -> Path:
-    candidate = Path(model_path).expanduser().resolve(strict=False)
-    if not candidate.exists() or not candidate.is_file():
-        raise HTTPException(status_code=400, detail="model path not found")
-    if candidate.is_symlink():
-        raise HTTPException(status_code=400, detail="symlink source files are not allowed")
-    mode = candidate.stat().st_mode
-    if not stat.S_ISREG(mode):
-        raise HTTPException(status_code=400, detail="source must be a regular file")
-
+    source_name = _safe_model_component(Path(model_path).name, "path")
     allowed_roots = _allowed_source_roots()
-    if not any(candidate.is_relative_to(allowed_root) for allowed_root in allowed_roots):
-        raise HTTPException(status_code=400, detail="model path is outside allowed registries")
-    return candidate
+    for allowed_root in allowed_roots:
+        candidate = (allowed_root / source_name).resolve(strict=False)
+        if not candidate.exists() or not candidate.is_file():
+            continue
+        if candidate.is_symlink():
+            raise HTTPException(status_code=400, detail="symlink source files are not allowed")
+        mode = candidate.stat().st_mode
+        if not stat.S_ISREG(mode):
+            raise HTTPException(status_code=400, detail="source must be a regular file")
+        return candidate
+    raise HTTPException(status_code=400, detail="model path not found in allowed source roots")
 
 
 class Register(BaseModel):

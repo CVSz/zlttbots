@@ -22,11 +22,14 @@ def _assert_internal_url(url: str) -> str:
     return url
 
 
-def safe_call(method, url: str, **kwargs: Any) -> dict[str, Any]:
+def safe_call(method: str, url: str, **kwargs: Any) -> dict[str, Any]:
     url = _assert_internal_url(url)
     kwargs.setdefault("timeout", TIMEOUT)
+    method_name = method.strip().lower()
+    if method_name not in {"get", "post"}:
+        raise HTTPException(status_code=500, detail="unsupported HTTP method")
     try:
-        response = method(url, allow_redirects=False, **kwargs)
+        response = getattr(requests, method_name)(url, allow_redirects=False, **kwargs)
         response.raise_for_status()
         return response.json()
     except requests.RequestException as exc:
@@ -36,9 +39,9 @@ def safe_call(method, url: str, **kwargs: Any) -> dict[str, Any]:
 
 
 def run_cycle(campaign_id: str) -> dict[str, Any]:
-    features = safe_call(requests.get, f"http://feature-store:8000/features/{campaign_id}")
+    features = safe_call("get", f"http://feature-store:8000/features/{campaign_id}")
     rl = safe_call(
-        requests.post,
+        "post",
         "http://rl-coordinator:8000/decide",
         json={"campaign_id": campaign_id, "features": features},
     )
@@ -54,7 +57,7 @@ def run_cycle(campaign_id: str) -> dict[str, Any]:
     pacing_ratio = min(2.0, max(0.1, (current_spend / daily_cap) if daily_cap else 1.0))
 
     budget = safe_call(
-        requests.post,
+        "post",
         "http://budget-allocator:8000/allocate",
         json={
             "campaign_id": campaign_id,
@@ -65,7 +68,7 @@ def run_cycle(campaign_id: str) -> dict[str, Any]:
         },
     )
     bid = safe_call(
-        requests.post,
+        "post",
         "http://rtb-engine:8000/bid",
         json={
             "campaign_id": campaign_id,
@@ -77,7 +80,7 @@ def run_cycle(campaign_id: str) -> dict[str, Any]:
         },
     )
     scale = safe_call(
-        requests.post,
+        "post",
         "http://scaling-engine:8000/scale",
         json={"campaign_id": rl["selected_campaign_id"], "score": rl["score"]},
     )

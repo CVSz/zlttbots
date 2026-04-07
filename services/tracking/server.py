@@ -5,7 +5,7 @@ import logging
 import os
 import time
 import uuid
-from urllib.parse import urlencode, urlparse
+from urllib.parse import urlencode, urlparse, urlunparse
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import RedirectResponse
@@ -54,7 +54,7 @@ def _validated_affiliate_base_url() -> str:
         raise HTTPException(status_code=500, detail="affiliate base url credentials/query are not allowed")
     if parsed.hostname not in AFFILIATE_ALLOWED_HOSTS:
         raise HTTPException(status_code=500, detail="affiliate base url host is not allowed")
-    return AFFILIATE_BASE_URL
+    return urlunparse((parsed.scheme, parsed.netloc, parsed.path or "/", "", "", ""))
 
 
 @app.get("/healthz")
@@ -85,7 +85,8 @@ async def track(campaign_id: str, request: Request) -> RedirectResponse:
         conn.commit()
 
     query = urlencode({"cid": cid, "click_id": click_id})
-    target = f"{affiliate_base_url}?{query}"
+    parsed_target = urlparse(affiliate_base_url)
+    target = urlunparse((parsed_target.scheme, parsed_target.netloc, parsed_target.path, "", query, ""))
     logger.info(
         json.dumps(
             {
