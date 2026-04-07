@@ -17,11 +17,16 @@ DEFAULT_REGION = os.getenv("FEDERATED_DEFAULT_REGION", "asia")
 DEFAULT_TENANT = os.getenv("FEDERATED_DEFAULT_TENANT", "default")
 DEFAULT_MAX_BUDGET = float(os.getenv("FEDERATED_MAX_BUDGET", "100"))
 ALLOWED_INTERNAL_HOSTS = {"feature-store", "rl-coordinator", "capital-allocator", "scheduler"}
+ALLOWED_INTERNAL_PORTS = {8000}
 
 
 def _assert_internal_url(url: str) -> str:
     parsed = urlparse(url)
-    if parsed.scheme != "http" or parsed.hostname not in ALLOWED_INTERNAL_HOSTS:
+    if parsed.scheme != "http" or parsed.username or parsed.password:
+        raise HTTPException(status_code=400, detail="upstream url is not allowed")
+    if parsed.hostname not in ALLOWED_INTERNAL_HOSTS or parsed.port not in ALLOWED_INTERNAL_PORTS:
+        raise HTTPException(status_code=400, detail="upstream url is not allowed")
+    if parsed.path in {"", "/"}:
         raise HTTPException(status_code=400, detail="upstream url is not allowed")
     return url
 
@@ -30,7 +35,7 @@ def safe_call(method, url: str, **kwargs: Any) -> dict[str, Any]:
     url = _assert_internal_url(url)
     kwargs.setdefault("timeout", TIMEOUT)
     try:
-        response = method(url, **kwargs)
+        response = method(url, allow_redirects=False, **kwargs)
         response.raise_for_status()
         return response.json()
     except requests.RequestException as exc:

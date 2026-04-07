@@ -73,6 +73,10 @@ def acquire_token() -> None:
         TOKENS -= 1
 
 
+def _sanitize_log_value(value: str) -> str:
+    return value.replace("\r", " ").replace("\n", " ").strip()
+
+
 @app.get("/healthz")
 def healthz() -> dict[str, Any]:
     return {
@@ -98,7 +102,7 @@ def publish(req: PublishRequest) -> PublishResponse:
         "metadata": {"campaign_id": req.campaign_id},
     }
 
-    log.info("Publishing campaign=%s", req.campaign_id)
+    log.info("Publishing campaign=%s", _sanitize_log_value(req.campaign_id))
     data = http_post(f"{API_BASE}/content/publish", payload)
 
     return PublishResponse(

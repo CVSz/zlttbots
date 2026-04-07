@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import time
+from hashlib import sha256
 from pathlib import Path
 
 import numpy as np
@@ -88,6 +89,18 @@ def build_autonomous_snapshot(features: np.ndarray, reward: float) -> dict[str, 
     }
 
 
+def _redact_snapshot(snapshot: dict[str, object]) -> dict[str, object]:
+    redacted = dict(snapshot)
+    identity_payload = snapshot.get("identity")
+    if isinstance(identity_payload, dict):
+        did = str(identity_payload.get("did", ""))
+        redacted["identity"] = {
+            "did_sha256": sha256(did.encode("utf-8")).hexdigest(),
+            "has_signature": bool(identity_payload.get("signature_b64")),
+        }
+    return redacted
+
+
 def loop() -> None:
     MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
     while True:
@@ -109,8 +122,9 @@ def loop() -> None:
         old_prob = float(data.get("prob", 0.5))
         prob = ppo.update(x, reward, old_prob)
         snapshot = build_autonomous_snapshot(x, reward)
-        MODEL_PATH.write_text(json.dumps({"weights": ppo.w.tolist(), "prob": prob, "autonomous_snapshot": snapshot}))
-        log.info("updated policy weights=%s autonomous_snapshot=%s", ppo.w.tolist(), snapshot)
+        safe_snapshot = _redact_snapshot(snapshot)
+        MODEL_PATH.write_text(json.dumps({"weights": ppo.w.tolist(), "prob": prob, "autonomous_snapshot": safe_snapshot}))
+        log.info("updated policy weights=%s autonomous_snapshot=%s", ppo.w.tolist(), safe_snapshot)
 
 
 if __name__ == "__main__":

@@ -43,12 +43,16 @@ def _sanitize_log_value(value: str) -> str:
 
 
 def _validated_affiliate_base_url() -> str:
+    if not AFFILIATE_ALLOWED_HOSTS:
+        raise HTTPException(status_code=500, detail="affiliate allowed hosts must be configured")
     parsed = urlparse(AFFILIATE_BASE_URL)
     if parsed.scheme not in {"http", "https"}:
         raise HTTPException(status_code=500, detail="affiliate base url must be http or https")
     if not parsed.netloc:
         raise HTTPException(status_code=500, detail="affiliate base url host is required")
-    if AFFILIATE_ALLOWED_HOSTS and parsed.hostname not in AFFILIATE_ALLOWED_HOSTS:
+    if parsed.username or parsed.password or parsed.query or parsed.fragment:
+        raise HTTPException(status_code=500, detail="affiliate base url credentials/query are not allowed")
+    if parsed.hostname not in AFFILIATE_ALLOWED_HOSTS:
         raise HTTPException(status_code=500, detail="affiliate base url host is not allowed")
     return AFFILIATE_BASE_URL
 

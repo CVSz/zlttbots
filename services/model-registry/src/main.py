@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import re
 import shutil
+import stat
 from pathlib import Path
 from typing import Any
 
@@ -48,6 +49,11 @@ def _resolve_source_file(model_path: str) -> Path:
     candidate = Path(model_path).expanduser().resolve(strict=False)
     if not candidate.exists() or not candidate.is_file():
         raise HTTPException(status_code=400, detail="model path not found")
+    if candidate.is_symlink():
+        raise HTTPException(status_code=400, detail="symlink source files are not allowed")
+    mode = candidate.stat().st_mode
+    if not stat.S_ISREG(mode):
+        raise HTTPException(status_code=400, detail="source must be a regular file")
 
     allowed_roots = _allowed_source_roots()
     if not any(candidate.is_relative_to(allowed_root) for allowed_root in allowed_roots):
@@ -77,9 +83,12 @@ def register(model: Register) -> dict[str, str]:
     safe_version = _safe_model_component(model.version, "version")
 
     destination = BASE / f"{safe_name}_{safe_version}.pt"
+    shared_destination = SHARED / destination.name
+    if destination.exists() or shared_destination.exists():
+        raise HTTPException(status_code=409, detail="model version already exists")
     shutil.copy2(source, destination)
-    shutil.copy2(source, SHARED / destination.name)
-    return {"stored": str(destination), "shared": str(SHARED / destination.name)}
+    shutil.copy2(source, shared_destination)
+    return {"stored": str(destination), "shared": str(shared_destination)}
 
 
 @app.get("/latest/{name}")
