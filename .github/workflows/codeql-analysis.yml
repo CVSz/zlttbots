@@ -1,6 +1,7 @@
-name: Enterprise CodeQL Analysis
+name: Enterprise CodeQL Analysis with Autofix
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -18,6 +19,8 @@ permissions:
   actions: read
   contents: read
   security-events: write
+  pull-requests: write
+  issues: write
 
 concurrency:
   group: codeql-${{ github.workflow }}-${{ github.ref }}
@@ -60,7 +63,114 @@ jobs:
         if: matrix.build-mode == 'autobuild'
         uses: github/codeql-action/autobuild@v4
 
-      - name: Perform CodeQL Analysis
+      - name: Perform CodeQL Analysis with Autofix
         uses: github/codeql-action/analyze@v4
         with:
           category: /language:${{ matrix.language }}
+          output: sarif-results
+          autofix: true
+
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: sarif-results
+
+      - name: Fail on high-severity findings
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          sarif_files=(sarif-results/*.sarif)
+          if [ ${#sarif_files[@]} -eq 0 ]; then
+            echo "No SARIF files found at sarif-results/*.sarif"
+            exit 1
+          fi
+
+          findings=0
+          for file in "${sarif_files[@]}"; do
+            count=$(jq '[.runs[].results[]? | select((.level // "") == "error")] | length' "$file")
+            findings=$((findings + count))
+          done
+
+          echo "High-severity (SARIF level=error) findings: ${findings}"
+          if [ "$findings" -gt 0 ]; then
+            echo "Blocking pipeline because high-severity findings were detected"
+            exit 1
+          fi
+
+      - name: Notify Slack
+        if: failure() && secrets.SLACK_WEBHOOK != ''
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "text": "🚨 CodeQL alert detected",
+              "attachments": [
+                {
+                  "color": "#ff0000",
+                  "fields": [
+                    {
+                      "title": "Repository",
+                      "value": "${{ github.repository }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Ref",
+                      "value": "${{ github.ref }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Workflow Run",
+                      "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                      "short": false
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: Notify Microsoft Teams
+        if: failure() && secrets.TEAMS_WEBHOOK != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          payload=$(cat <<'JSON'
+          {
+            "@type": "MessageCard",
+            "@context": "http://schema.org/extensions",
+            "summary": "CodeQL Alert",
+            "themeColor": "FF0000",
+            "title": "🚨 CodeQL security alert",
+            "sections": [
+              {
+                "facts": [
+                  {"name": "Repository", "value": "${{ github.repository }}"},
+                  {"name": "Ref", "value": "${{ github.ref }}"},
+                  {"name": "Run", "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}
+                ]
+              }
+            ]
+          }
+          JSON
+          )
+
+          curl --fail --show-error --silent \
+            -H "Content-Type: application/json" \
+            -d "$payload" \
+            "${{ secrets.TEAMS_WEBHOOK }}"
+
+      - name: Create GitHub issue on failure
+        if: failure() && github.event_name != 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 CodeQL alert (${context.runId})`,
+              body: `CodeQL detected high-severity findings.\n\nRun: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              labels: ['security', 'codeql']
+            })
