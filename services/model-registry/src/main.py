@@ -71,11 +71,24 @@ def _resolve_destination(base_dir: Path, file_name: str) -> Path:
 
 
 def _is_within_roots(path: Path, roots: tuple[Path, ...]) -> bool:
-    resolved_path = path.resolve(strict=False)
+    """
+    Return True if ``path`` is contained within any of the given root directories.
+
+    The check is performed on a normalized absolute path to avoid directory-traversal
+    issues. Only paths that stay within one of the allowed roots after resolution
+    are considered valid.
+    """
+    # Normalize the path first; `absolute()` avoids surprising behavior if a relative
+    # path is passed in, and `resolve(strict=False)` collapses any ".." segments.
+    resolved_path = path.absolute().resolve(strict=False)
     for root in roots:
-        resolved_root = root.resolve(strict=False)
-        if resolved_path == resolved_root or resolved_root in resolved_path.parents:
+        resolved_root = root.absolute().resolve(strict=False)
+        try:
+            # `relative_to` will raise ValueError if `resolved_path` is not under `resolved_root`.
+            resolved_path.relative_to(resolved_root)
             return True
+        except ValueError:
+            continue
     return False
 
 
