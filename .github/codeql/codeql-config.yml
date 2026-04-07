@@ -1,0 +1,41 @@
+name: "Enterprise Meta Full CodeQL Config"
+
+disable-default-queries: false
+
+# Language packs for enterprise-scale multi-language repositories.
+packs:
+  - github/codeql-javascript
+  - github/codeql-python
+  - github/codeql-java
+  - github/codeql-cpp
+  - github/codeql-go
+  - github/codeql-ruby
+
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
+
+query-filters:
+  - exclude:
+      id: js/redundant-assignment
+  - exclude:
+      id: py/unreachable-code
+  - exclude:
+      id: cpp/memory-leak
+  - exclude:
+      id: java/unnecessary-boxing
+
+# Scope analysis to production paths and skip non-runtime content.
+paths:
+  - services
+  - workers
+  - cloudflare-devops
+
+paths-ignore:
+  - tests
+  - docs
+  - examples
+  - '**/*.md'
+
+max-paths: 2000
+threads: 4
