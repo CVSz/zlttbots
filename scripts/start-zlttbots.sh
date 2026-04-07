@@ -59,7 +59,8 @@ log "Waiting Postgres"
 
 for i in {1..30}; do
 
-if docker exec zlttbots-postgres-1 pg_isready -U zlttbots >/dev/null 2>&1; then
+POSTGRES_CONTAINER="$($COMPOSE -f "$COMPOSE_FILE" ps -q postgres 2>/dev/null || true)"
+if [ -n "$POSTGRES_CONTAINER" ] && docker exec "$POSTGRES_CONTAINER" pg_isready -U zlttbots >/dev/null 2>&1; then
 log "Postgres ready"
 break
 fi
@@ -110,6 +111,7 @@ fi
 }
 
 export -f install_node_service
+export -f log
 
 find "$NODE_SERVICES_DIR" -maxdepth 1 -type d \
 | tail -n +2 \

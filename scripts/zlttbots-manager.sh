@@ -49,7 +49,7 @@ USAGE
 
 case "${1:-}" in
   install)
-    bash "$ROOT_DIR/scripts/install-zlttbots.sh"
+    bash "$ROOT_DIR/scripts/install-zlttbots-platform.sh"
     ;;
   start)
     bash "$ROOT_DIR/scripts/start-zlttbots.sh"
