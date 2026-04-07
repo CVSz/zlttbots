@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import stat
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -61,6 +62,29 @@ def _resolve_source_file(model_path: str) -> Path:
     raise HTTPException(status_code=400, detail="model path not found in allowed source roots")
 
 
+def _resolve_destination(base_dir: Path, file_name: str) -> Path:
+    candidate = (base_dir / file_name).resolve(strict=False)
+    base_resolved = base_dir.resolve(strict=False)
+    if candidate.parent != base_resolved:
+        raise HTTPException(status_code=400, detail="invalid destination path")
+    return candidate
+
+
+def _atomic_copy(source: Path, destination: Path) -> None:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if destination.exists():
+        raise HTTPException(status_code=409, detail="model version already exists")
+    with tempfile.NamedTemporaryFile(dir=destination.parent, prefix=".tmp-", delete=False) as tmp_file:
+        temp_path = Path(tmp_file.name)
+    try:
+        shutil.copy2(source, temp_path)
+        os.chmod(temp_path, 0o600)
+        os.replace(temp_path, destination)
+    except Exception:
+        temp_path.unlink(missing_ok=True)
+        raise
+
+
 class Register(BaseModel):
     name: str = Field(min_length=1)
     version: str = Field(min_length=1)
@@ -82,12 +106,13 @@ def register(model: Register) -> dict[str, str]:
     safe_name = _safe_model_component(model.name, "name")
     safe_version = _safe_model_component(model.version, "version")
 
-    destination = BASE / f"{safe_name}_{safe_version}.pt"
-    shared_destination = SHARED / destination.name
+    destination_name = f"{safe_name}_{safe_version}.pt"
+    destination = _resolve_destination(BASE, destination_name)
+    shared_destination = _resolve_destination(SHARED, destination_name)
     if destination.exists() or shared_destination.exists():
         raise HTTPException(status_code=409, detail="model version already exists")
-    shutil.copy2(source, destination)
-    shutil.copy2(source, shared_destination)
+    _atomic_copy(source, destination)
+    _atomic_copy(source, shared_destination)
     return {"stored": str(destination), "shared": str(shared_destination)}
 
 

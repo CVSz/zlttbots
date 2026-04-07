@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import time
 from hashlib import sha256
 from pathlib import Path
@@ -26,6 +27,7 @@ from autonomy.simulation import World
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("rl-trainer")
 MODEL_PATH = Path("/models/policy.onnx")
+MODEL_FILE_MODE = 0o600
 consumer = Consumer(
     {
         "bootstrap.servers": "redpanda:9092",
@@ -101,6 +103,11 @@ def _redact_snapshot(snapshot: dict[str, object]) -> dict[str, object]:
     return redacted
 
 
+def _snapshot_fingerprint(snapshot: dict[str, object]) -> str:
+    canonical = json.dumps(snapshot, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return sha256(canonical).hexdigest()
+
+
 def loop() -> None:
     MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
     while True:
@@ -123,8 +130,24 @@ def loop() -> None:
         prob = ppo.update(x, reward, old_prob)
         snapshot = build_autonomous_snapshot(x, reward)
         safe_snapshot = _redact_snapshot(snapshot)
-        MODEL_PATH.write_text(json.dumps({"weights": ppo.w.tolist(), "prob": prob, "autonomous_snapshot": safe_snapshot}))
-        log.info("updated policy weights=%s autonomous_snapshot=%s", ppo.w.tolist(), safe_snapshot)
+        persisted_payload = {
+            "weights": ppo.w.tolist(),
+            "prob": prob,
+            "autonomous_snapshot_sha256": _snapshot_fingerprint(safe_snapshot),
+            "updated_at": int(time.time()),
+        }
+        encoded_payload = json.dumps(persisted_payload, sort_keys=True, separators=(",", ":"))
+        with os.fdopen(
+            os.open(MODEL_PATH, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, MODEL_FILE_MODE),
+            "w",
+            encoding="utf-8",
+        ) as handle:
+            handle.write(encoded_payload)
+        log.info(
+            "updated policy weights_sha256=%s autonomous_snapshot_sha256=%s",
+            sha256(np.asarray(ppo.w, dtype=float).tobytes()).hexdigest(),
+            persisted_payload["autonomous_snapshot_sha256"],
+        )
 
 
 if __name__ == "__main__":
