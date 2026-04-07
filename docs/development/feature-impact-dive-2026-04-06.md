@@ -3,10 +3,10 @@
 - Generated from repository sources on 2026-04-06 (UTC).
 - Canonical admin-panel path: **nextjs-app-router**
 - Compose services discovered: **43**
-- Node app features discovered: **7**
-- Runtime service modules discovered: **46**
+- Node app features discovered: **8**
+- Runtime service modules discovered: **50**
 - Service documentation feature specs: **11**
-- Aggregate discovered feature surfaces: **107**
+- Aggregate discovered feature surfaces: **112**
 
 ## Compose Service Surface
 
@@ -56,6 +56,7 @@
 
 ## Application API Surface
 
+- affiliate-marketing (4 endpoints): GET /healthz, POST /v1/copy/generate, POST /v1/copy/optimize, POST /v1/trends/analyze
 - api-gateway (1 endpoints): GET /healthz
 - auth-service (3 endpoints): GET /healthz, POST /login, POST /register
 - billing-service (4 endpoints): GET /healthz, GET /plan/:userId, POST /checkout, POST /webhook
@@ -68,6 +69,7 @@
 
 - account-farm [node] (2 endpoints): GET /farm/health, POST /farm/run
 - affiliate-webhook [python] (2 endpoints): GET /healthz, POST /conversion
+- ai-fix [python] (0 endpoints): no HTTP routes found
 - ai-orchestrator [python] (2 endpoints): GET /health, POST /run-growth-cycle
 - ai-video-generator [node] (0 endpoints): no HTTP routes found
 - analytics [node] (6 endpoints): GET /analytics/campaigns, GET /analytics/conversion, GET /analytics/products, GET /analytics/revenue, GET /analytics/summary, GET /healthz
@@ -94,6 +96,7 @@
 - model-sync [python] (0 endpoints): no HTTP routes found
 - network-egress [python] (0 endpoints): no HTTP routes found
 - p2p-node [node] (0 endpoints): no HTTP routes found
+- pr-bot [python] (0 endpoints): no HTTP routes found
 - product-discovery [python] (2 endpoints): GET /discover, GET /healthz
 - product-generator [python] (2 endpoints): GET /healthz, POST /generate
 - retraining-loop [python] (0 endpoints): no HTTP routes found
@@ -105,7 +108,9 @@
 - rtb-engine [python] (3 endpoints): GET /healthz, POST /bid, POST /openrtb/bid
 - scaling-engine [python] (2 endpoints): GET /healthz, POST /scale
 - scheduler [python] (2 endpoints): GET /healthz, POST /assign
+- security-api [python] (3 endpoints): GET /healthz, GET /scan/{scan_id}, POST /scan
 - shopee-crawler [node] (0 endpoints): no HTTP routes found
+- singularity [python] (0 endpoints): no HTTP routes found
 - stream-consumer [python] (0 endpoints): no HTTP routes found
 - tenant-service [python] (2 endpoints): GET /healthz, POST /tenant
 - tiktok-farm [node] (2 endpoints): GET /farm/status, POST /farm/job
@@ -130,6 +135,7 @@
 ## Write Endpoint Security Policy Surface
 
 - account-farm: 1 write endpoint policies
+- affiliate-marketing: 3 write endpoint policies
 - affiliate-webhook: 1 write endpoint policies
 - ai-orchestrator: 1 write endpoint policies
 - arbitrage-engine: 7 write endpoint policies
@@ -159,6 +165,7 @@
 - rtb-engine: 2 write endpoint policies
 - scaling-engine: 1 write endpoint policies
 - scheduler: 1 write endpoint policies
+- security-api: 1 write endpoint policies
 - tenant-service: 1 write endpoint policies
 - tiktok-farm: 1 write endpoint policies
 - viral-predictor: 1 write endpoint policies
