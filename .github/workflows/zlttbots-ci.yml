@@ -119,6 +119,8 @@ jobs:
           context: services/${{ matrix.service }}
           push: false
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Build and push image
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -127,6 +129,8 @@ jobs:
           context: services/${{ matrix.service }}
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   dast-scan:
     runs-on: ubuntu-latest
@@ -135,8 +139,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - name: Start local stack
-        run: docker compose up -d
+      - name: Start core stack
+        run: docker compose build --pull && docker compose up -d
+
+      - name: Start admin-panel for DAST (exposes port 3000)
+        run: |
+          docker build -t zlttbots/admin-panel:ci -f services/admin-panel/Dockerfile services/admin-panel
+          docker run -d \
+            --name zlttbots-admin-panel \
+            --network zlttbots_zlttbots-net \
+            -p 3000:3000 \
+            zlttbots/admin-panel:ci
 
       - name: Run ZAP baseline scan
         run: |
@@ -145,8 +158,9 @@ jobs:
 
       - name: Stop local stack
         if: always()
-        run: docker compose down
-
+        run: |
+          docker stop zlttbots-admin-panel || true
+          docker compose down
 
   promote-dev:
     if: github.ref == 'refs/heads/main'
