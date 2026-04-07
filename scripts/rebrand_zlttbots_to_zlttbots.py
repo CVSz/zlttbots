@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Repository-wide deterministic brand audit and rebrand utility.
 
-Scans text source files for legacy zttato-platform tokens and can optionally
+Scans text source files for legacy zlttbots tokens and can optionally
 apply in-place replacements to zlttbots naming.
 """
 
@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Iterable
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_REPORT_PATH = REPO_ROOT / "feature_repo" / "rebrand" / "zttato_to_zlttbots_report.json"
+DEFAULT_REPORT_PATH = REPO_ROOT / "feature_repo" / "rebrand" / "zlttbots_to_zlttbots_report.json"
 
 EXCLUDED_PARTS = {
     ".git",
@@ -55,13 +55,13 @@ TEXT_EXTENSIONS = {
 }
 
 REPLACEMENTS = (
-    ("zttato-platform", "zlttbots"),
-    ("zttato_platform", "zlttbots"),
-    ("zttato platform", "zlttbots"),
+    ("zlttbots", "zlttbots"),
+    ("zlttbots_platform", "zlttbots"),
+    ("zlttbots platform", "zlttbots"),
     ("ZTTATO-PLATFORM", "ZLTTBOTS"),
     ("Zttato-Platform", "Zlttbots"),
     ("Zttato Platform", "Zlttbots"),
-    ("zttato", "zlttbots"),
+    ("zlttbots", "zlttbots"),
     ("Zttato", "Zlttbots"),
     ("ZTTATO", "ZLTTBOTS"),
 )
@@ -79,7 +79,7 @@ def is_excluded(path: Path) -> bool:
 
 
 def should_scan_file(path: Path) -> bool:
-    if "rebrand_zttato_to_zlttbots" in path.name:
+    if "rebrand_zlttbots_to_zlttbots" in path.name:
         return False
     if path.suffix in TEXT_EXTENSIONS:
         return True
@@ -149,7 +149,7 @@ def write_report(report: dict, report_path: Path) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Audit and rebrand zttato-platform tokens to zlttbots")
+    parser = argparse.ArgumentParser(description="Audit and rebrand zlttbots tokens to zlttbots")
     parser.add_argument("--root", type=Path, default=REPO_ROOT, help="Root folder to scan")
     parser.add_argument("--report", type=Path, default=DEFAULT_REPORT_PATH, help="JSON report output path")
     parser.add_argument("--apply", action="store_true", help="Apply in-place replacements")
