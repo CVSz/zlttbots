@@ -1,0 +1,78 @@
+name: Next.js CI/CD + Security
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "apps/frontend/**"
+      - ".github/workflows/nextjs.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "apps/frontend/**"
+      - ".github/workflows/nextjs.yml"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  ci-security:
+    name: Node ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        node-version: [18.x, 20.x]
+
+    defaults:
+      run:
+        working-directory: apps/frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Run tests (if present)
+        run: npm test --if-present
+
+      - name: Audit dependencies (high+)
+        run: npm audit --audit-level=high
+
+      - name: Build Docker image
+        run: docker build -t zttato-frontend-nextjs:${{ github.sha }} -f Dockerfile .
+
+  codeql:
+    name: CodeQL JavaScript
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: javascript
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v4
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v4
