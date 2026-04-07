@@ -80,3 +80,37 @@ services:
       - "5173:5173"
     depends_on:
       - api-gateway
+
+  security-api:
+    build: ../services/security-api
+    ports:
+      - "8000:8000"
+    environment:
+      - SECURITY_API_KEY=${SECURITY_API_KEY:?set SECURITY_API_KEY}
+      - SCAN_ROOT=/tmp/zttato-scans
+
+  ai-fix-engine:
+    build: ../services/ai-fix
+
+  pr-bot:
+    build: ../services/pr-bot
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+
+  redis:
+    image: redis:7.4-alpine
+
+  zookeeper:
+    image: bitnami/zookeeper:3.9
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+
+  grafana:
+    image: grafana/grafana:11.6.1
+    ports:
+      - "3003:3000"
+
+  loki:
+    image: grafana/loki:3.4.2
+    ports:
+      - "3100:3100"
