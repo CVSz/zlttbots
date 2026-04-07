@@ -33,6 +33,12 @@ EXCLUDED_DIRS = {
     "venv",
 }
 
+EXCLUDED_FILES = {
+    ".github/workflows/zlttbots-ci.yml",
+    "scripts/full_migration.py",
+    "scripts/rebrand_zlttbots_to_zlttbots.py",
+}
+
 TEXT_EXTENSIONS = {
     ".py",
     ".js",
@@ -104,6 +110,8 @@ def iter_files(root: Path) -> Iterable[Path]:
         rel = file_path.relative_to(root)
         if is_excluded(rel):
             continue
+        if str(rel) in EXCLUDED_FILES:
+            continue
         if is_text_candidate(file_path):
             yield file_path
 
@@ -138,6 +146,8 @@ def plan_renames(root: Path) -> list[PathRename]:
     for path in sorted(root.rglob("*"), key=lambda p: len(p.parts), reverse=True):
         rel = path.relative_to(root)
         if is_excluded(rel):
+            continue
+        if str(rel) in EXCLUDED_FILES:
             continue
 
         old_name = path.name
