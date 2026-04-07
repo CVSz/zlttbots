@@ -122,6 +122,39 @@ def test_validate_manifest_detects_drift(tmp_path: Path) -> None:
     assert errors
 
 
+def test_validate_manifest_reports_json_decode_errors(tmp_path: Path) -> None:
+    report = ImpactReport(
+        compose_services=("platform",),
+        app_features=(AppFeature(name="platform", endpoints=("GET /healthz",)),),
+        runtime_services=(),
+        documented_features=(),
+    )
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text('{"services": [}', encoding="utf-8")
+
+    errors = validate_manifest(report, manifest_path)
+    assert "manifest JSON decode error" in errors[0]
+
+
+def test_validate_manifest_rejects_non_string_policy_fields(tmp_path: Path) -> None:
+    report = ImpactReport(
+        compose_services=("platform",),
+        app_features=(AppFeature(name="platform", endpoints=("POST /deploy",)),),
+        runtime_services=(),
+        documented_features=(),
+    )
+    manifest = build_surface_manifest(report)
+    manifest_path = tmp_path / "manifest.json"
+    write_manifest(manifest, manifest_path)
+
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    payload["services"][0]["write_policies"][0]["schema"] = True
+    manifest_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    errors = validate_manifest(report, manifest_path)
+    assert any(".schema must be a string" in error for error in errors)
+
+
 def test_format_markdown_contains_counts() -> None:
     report = ImpactReport(
         compose_services=("api",),
