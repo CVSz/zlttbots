@@ -1,0 +1,9 @@
+- rule: Write below etc
+  desc: Detect write operations targeting /etc paths from containers.
+  condition: >-
+    container and evt.type in (open,openat,openat2) and
+    fd.name startswith /etc and evt.arg.flags contains O_WRONLY
+  output: >-
+    Sensitive file modified (user=%user.name command=%proc.cmdline container=%container.id file=%fd.name)
+  priority: CRITICAL
+  tags: [filesystem, mitre_persistence]

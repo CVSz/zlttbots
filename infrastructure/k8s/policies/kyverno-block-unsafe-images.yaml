@@ -1,0 +1,21 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: block-unsafe-images
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-non-root-pods
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: Containers must not run as root.
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  runAsNonRoot: true

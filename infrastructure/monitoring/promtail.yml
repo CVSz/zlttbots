@@ -15,3 +15,13 @@ scrape_configs:
         labels:
           job: docker
           __path__: /var/lib/docker/containers/*/*.log
+
+  - job_name: security-codeql
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: security
+          app: security
+          source: codeql
+          __path__: /var/log/security/*.log

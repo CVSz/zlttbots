@@ -4,3 +4,4 @@ resources:
   - gatekeeper-requirements-template.yaml
   - gatekeeper-requirements-constraint.yaml
   - kyverno-enforce-platform-baseline.yaml
+  - kyverno-block-unsafe-images.yaml
