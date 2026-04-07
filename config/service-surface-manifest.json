@@ -81,6 +81,41 @@
       "write_policies": []
     },
     {
+      "app": true,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "POST /v1/copy/generate",
+        "POST /v1/copy/optimize",
+        "POST /v1/trends/analyze"
+      ],
+      "name": "affiliate-marketing",
+      "runtime": false,
+      "runtime_language": null,
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /v1/copy/generate",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /v1/copy/optimize",
+          "schema": "required",
+          "tenant": "required"
+        },
+        {
+          "auth": "required",
+          "endpoint": "POST /v1/trends/analyze",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
       "app": false,
       "compose": true,
       "docs": false,
