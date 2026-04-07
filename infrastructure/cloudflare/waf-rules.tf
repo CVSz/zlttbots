@@ -12,7 +12,7 @@ provider "cloudflare" {
   api_token = var.cloudflare_api_token
 }
 
-resource "cloudflare_ruleset" "zttato_waf" {
+resource "cloudflare_ruleset" "zlttbots_waf" {
   zone_id = var.cloudflare_zone_id
   name    = "zlttbots-waf"
   kind    = "zone"

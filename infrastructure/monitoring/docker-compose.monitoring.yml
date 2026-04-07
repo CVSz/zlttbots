@@ -1,7 +1,7 @@
 services:
   prometheus:
     image: prom/prometheus:latest
-    container_name: zttato-prometheus
+    container_name: zlttbots-prometheus
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
@@ -10,7 +10,7 @@ services:
 
   grafana:
     image: grafana/grafana:latest
-    container_name: zttato-grafana
+    container_name: zlttbots-grafana
     ports:
       - "3000:3000"
     volumes:
@@ -20,7 +20,7 @@ services:
 
   loki:
     image: grafana/loki:latest
-    container_name: zttato-loki
+    container_name: zlttbots-loki
     command: -config.file=/etc/loki/local-config.yaml
     volumes:
       - ./loki.yml:/etc/loki/local-config.yaml
@@ -30,7 +30,7 @@ services:
 
   promtail:
     image: grafana/promtail:latest
-    container_name: zttato-promtail
+    container_name: zlttbots-promtail
     volumes:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - ./promtail.yml:/etc/promtail/config.yml

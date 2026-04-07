@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 app = FastAPI(title="Affiliate Webhook (Verified)")
 
 SECRET = os.getenv("AFFILIATE_WEBHOOK_SECRET", "")
-DB_URL = os.getenv("DATABASE_URL", "postgresql://zttato:zttato@postgres:5432/zttato")
+DB_URL = os.getenv("DATABASE_URL", "postgresql://zlttbots:zlttbots@postgres:5432/zlttbots")
 REWARD_COLLECTOR_URL = os.getenv("REWARD_COLLECTOR_URL", "http://reward-collector:8000/reward")
 FEATURE_STORE_URL = os.getenv("FEATURE_STORE_URL", "http://feature-store:8000")
 TIMEOUT = int(os.getenv("HTTP_TIMEOUT", "10"))

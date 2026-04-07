@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: zttato-ingress
+  name: zlttbots-ingress
   namespace: platform
   annotations:
     kubernetes.io/ingress.class: nginx
@@ -10,7 +10,7 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-body-size: "20m"
 spec:
   rules:
-    - host: zttato.local
+    - host: zlttbots.local
       http:
         paths:
           - path: /

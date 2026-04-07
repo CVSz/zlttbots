@@ -1,5 +1,5 @@
 # AGENTS.md
-# Codex Autonomous Agent Specification for zTTato Platform
+# Codex Autonomous Agent Specification for zlttbots
 # Repository: https://github.com/cvsz/zlttbots
 
 ---
@@ -19,14 +19,14 @@ Agents must operate under:
 
 ## 🧩 SYSTEM CONTEXT
 
-zTTato Platform is a:
+zlttbots is a:
 - Distributed AI + DevOps Platform
 - Multi-service architecture (microservices / modular monolith hybrid)
 - Includes:
   - AI orchestration
   - Automation engines
   - Deployment pipelines
-  - Platform manager (zttato-manager)
+  - Platform manager (zlttbots-manager)
   - Installer + bootstrap system
 
 Agents MUST assume:
@@ -141,7 +141,7 @@ MANDATORY:
 /scripts
 /deploy
 /installer
-/zttato-manager
+/zlttbots-manager
 /config
 /tests
 ```

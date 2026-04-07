@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# zTTato adaptation of requested ZEAZ single-file installer.
+# zlttbots adaptation of requested ZEAZ single-file installer.
 # This script generates a production-oriented stack at /opt/zlttbots.
 
 DOMAIN=""
@@ -21,7 +21,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$DOMAIN" ]]; then
-  echo "Usage: sudo bash installer/zttato-ai-full-stack-installer.sh --domain your-domain [--cert-email admin@your-domain] [--export-zip] [--skip-full-pack]"
+  echo "Usage: sudo bash installer/zlttbots-ai-full-stack-installer.sh --domain your-domain [--cert-email admin@your-domain] [--export-zip] [--skip-full-pack]"
   exit 1
 fi
 
@@ -54,7 +54,7 @@ DB_PASS="$(openssl rand -hex 32)"
 REDIS_PASS="$(openssl rand -hex 32)"
 JWT_SECRET_CURRENT="$(openssl rand -hex 48)"
 JWT_SECRET_PREVIOUS=""
-KAFKA_USER="zttato_app"
+KAFKA_USER="zlttbots_app"
 KAFKA_PASS="$(openssl rand -hex 24)"
 ADMIN_PASS="$(openssl rand -base64 18)"
 API_HMAC_SECRET="$(openssl rand -hex 48)"
@@ -65,7 +65,7 @@ DB_PASS=${DB_PASS}
 REDIS_PASS=${REDIS_PASS}
 TRUST_PROXY=true
 REAL_IP_HEADER=X-Forwarded-For
-DATABASE_URL=postgresql://zttato:${DB_PASS}@db:5432/zttato
+DATABASE_URL=postgresql://zlttbots:${DB_PASS}@db:5432/zlttbots
 JWT_SECRET=${JWT_SECRET_CURRENT}
 JWT_SECRET_CURRENT=${JWT_SECRET_CURRENT}
 JWT_SECRET_PREVIOUS=${JWT_SECRET_PREVIOUS}
@@ -81,7 +81,7 @@ ENVFILE
 chmod 600 "$APP_DIR/.env"
 
 cat > "$APP_DIR/api/api.env" <<ENVFILE
-DATABASE_URL=postgresql://zttato:${DB_PASS}@db:5432/zttato
+DATABASE_URL=postgresql://zlttbots:${DB_PASS}@db:5432/zlttbots
 JWT_SECRET=${JWT_SECRET_CURRENT}
 JWT_SECRET_CURRENT=${JWT_SECRET_CURRENT}
 JWT_SECRET_PREVIOUS=${JWT_SECRET_PREVIOUS}
@@ -106,7 +106,7 @@ ENVFILE
 chmod 600 "$APP_DIR/api/api.env"
 
 cat > "$APP_DIR/worker/worker.env" <<ENVFILE
-DATABASE_URL=postgresql://zttato:${DB_PASS}@db:5432/zttato
+DATABASE_URL=postgresql://zlttbots:${DB_PASS}@db:5432/zlttbots
 KAFKA_BROKER=kafka:9092
 KAFKA_SECURITY_PROTOCOL=SASL_PLAINTEXT
 KAFKA_SASL_MECHANISM=PLAIN
@@ -281,7 +281,7 @@ DOCKER
 
 cat > "$APP_DIR/api/main.py" <<'PYCODE'
 from fastapi import FastAPI
-app = FastAPI(title="zTTato SaaS API")
+app = FastAPI(title="zlttbots SaaS API")
 @app.get('/health')
 def health():
     return {'ok': True}
@@ -387,8 +387,8 @@ services:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_DB: zttato
-      POSTGRES_USER: zttato
+      POSTGRES_DB: zlttbots
+      POSTGRES_USER: zlttbots
       POSTGRES_PASSWORD: ${DB_PASS}
     volumes:
       - db_data:/var/lib/postgresql/data
@@ -420,7 +420,7 @@ cat > "$APP_DIR/k8s/namespace.yaml" <<'YAML'
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: zttato
+  name: zlttbots
 YAML
 cat > "$APP_DIR/k8s/deploy.sh" <<'BASH'
 #!/usr/bin/env bash
@@ -438,7 +438,7 @@ FILE="/opt/zlttbots/backup/db_${TS}.sql.gz"
 ENCRYPTED_FILE="${FILE}.enc"
 BACKUP_KEY_FILE="/opt/zlttbots/backup/.backup_key"
 DB_CONTAINER=$(docker compose -f /opt/zlttbots/infra/docker-compose.yml ps -q db)
-docker exec "$DB_CONTAINER" pg_dump -U zttato zttato | gzip > "$FILE"
+docker exec "$DB_CONTAINER" pg_dump -U zlttbots zlttbots | gzip > "$FILE"
 test -s "$FILE"
 if [[ ! -f "$BACKUP_KEY_FILE" ]]; then
   umask 077
@@ -474,9 +474,9 @@ ufw --force enable
 (crontab -l 2>/dev/null; echo "0 */6 * * * ${APP_DIR}/backup/backup.sh") | crontab -
 (crontab -l 2>/dev/null; echo "*/5 * * * * ${APP_DIR}/monitor/health.sh") | crontab -
 
-cat > /etc/systemd/system/zttato.service <<EOF
+cat > /etc/systemd/system/zlttbots.service <<EOF
 [Unit]
-Description=zTTato Stack
+Description=zlttbots Stack
 After=docker.service
 Requires=docker.service
 
@@ -492,7 +492,7 @@ TimeoutStartSec=0
 WantedBy=multi-user.target
 EOF
 systemctl daemon-reload
-systemctl enable zttato
+systemctl enable zlttbots
 
 if [[ -n "$CERT_EMAIL" && "$DOMAIN" != "localhost" && "$DOMAIN" != *.local ]]; then
   (crontab -l 2>/dev/null; echo "0 2 * * * certbot renew --quiet && docker compose -f ${APP_DIR}/infra/docker-compose.yml restart nginx") | crontab -

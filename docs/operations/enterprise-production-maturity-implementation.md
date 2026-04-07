@@ -13,7 +13,7 @@ This document maps the roadmap items in `enterprise-production-maturity-roadmap.
 
 ## CI/CD implementations
 
-- `.github/workflows/zttato-ci.yml` now includes:
+- `.github/workflows/zlttbots-ci.yml` now includes:
   - Unit/integration + security checks as deployment gates.
   - SAST (Bandit) and dependency vulnerability scanning for Node services.
   - Trivy image/filesystem scans.

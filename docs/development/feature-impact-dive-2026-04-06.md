@@ -1,4 +1,4 @@
-# zTTato Feature Impact Dive
+# zlttbots Feature Impact Dive
 
 - Generated from repository sources on 2026-04-06 (UTC).
 - Canonical admin-panel path: **nextjs-app-router**

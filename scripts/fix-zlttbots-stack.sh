@@ -1,11 +1,11 @@
-# path: scripts/fix-zttato-stack.sh
+# path: scripts/fix-zlttbots-stack.sh
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
 ROOT="$(pwd)"
 
 echo "===================================="
-echo "Fixing zTTato stack"
+echo "Fixing zlttbots stack"
 echo "===================================="
 
 #####################################
@@ -40,7 +40,7 @@ sed -i '/^version:/d' docker-compose.yml
 if [ ! -f .env ]; then
 
 cat > .env <<EOF
-DB_URL=postgresql://postgres:postgres@postgres:5432/zttato
+DB_URL=postgresql://postgres:postgres@postgres:5432/zlttbots
 REDIS_URL=redis://redis:6379
 EOF
 

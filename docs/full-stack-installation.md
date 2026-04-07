@@ -1,6 +1,6 @@
 # Full-Stack Install + Config + Starter + Deploy Guide
 
-This guide provides a single deterministic workflow to install, configure, start, verify, and manage the zTTato full stack locally using Docker Compose.
+This guide provides a single deterministic workflow to install, configure, start, verify, and manage the zlttbots full stack locally using Docker Compose.
 
 ## What this includes
 

@@ -18,7 +18,7 @@ logger = logging.getLogger("security-api")
 
 
 class Settings(BaseModel):
-    scan_root: Path = Path(os.getenv("SCAN_ROOT", "/tmp/zttato-scans"))
+    scan_root: Path = Path(os.getenv("SCAN_ROOT", "/tmp/zlttbots-scans"))
     service_api_key: str = os.getenv("SECURITY_API_KEY", "")
     git_clone_timeout_seconds: int = Field(default=int(os.getenv("GIT_CLONE_TIMEOUT_SECONDS", "180")), ge=30, le=1800)
     codeql_timeout_seconds: int = Field(default=int(os.getenv("CODEQL_TIMEOUT_SECONDS", "600")), ge=60, le=3600)

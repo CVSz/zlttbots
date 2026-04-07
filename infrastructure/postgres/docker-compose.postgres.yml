@@ -7,11 +7,11 @@ image: postgres:15
 
 environment:
 
-POSTGRES_DB: zttato
+POSTGRES_DB: zlttbots
 
-POSTGRES_USER: zttato
+POSTGRES_USER: zlttbots
 
-POSTGRES_PASSWORD: zttato
+POSTGRES_PASSWORD: zlttbots
 
 ports:
 

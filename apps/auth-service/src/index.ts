@@ -90,7 +90,7 @@ app.post("/login", async (req, res) => {
 
   const token = jwt.sign({ userId: user.id, tenantId: user.tenantId }, jwtSecret, {
     expiresIn: "1h",
-    issuer: "zttato-auth-service",
+    issuer: "zlttbots-auth-service",
     audience: "zlttbots",
   });
 

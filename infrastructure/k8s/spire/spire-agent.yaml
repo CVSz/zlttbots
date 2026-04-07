@@ -44,5 +44,5 @@ data:
       log_level = "INFO"
       server_address = "spire-server"
       server_port = "8081"
-      trust_domain = "zttato.internal"
+      trust_domain = "zlttbots.internal"
     }

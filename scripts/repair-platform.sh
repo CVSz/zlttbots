@@ -1,7 +1,7 @@
 # path: scripts/repair-platform.sh
 #!/usr/bin/env bash
 #
-# zTTato Platform Repair Tool
+# zlttbots Repair Tool
 #
 # Repairs common issues:
 # - missing Dockerfiles for Python services
@@ -19,7 +19,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 echo "======================================"
-echo "zTTato Platform Repair Tool"
+echo "zlttbots Repair Tool"
 echo "Root: $ROOT"
 echo "======================================"
 
@@ -104,7 +104,7 @@ echo "Checking environment file..."
 if [ ! -f ".env" ]; then
 
 cat > .env <<EOF
-DB_URL=postgresql://postgres:postgres@postgres:5432/zttato
+DB_URL=postgresql://postgres:postgres@postgres:5432/zlttbots
 REDIS_URL=redis://redis:6379
 EOF
 
@@ -154,6 +154,6 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 echo ""
 echo "Test endpoints:"
-echo "https://zttato.zeaz.dev"
-echo "https://admin.zttato.zeaz.dev"
-echo "https://api.zttato.zeaz.dev"
+echo "https://zlttbots.zeaz.dev"
+echo "https://admin.zlttbots.zeaz.dev"
+echo "https://api.zlttbots.zeaz.dev"

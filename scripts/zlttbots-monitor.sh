@@ -8,7 +8,7 @@ do
 clear
 
 echo "=============================="
-echo "zTTato Platform Monitor"
+echo "zlttbots Monitor"
 echo "=============================="
 
 echo

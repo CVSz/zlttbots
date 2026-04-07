@@ -15,7 +15,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: runner
-          image: zttato-self-modifier:latest
+          image: zlttbots-self-modifier:latest
           imagePullPolicy: IfNotPresent
           command: ["python", "-m", "engine"]
           env:

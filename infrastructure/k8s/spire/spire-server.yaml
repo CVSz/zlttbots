@@ -58,13 +58,13 @@ data:
     server {
       bind_address = "0.0.0.0"
       bind_port = "8081"
-      trust_domain = "zttato.internal"
+      trust_domain = "zlttbots.internal"
       data_dir = "/run/spire/data"
       log_level = "INFO"
       ca_subject = {
         country = ["US"]
-        organization = ["zttato"]
-        common_name = "zttato platform spire"
+        organization = ["zlttbots"]
+        common_name = "zlttbots platform spire"
       }
       default_x509_svid_ttl = "1h"
     }

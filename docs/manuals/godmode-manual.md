@@ -1,6 +1,6 @@
 # Godmode Manual
 
-This manual is the full-detail break-glass guide for severe zTTato incidents. Godmode is for platform-wide recovery, failed deployments, data-risk events, or situations where admin/standard DevOps actions are not enough.
+This manual is the full-detail break-glass guide for severe zlttbots incidents. Godmode is for platform-wide recovery, failed deployments, data-risk events, or situations where admin/standard DevOps actions are not enough.
 
 ## 1) Rules of engagement
 
@@ -83,10 +83,10 @@ Guidance:
 
 Useful scripts include:
 - `scripts/test-integration.sh`
-- `scripts/zttato-doctor.sh`
+- `scripts/zlttbots-doctor.sh`
 - `scripts/repair-platform.sh`
-- `scripts/zttato-docker-recovery.sh`
-- `scripts/fix-zttato-stack.sh`
+- `scripts/zlttbots-docker-recovery.sh`
+- `scripts/fix-zlttbots-stack.sh`
 - `infrastructure/scripts/validate-repo.sh`
 - `infrastructure/scripts/rollback.sh`
 - `infrastructure/scripts/bootstrap-platform.sh`
@@ -99,13 +99,13 @@ Prefer using an existing script over ad hoc shell when the script already matche
 ### Backup
 
 ```bash
-pg_dump -U zttato zttato > backup-$(date +%Y%m%d%H%M%S).sql
+pg_dump -U zlttbots zlttbots > backup-$(date +%Y%m%d%H%M%S).sql
 ```
 
 ### Restore
 
 ```bash
-psql -U zttato zttato < backup.sql
+psql -U zlttbots zlttbots < backup.sql
 ```
 
 Before restore:
@@ -125,9 +125,9 @@ docker compose -f infrastructure/monitoring/docker compose.monitoring.yml up -d
 ### Node-service lifecycle
 
 ```bash
-bash scripts/zttato-node.sh install
-bash scripts/zttato-node.sh start
-bash scripts/zttato-node.sh status
+bash scripts/zlttbots-node.sh install
+bash scripts/zlttbots-node.sh start
+bash scripts/zlttbots-node.sh status
 ```
 
 ### Alternate runtime / edge tooling

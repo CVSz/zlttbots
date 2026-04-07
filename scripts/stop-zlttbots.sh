@@ -20,6 +20,6 @@ rm -f "$f"
 
 done
 
-docker stop zttato-cloudflared >/dev/null 2>&1 || true
+docker stop zlttbots-cloudflared >/dev/null 2>&1 || true
 
 echo "Platform stopped"

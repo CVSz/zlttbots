@@ -19,7 +19,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: jwt-auth
-          image: zttato/jwt-auth:v1.0.0
+          image: zlttbots/jwt-auth:v1.0.0
           ports:
             - containerPort: 8080
           env:
@@ -29,7 +29,7 @@ spec:
                   name: jwt-auth-secret
                   key: jwt-secret
             - name: JWT_ISSUER
-              value: "https://api.zttato.internal/auth"
+              value: "https://api.zlttbots.internal/auth"
             - name: JWT_AUDIENCE
               value: "zlttbots"
           readinessProbe:

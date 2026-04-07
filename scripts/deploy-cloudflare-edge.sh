@@ -1,7 +1,7 @@
 # path: scripts/deploy-cloudflare-edge.sh
 #!/usr/bin/env bash
 #
-# Deploy Cloudflare Tunnel + DNS + Ingress for zTTato Platform
+# Deploy Cloudflare Tunnel + DNS + Ingress for zlttbots
 #
 # Requirements:
 # - env file with CF_API_TOKEN CF_ACCOUNT_ID CF_ZONE_ID DOMAIN SUBDOMAIN
@@ -199,4 +199,4 @@ echo "https://predict.$SUBDOMAIN.$DOMAIN"
 
 echo ""
 echo "Tunnel status:"
-docker logs zttato-cloudflared --tail 10
+docker logs zlttbots-cloudflared --tail 10

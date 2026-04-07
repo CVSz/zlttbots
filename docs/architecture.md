@@ -1,6 +1,6 @@
 # System Architecture
 
-This document describes the current service architecture and execution flow for zTTato Platform.
+This document describes the current service architecture and execution flow for zlttbots.
 
 ## 1) Architectural style
 
@@ -65,7 +65,7 @@ Purpose: durable storage + task coordination.
 
 ## 5) Security and control boundaries
 
-- Service communication is isolated on the internal `zttato-net` bridge network.
+- Service communication is isolated on the internal `zlttbots-net` bridge network.
 - External exposure is minimized to nginx (`:80`) unless explicitly configured.
 - Secrets are expected through `.env` and runtime environment injection.
 - Additional enterprise hardening artifacts are available in infra/security docs.

@@ -56,7 +56,7 @@ jobs:
         run: npm audit --audit-level=high
 
       - name: Build Docker image
-        run: docker build -t zttato-frontend-nextjs:${{ github.sha }} -f Dockerfile .
+        run: docker build -t zlttbots-frontend-nextjs:${{ github.sha }} -f Dockerfile .
 
   codeql:
     name: CodeQL JavaScript

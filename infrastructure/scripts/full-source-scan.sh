@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
-echo "=== ZTTATO Full Source Scan ==="
+echo "=== ZLTTBOTS Full Source Scan ==="
 echo "Repository: $ROOT_DIR"
 
 echo

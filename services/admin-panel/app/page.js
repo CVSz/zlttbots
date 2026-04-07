@@ -32,7 +32,7 @@ export default function HomePage() {
       <header className="hero">
         <div>
           <p className="badge">Go-live</p>
-          <h1>ZTTATO Operator Console</h1>
+          <h1>ZLTTBOTS Operator Console</h1>
           <p>Unified operations for partner analytics, compliant redirect tracking, edge routing, and human-reviewed content workflows.</p>
         </div>
         <div className="hero-stats">

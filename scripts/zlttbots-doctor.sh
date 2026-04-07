@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "zTTato diagnostics"
+echo "zlttbots diagnostics"
 
 echo
 echo "Docker containers"

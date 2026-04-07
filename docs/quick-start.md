@@ -1,6 +1,6 @@
 # Quick Start
 
-This is the full starter-platform guide for getting zTTato running fast without reading the entire repository first.
+This is the full starter-platform guide for getting zlttbots running fast without reading the entire repository first.
 
 ## Goal
 
@@ -9,9 +9,9 @@ Start the platform, verify the gateway, run one request per core API, and know w
 ## 1) Create `.env`
 
 ```env
-DB_NAME=zttato
-DB_USER=zttato
-DB_PASSWORD=zttato
+DB_NAME=zlttbots
+DB_USER=zlttbots
+DB_PASSWORD=zlttbots
 DB_PORT=5432
 REDIS_HOST=redis
 REDIS_PORT=6379
@@ -44,8 +44,8 @@ bash start.sh
 If you want the managed lifecycle wrapper:
 
 ```bash
-bash scripts/zttato-manager.sh install
-bash scripts/zttato-manager.sh start
+bash scripts/zlttbots-manager.sh install
+bash scripts/zlttbots-manager.sh start
 ```
 
 ## 4) Check container state
@@ -146,8 +146,8 @@ docker compose up -d --scale crawler-worker=3 --scale renderer-worker=2 --scale 
 ### Run the Node application layer
 
 ```bash
-bash scripts/zttato-node.sh install
-bash scripts/zttato-node.sh start
+bash scripts/zlttbots-node.sh install
+bash scripts/zlttbots-node.sh start
 ```
 
 ### Start the monitoring stack

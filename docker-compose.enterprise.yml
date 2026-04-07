@@ -1,23 +1,23 @@
 services:
   postgres:
     image: postgres:15
-    container_name: zttato-postgres
+    container_name: zlttbots-postgres
     environment:
-      POSTGRES_USER: zttato
-      POSTGRES_PASSWORD: zttato
-      POSTGRES_DB: zttato
+      POSTGRES_USER: zlttbots
+      POSTGRES_PASSWORD: zlttbots
+      POSTGRES_DB: zlttbots
     volumes:
       - postgres-data:/var/lib/postgresql/data
     restart: always
 
   redis:
     image: redis:7
-    container_name: zttato-redis
+    container_name: zlttbots-redis
     restart: always
 
   kafka:
     image: bitnami/kafka:latest
-    container_name: zttato-kafka
+    container_name: zlttbots-kafka
     environment:
       - KAFKA_ENABLE_KRAFT=yes
       - KAFKA_CFG_NODE_ID=1
@@ -33,7 +33,7 @@ services:
 
   traefik:
     image: traefik:v3.0
-    container_name: zttato-traefik
+    container_name: zlttbots-traefik
     command:
       - --providers.docker=true
       - --entrypoints.web.address=:80
@@ -45,7 +45,7 @@ services:
 
   prometheus:
     image: prom/prometheus
-    container_name: zttato-prometheus
+    container_name: zlttbots-prometheus
     volumes:
       - ./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
@@ -54,7 +54,7 @@ services:
 
   grafana:
     image: grafana/grafana
-    container_name: zttato-grafana
+    container_name: zlttbots-grafana
     ports:
       - "3000:3000"
     volumes:
@@ -63,7 +63,7 @@ services:
 
   loki:
     image: grafana/loki
-    container_name: zttato-loki
+    container_name: zlttbots-loki
     command: -config.file=/etc/loki/local-config.yaml
     volumes:
       - ./infrastructure/monitoring/loki.yml:/etc/loki/local-config.yaml
@@ -73,17 +73,17 @@ services:
 
   ai-orchestrator:
     build: ./services/ai-orchestrator
-    container_name: zttato-ai-orchestrator
+    container_name: zlttbots-ai-orchestrator
     depends_on:
       - market-crawler
       - viral-predictor
       - redis
     networks:
-      - zttato-net
+      - zlttbots-net
 
   product-discovery:
     build: ./services/product-discovery
-    container_name: zttato-product-discovery
+    container_name: zlttbots-product-discovery
     environment:
       MARKET_CRAWLER_URL: http://market-crawler:8000/products
       HTTP_TIMEOUT: 5
@@ -96,18 +96,18 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   campaign-optimizer:
     build: ./services/campaign-optimizer
-    container_name: zttato-campaign-optimizer
+    container_name: zlttbots-campaign-optimizer
     networks:
-      - zttato-net
+      - zlttbots-net
 
 volumes:
   postgres-data:
   grafana-data:
 
 networks:
-  zttato-net:
+  zlttbots-net:
     driver: bridge

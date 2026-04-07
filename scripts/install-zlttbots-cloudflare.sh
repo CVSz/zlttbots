@@ -1,15 +1,15 @@
-# path: scripts/install-zttato-cloudflare.sh
+# path: scripts/install-zlttbots-cloudflare.sh
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
 
 DOMAIN="zeaz.dev"
-TUNNEL_NAME="zttato"
+TUNNEL_NAME="zlttbots"
 ROOT="$(pwd)"
 CF_DIR="/root/.cloudflared"
 
 echo "===================================="
-echo "zTTato Cloudflare Tunnel Installer"
+echo "zlttbots Cloudflare Tunnel Installer"
 echo "===================================="
 
 ########################################
@@ -56,8 +56,8 @@ echo "Tunnel ID: $TUNNEL_ID"
 
 echo "Creating DNS routes..."
 
-cloudflared tunnel route dns "$TUNNEL_NAME" "zttato.$DOMAIN"
-cloudflared tunnel route dns "$TUNNEL_NAME" "*.zttato.$DOMAIN"
+cloudflared tunnel route dns "$TUNNEL_NAME" "zlttbots.$DOMAIN"
+cloudflared tunnel route dns "$TUNNEL_NAME" "*.zlttbots.$DOMAIN"
 
 ########################################
 # generate config
@@ -73,22 +73,22 @@ credentials-file: $CF_DIR/$TUNNEL_ID.json
 
 ingress:
 
-  - hostname: zttato.$DOMAIN
+  - hostname: zlttbots.$DOMAIN
     service: http://admin-panel:3000
 
-  - hostname: api.zttato.$DOMAIN
+  - hostname: api.zlttbots.$DOMAIN
     service: http://analytics:9100
 
-  - hostname: video.zttato.$DOMAIN
+  - hostname: video.zlttbots.$DOMAIN
     service: http://ai-video-generator:9400
 
-  - hostname: arbitrage.zttato.$DOMAIN
+  - hostname: arbitrage.zlttbots.$DOMAIN
     service: http://arbitrage-engine:9500
 
-  - hostname: crawler.zttato.$DOMAIN
+  - hostname: crawler.zlttbots.$DOMAIN
     service: http://market-crawler:9200
 
-  - hostname: "*.zttato.$DOMAIN"
+  - hostname: "*.zlttbots.$DOMAIN"
     service: http://admin-panel:3000
 
   - service: http_status:404
@@ -105,7 +105,7 @@ services:
 
   cloudflared:
     image: cloudflare/cloudflared:latest
-    container_name: zttato-cloudflared
+    container_name: zlttbots-cloudflared
     restart: unless-stopped
     command: tunnel run $TUNNEL_ID
     volumes:
@@ -134,11 +134,11 @@ echo ""
 
 echo "Domains:"
 
-echo "https://zttato.$DOMAIN"
-echo "https://api.zttato.$DOMAIN"
-echo "https://video.zttato.$DOMAIN"
-echo "https://arbitrage.zttato.$DOMAIN"
-echo "https://crawler.zttato.$DOMAIN"
+echo "https://zlttbots.$DOMAIN"
+echo "https://api.zlttbots.$DOMAIN"
+echo "https://video.zlttbots.$DOMAIN"
+echo "https://arbitrage.zlttbots.$DOMAIN"
+echo "https://crawler.zlttbots.$DOMAIN"
 
 echo ""
 echo "Tunnel running via Docker"

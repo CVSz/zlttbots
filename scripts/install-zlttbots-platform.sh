@@ -24,9 +24,9 @@ ensure_env(){
   fi
 
   cat > .env <<'ENVEOF'
-DB_NAME=zttato
-DB_USER=zttato
-DB_PASSWORD=zttato
+DB_NAME=zlttbots
+DB_USER=zlttbots
+DB_PASSWORD=zlttbots
 DB_PORT=5432
 REDIS_HOST=redis
 REDIS_PORT=6379
@@ -71,4 +71,4 @@ ensure_env
 validate_compose
 install_node_dependencies
 
-log "zTTato platform install completed"
+log "zlttbots platform install completed"

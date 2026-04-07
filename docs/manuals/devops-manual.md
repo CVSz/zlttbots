@@ -1,6 +1,6 @@
 # DevOps Manual
 
-This manual is the full-detail infrastructure and runtime operations guide for zTTato Platform.
+This manual is the full-detail infrastructure and runtime operations guide for zlttbots.
 
 ## 1) DevOps responsibilities
 
@@ -148,12 +148,12 @@ Cloudflare tunnel and edge-related scripts/configs exist under `scripts/`, `clou
 ## 8) Node-service operations
 
 ```bash
-bash scripts/zttato-node.sh install
-bash scripts/zttato-node.sh start
-bash scripts/zttato-node.sh stop
-bash scripts/zttato-node.sh restart
-bash scripts/zttato-node.sh status
-bash scripts/zttato-node.sh logs
+bash scripts/zlttbots-node.sh install
+bash scripts/zlttbots-node.sh start
+bash scripts/zlttbots-node.sh stop
+bash scripts/zlttbots-node.sh restart
+bash scripts/zlttbots-node.sh status
+bash scripts/zlttbots-node.sh logs
 ```
 
 If PM2 is missing, the wrapper will fail for status/log actions. Treat PM2 availability as an environment prerequisite for that mode.
@@ -163,13 +163,13 @@ If PM2 is missing, the wrapper will fail for status/log actions. Treat PM2 avail
 ### Backup
 
 ```bash
-pg_dump -U zttato zttato > backup-$(date +%Y%m%d%H%M%S).sql
+pg_dump -U zlttbots zlttbots > backup-$(date +%Y%m%d%H%M%S).sql
 ```
 
 ### Restore
 
 ```bash
-psql -U zttato zttato < backup.sql
+psql -U zlttbots zlttbots < backup.sql
 ```
 
 Recommended sequence:

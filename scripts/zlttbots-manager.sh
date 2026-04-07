@@ -32,7 +32,7 @@ logs_cmd(){
 
 usage(){
   cat <<'USAGE'
-Usage: bash scripts/zttato-manager.sh <command> [args]
+Usage: bash scripts/zlttbots-manager.sh <command> [args]
 
 Commands:
   install         Prepare .env and install local dependencies
@@ -74,7 +74,7 @@ case "${1:-}" in
     logs_cmd "${2:-}"
     ;;
   node)
-    echo 'Use: bash scripts/zttato-node.sh {install|start|stop|restart|status|logs [service]}'
+    echo 'Use: bash scripts/zlttbots-node.sh {install|start|stop|restart|status|logs [service]}'
     ;;
   *)
     usage

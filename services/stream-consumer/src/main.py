@@ -16,8 +16,8 @@ log = logging.getLogger("stream-consumer")
 
 KAFKA_BROKER = os.getenv("KAFKA_BROKER", "redpanda:9092")
 KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "events")
-KAFKA_GROUP = os.getenv("KAFKA_GROUP", "zttato-consumer")
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://zttato:zttato@postgres:5432/zttato")
+KAFKA_GROUP = os.getenv("KAFKA_GROUP", "zlttbots-consumer")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://zlttbots:zlttbots@postgres:5432/zlttbots")
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 REDIS = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 RUNNING = True

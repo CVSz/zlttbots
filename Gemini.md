@@ -26,7 +26,7 @@ Path recommendation: `scripts/meta-clean.sh`
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-PROJECT_NAME="${PROJECT_NAME:-zttato}"
+PROJECT_NAME="${PROJECT_NAME:-zlttbots}"
 ENVIRONMENT="${ENVIRONMENT:-dev}"   # dev|staging|prod
 CONFIRM="${CONFIRM:-false}"         # must be true to execute
 FORCE_PROD="${FORCE_PROD:-false}"   # must be true when ENVIRONMENT=prod
@@ -95,13 +95,13 @@ main "$@"
 
 ```bash
 # Safe dev cleanup
-CONFIRM=true PROJECT_NAME=zttato ENVIRONMENT=dev bash scripts/meta-clean.sh
+CONFIRM=true PROJECT_NAME=zlttbots ENVIRONMENT=dev bash scripts/meta-clean.sh
 
 # Staging cleanup
-CONFIRM=true PROJECT_NAME=zttato ENVIRONMENT=staging bash scripts/meta-clean.sh
+CONFIRM=true PROJECT_NAME=zlttbots ENVIRONMENT=staging bash scripts/meta-clean.sh
 
 # Prod cleanup (explicit double-ack)
-CONFIRM=true FORCE_PROD=true PROJECT_NAME=zttato ENVIRONMENT=prod bash scripts/meta-clean.sh
+CONFIRM=true FORCE_PROD=true PROJECT_NAME=zlttbots ENVIRONMENT=prod bash scripts/meta-clean.sh
 ```
 
 ## Notes

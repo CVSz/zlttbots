@@ -20,7 +20,7 @@ def db():
         port=int(os.getenv("POSTGRES_PORT", "5432")),
         user=_required_env("POSTGRES_USER"),
         password=_required_env("POSTGRES_PASSWORD"),
-        dbname=os.getenv("POSTGRES_DB", "zttato"),
+        dbname=os.getenv("POSTGRES_DB", "zlttbots"),
     )
 
 

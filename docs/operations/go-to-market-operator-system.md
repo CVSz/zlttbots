@@ -43,7 +43,7 @@ This runbook converts growth ideas into deterministic execution primitives that 
 from enterprise_maturity.go_to_market import ContentInput, DeckMetrics, generate_daily_plan, generate_post
 
 plan = generate_daily_plan(4)
-post = generate_post(ContentInput(product_link="https://zttato.dev", social_proof_count=120), slot=1)
+post = generate_post(ContentInput(product_link="https://zlttbots.dev", social_proof_count=120), slot=1)
 metrics = DeckMetrics(users=320, deploys=1180, daily_growth_percent=12.4)
 ```
 

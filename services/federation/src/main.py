@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 
 app = FastAPI(title="Federation Control Plane")
 SECRET = os.getenv("FEDERATION_SECRET", "change-me")
-DB_URL = os.getenv("DATABASE_URL", "postgresql://zttato:zttato@postgres:5432/zttato")
+DB_URL = os.getenv("DATABASE_URL", "postgresql://zlttbots:zlttbots@postgres:5432/zlttbots")
 AUDIT_LOG_PATH = Path(os.getenv("FEDERATION_AUDIT_LOG", "/tmp/federation-audit.log"))
 DEFAULT_TENANT = os.getenv("FEDERATION_DEFAULT_TENANT", "default")
 

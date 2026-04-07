@@ -41,7 +41,7 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
       - name: Build jwt-auth image
-        run: docker build -t zttato/jwt-auth:${{ github.sha }} services/jwt-auth
+        run: docker build -t zlttbots/jwt-auth:${{ github.sha }} services/jwt-auth
 
   deploy-staging:
     needs: [container-build]

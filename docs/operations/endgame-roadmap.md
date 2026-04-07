@@ -1,4 +1,4 @@
-# zTTato Endgame Roadmap (Reality-Based Execution Order)
+# zlttbots Endgame Roadmap (Reality-Based Execution Order)
 
 เอกสารนี้แปลง roadmap แบบ “endgame” ให้เป็นลำดับลงมือทำที่ผูกกับ repo ปัจจุบัน โดยเน้น production-first และเงินเข้าได้จริงก่อนฝันไกล.
 

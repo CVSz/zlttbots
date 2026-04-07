@@ -7,7 +7,7 @@ import psycopg2
 import redis
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://zttato:zttato@postgres:5432/zttato")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://zlttbots:zlttbots@postgres:5432/zlttbots")
 REDIS = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 

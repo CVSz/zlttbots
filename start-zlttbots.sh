@@ -1,7 +1,7 @@
-# path: start-zttato.sh
+# path: start-zlttbots.sh
 #!/usr/bin/env bash
 #
-# Unified launcher for zTTato Platform
+# Unified launcher for zlttbots
 # Combines:
 # - permission fix
 # - env loader
@@ -22,7 +22,7 @@ PID_DIR="$ROOT/pids"
 mkdir -p "$LOG_DIR" "$PID_DIR"
 
 echo "================================="
-echo "zTTato Platform Bootstrap"
+echo "zlttbots Bootstrap"
 echo "Root: $ROOT"
 echo "================================="
 
@@ -134,7 +134,7 @@ docker compose up -d postgres redis
 
 # Ensure compose services get container-resolvable URLs without leaking
 # container-only hostnames into locally executed workers.
-COMPOSE_DB_URL="${CONTAINER_DB_URL:-postgresql://zttato:zttato@postgres:5432/zttato}"
+COMPOSE_DB_URL="${CONTAINER_DB_URL:-postgresql://zlttbots:zlttbots@postgres:5432/zlttbots}"
 COMPOSE_REDIS_URL="${CONTAINER_REDIS_URL:-redis://redis:6379}"
 
 sleep 6
@@ -168,7 +168,7 @@ if [ -f "$MIG" ]; then
   CONTAINER=$(docker ps -qf name=postgres | head -n1 || true)
 
   if [ -n "$CONTAINER" ]; then
-    docker exec -i "$CONTAINER" psql -U zttato -d zttato -f /dev/stdin < "$MIG" || true
+    docker exec -i "$CONTAINER" psql -U zlttbots -d zlttbots -f /dev/stdin < "$MIG" || true
   fi
 fi
 
@@ -207,7 +207,7 @@ curl -fs http://localhost:9500/docs || true
 
 echo ""
 echo "================================="
-echo "zTTato Platform Started"
+echo "zlttbots Started"
 echo "================================="
 
 echo ""

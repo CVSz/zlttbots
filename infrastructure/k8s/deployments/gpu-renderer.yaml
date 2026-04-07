@@ -24,7 +24,7 @@ spec:
         accelerator: nvidia
       containers:
         - name: gpu-renderer
-          image: zttato/gpu-renderer:v1.0.0
+          image: zlttbots/gpu-renderer:v1.0.0
           resources:
             limits:
               nvidia.com/gpu: "1"

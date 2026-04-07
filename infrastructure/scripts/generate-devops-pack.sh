@@ -88,7 +88,7 @@ do
   service=$(basename "$(dirname "$dir")")
 
   echo "Building image: $service"
-  docker build -t zttato/$service "$dir"
+  docker build -t zlttbots/$service "$dir"
 done
 
 echo "Build complete."

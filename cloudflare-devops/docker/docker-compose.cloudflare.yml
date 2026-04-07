@@ -2,6 +2,6 @@ services:
 
   cloudflared:
     image: cloudflare/cloudflared:latest
-    container_name: zttato-cloudflared
+    container_name: zlttbots-cloudflared
     restart: unless-stopped
     command: tunnel run --token ${CF_TUNNEL_TOKEN}

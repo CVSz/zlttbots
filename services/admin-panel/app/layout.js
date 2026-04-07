@@ -1,7 +1,7 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'ZTTATO Production Admin Dashboard',
+  title: 'ZLTTBOTS Production Admin Dashboard',
   description: 'Admin controls for affiliate analytics, TikTok automation, and AI product discovery.'
 }
 

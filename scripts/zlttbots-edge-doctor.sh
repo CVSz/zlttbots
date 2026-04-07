@@ -1,7 +1,7 @@
-# path: scripts/zttato-edge-doctor.sh
+# path: scripts/zlttbots-edge-doctor.sh
 #!/usr/bin/env bash
 #
-# zTTato Edge Doctor
+# zlttbots Edge Doctor
 # Comprehensive diagnostics + optional auto-repair for Cloudflare Tunnel edge.
 #
 # Checks:
@@ -15,8 +15,8 @@
 # - Service health
 #
 # Usage:
-#   bash scripts/zttato-edge-doctor.sh
-#   bash scripts/zttato-edge-doctor.sh --repair
+#   bash scripts/zlttbots-edge-doctor.sh
+#   bash scripts/zlttbots-edge-doctor.sh --repair
 
 set -Eeuo pipefail
 
@@ -29,7 +29,7 @@ if [[ "${1:-}" == "--repair" ]]; then
 fi
 
 echo "======================================"
-echo "zTTato Edge Doctor"
+echo "zlttbots Edge Doctor"
 echo "Root: $ROOT"
 echo "Repair mode: $REPAIR"
 echo "======================================"
@@ -124,7 +124,7 @@ echo "Cloudflare Tunnel"
 echo "--------------------------------------"
 
 docker ps --format '{{.Names}}' | grep -q cloudflared && \
-docker logs zttato-cloudflared --tail 15 || \
+docker logs zlttbots-cloudflared --tail 15 || \
 echo "[WARN] cloudflared container not running"
 
 ########################################
@@ -177,7 +177,7 @@ echo ""
 echo "Docker Network"
 echo "--------------------------------------"
 
-DOCKER_NETWORK="zlttbots_zttato-net"
+DOCKER_NETWORK="zlttbots_zlttbots-net"
 if ! docker network inspect "$DOCKER_NETWORK" >/dev/null 2>&1; then
   DOCKER_NETWORK="zlttbots_default"
 fi
@@ -185,7 +185,7 @@ fi
 if docker network inspect "$DOCKER_NETWORK" >/dev/null 2>&1; then
   echo "[OK] $DOCKER_NETWORK exists"
 else
-  echo "[WARN] docker network missing (checked zlttbots_zttato-net and zlttbots_default)"
+  echo "[WARN] docker network missing (checked zlttbots_zlttbots-net and zlttbots_default)"
 fi
 
 ########################################
@@ -203,9 +203,9 @@ SERVICES=(
 "viral-predictor:9100"
 )
 
-PROBE_CONTAINER="zttato-market-crawler"
+PROBE_CONTAINER="zlttbots-market-crawler"
 if ! docker ps --format '{{.Names}}' | grep -qx "$PROBE_CONTAINER"; then
-  PROBE_CONTAINER="zttato-arbitrage-engine"
+  PROBE_CONTAINER="zlttbots-arbitrage-engine"
 fi
 
 for s in "${SERVICES[@]}"; do
@@ -246,7 +246,7 @@ if $REPAIR; then
   }" >/dev/null
 
   echo "Restarting cloudflared container"
-  docker restart zttato-cloudflared >/dev/null || true
+  docker restart zlttbots-cloudflared >/dev/null || true
 
   echo "Restarting docker stack"
   docker compose down >/dev/null
@@ -261,7 +261,7 @@ fi
 
 echo ""
 echo "======================================"
-echo "zTTato Edge Doctor Finished"
+echo "zlttbots Edge Doctor Finished"
 echo "======================================"
 
 echo "Endpoints:"

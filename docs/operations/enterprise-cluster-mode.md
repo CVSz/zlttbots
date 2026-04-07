@@ -22,7 +22,7 @@ This runbook provides a production deployment path for enterprise cluster mode (
 ## Prerequisites
 
 1. Kubernetes cluster initialized (`kubeadm` or managed cluster).
-2. External Secrets Operator installed with `ClusterSecretStore` named `zttato-secret-store`.
+2. External Secrets Operator installed with `ClusterSecretStore` named `zlttbots-secret-store`.
 3. KEDA installed.
 4. Istio installed (or install via `scripts/install-istio.sh`).
 5. Gatekeeper and Kyverno installed (for policy enforcement).

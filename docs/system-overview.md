@@ -1,6 +1,6 @@
 # System Overview
 
-zTTato Platform is a mixed Python, Node.js, shell, Docker, and infrastructure-code repository for social-commerce automation, affiliate workflow execution, analytics, and operator tooling. The project is not just one app: it is a platform with a safe baseline runtime, a broader orchestration stack, optional Node-managed applications, and enterprise-scale reference modules.
+zlttbots is a mixed Python, Node.js, shell, Docker, and infrastructure-code repository for social-commerce automation, affiliate workflow execution, analytics, and operator tooling. The project is not just one app: it is a platform with a safe baseline runtime, a broader orchestration stack, optional Node-managed applications, and enterprise-scale reference modules.
 
 ## 1) Platform modes
 
@@ -39,7 +39,7 @@ A separate operator path exists for Node applications under `services/`, especia
 - `tiktok-shop-miner`
 - `tiktok-uploader`
 
-These are typically installed and run with `scripts/zttato-node.sh` and PM2 rather than through the baseline Compose gateway.
+These are typically installed and run with `scripts/zlttbots-node.sh` and PM2 rather than through the baseline Compose gateway.
 
 ### D. Enterprise blueprint layer
 The `enterprise_maturity/` tree and `tests/` capture future-state and alternate deployment patterns such as:

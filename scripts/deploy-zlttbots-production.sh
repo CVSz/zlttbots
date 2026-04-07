@@ -1,10 +1,10 @@
-# scripts/deploy-zttato-production.sh
+# scripts/deploy-zlttbots-production.sh
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
 
 # ==========================================
-# zTTato Production Deployment
+# zlttbots Production Deployment
 # ==========================================
 # Responsibilities
 # - Validate environment
@@ -20,7 +20,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 echo "======================================"
-echo "zTTato Production Deployment"
+echo "zlttbots Production Deployment"
 echo "Root: $ROOT_DIR"
 echo "======================================"
 
@@ -80,7 +80,7 @@ sleep 5
 echo
 echo "Checking docker network"
 
-NETWORK="zlttbots_zttato-net"
+NETWORK="zlttbots_zlttbots-net"
 
 if ! docker network inspect "$NETWORK" >/dev/null 2>&1; then
     NETWORK="zlttbots_default"
@@ -98,17 +98,17 @@ fi
 echo
 echo "Ensuring cloudflared network connectivity"
 
-if docker ps --format '{{.Names}}' | grep -q "zttato-cloudflared"; then
+if docker ps --format '{{.Names}}' | grep -q "zlttbots-cloudflared"; then
 
-    if ! docker network inspect "$NETWORK" | grep -q zttato-cloudflared; then
-        docker network connect "$NETWORK" zttato-cloudflared || true
+    if ! docker network inspect "$NETWORK" | grep -q zlttbots-cloudflared; then
+        docker network connect "$NETWORK" zlttbots-cloudflared || true
     fi
 
 else
     echo "Starting cloudflared"
 
     docker run -d \
-        --name zttato-cloudflared \
+        --name zlttbots-cloudflared \
         --network "$NETWORK" \
         --restart unless-stopped \
         cloudflare/cloudflared:latest \
@@ -148,7 +148,7 @@ echo "Warming Cloudflare edge"
 
 domains=(
 "zeaz.dev"
-"zttato.zeaz.dev"
+"zlttbots.zeaz.dev"
 "api.zeaz.dev"
 "gpu.zeaz.dev"
 "predict.zeaz.dev"
@@ -205,12 +205,12 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 echo
 echo "======================================"
-echo "zTTato Production Deployment Complete"
+echo "zlttbots Production Deployment Complete"
 echo "======================================"
 echo
 echo "Endpoints:"
 echo "https://zeaz.dev"
-echo "https://zttato.zeaz.dev"
+echo "https://zlttbots.zeaz.dev"
 echo "https://api.zeaz.dev"
 echo "https://gpu.zeaz.dev"
 echo "https://predict.zeaz.dev"
@@ -219,8 +219,8 @@ echo "Swagger:"
 echo "https://api.zeaz.dev/docs"
 echo "https://gpu.zeaz.dev/docs"
 echo "https://predict.zeaz.dev/docs"
-echo "https://zttato.zeaz.dev/docs"
+echo "https://zlttbots.zeaz.dev/docs"
 echo
 echo "Diagnostics:"
-echo "bash scripts/zttato-edge-doctor.sh"
+echo "bash scripts/zlttbots-edge-doctor.sh"
 echo

@@ -5,7 +5,7 @@ import time
 
 import boto3
 
-S3_BUCKET = os.getenv("MODEL_BUCKET", "zttato-models")
+S3_BUCKET = os.getenv("MODEL_BUCKET", "zlttbots-models")
 LOCAL_PATH = os.getenv("MODEL_SYNC_FILE", "/models/policy.onnx")
 ENDPOINT = os.getenv("S3_ENDPOINT")
 KEY = os.getenv("MODEL_SYNC_OBJECT_KEY", "policy.onnx")

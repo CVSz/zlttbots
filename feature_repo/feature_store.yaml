@@ -1,4 +1,4 @@
-project: zttato
+project: zlttbots
 registry: data/registry.db
 provider: local
 
@@ -10,6 +10,6 @@ offline_store:
   type: postgres
   host: postgres
   port: 5432
-  database: zttato
-  user: zttato
-  password: zttato
+  database: zlttbots
+  user: zlttbots
+  password: zlttbots
