@@ -1,4 +1,5 @@
 from typing import Any
+from urllib.parse import quote
 
 import requests
 from fastapi import FastAPI, HTTPException
@@ -11,7 +12,7 @@ TIMEOUT = 10
 
 
 class RewardEvent(BaseModel):
-    campaign_id: str = Field(min_length=1)
+    campaign_id: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
     revenue: float = Field(default=0.0, ge=0.0)
     conversions: int = Field(default=0, ge=0)
     clicks: int = Field(default=0, ge=0)
@@ -46,7 +47,8 @@ def reward(event: RewardEvent) -> RewardResponse:
     profit = event.revenue - (event.clicks * 0.02)
     reward_value = round(max(-1.0, min(1.0, profit)), 6)
 
-    features = safe_call(requests.get, f"http://feature-store:8000/features/{event.campaign_id}")
+    campaign_id = quote(event.campaign_id, safe="")
+    features = safe_call(requests.get, f"http://feature-store:8000/features/{campaign_id}")
     safe_call(
         requests.post,
         "http://rl-coordinator:8000/update",
