@@ -87,7 +87,7 @@ services:
       - "8000:8000"
     environment:
       - SECURITY_API_KEY=${SECURITY_API_KEY:?set SECURITY_API_KEY}
-      - SCAN_ROOT=/tmp/zttato-scans
+      - SCAN_ROOT=/tmp/zlttbots-scans
 
   ai-fix-engine:
     build: ../services/ai-fix

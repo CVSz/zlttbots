@@ -1,4 +1,4 @@
-name: zttato-enterprise-build
+name: zlttbots-enterprise-build
 
 on:
   push:
@@ -17,6 +17,6 @@ jobs:
 
       - name: Build Docker Images
         run: |
-          docker build -t zttato-market-crawler services/market-crawler
-          docker build -t zttato-viral-predictor services/viral-predictor
-          docker build -t zttato-arbitrage-engine services/arbitrage-engine
+          docker build -t zlttbots-market-crawler services/market-crawler
+          docker build -t zlttbots-viral-predictor services/viral-predictor
+          docker build -t zlttbots-arbitrage-engine services/arbitrage-engine

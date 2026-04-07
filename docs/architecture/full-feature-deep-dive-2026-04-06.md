@@ -1,4 +1,4 @@
-# zTTato Platform Full Feature Deep Dive
+# zlttbots Full Feature Deep Dive
 
 **Date (UTC):** 2026-04-06  
 **Scope:** Whole repository feature topology and runtime capability mapping

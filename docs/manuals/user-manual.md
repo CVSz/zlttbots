@@ -1,6 +1,6 @@
 # User Manual
 
-This manual is the full-detail user guide for the currently accessible zTTato platform flows.
+This manual is the full-detail user guide for the currently accessible zlttbots platform flows.
 
 ## 1) Who this manual is for
 

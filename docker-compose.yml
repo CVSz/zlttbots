@@ -3,27 +3,27 @@ name: zlttbots
 services:
   postgres:
     image: postgres:15.8
-    container_name: zttato-postgres
+    container_name: zlttbots-postgres
     restart: always
     environment:
-      POSTGRES_DB: ${DB_NAME:-zttato}
-      POSTGRES_USER: ${DB_USER:-zttato}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-zttato}
+      POSTGRES_DB: ${DB_NAME:-zlttbots}
+      POSTGRES_USER: ${DB_USER:-zlttbots}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-zlttbots}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./infrastructure/postgres/migrations:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-zttato} -d ${DB_NAME:-zttato}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-zlttbots} -d ${DB_NAME:-zlttbots}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 15s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   redis:
     image: redis:7.4.0
-    container_name: zttato-redis
+    container_name: zlttbots-redis
     restart: always
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
@@ -34,17 +34,17 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - zttato-net
+      - zlttbots-net
 
   viral-predictor:
     build:
       context: ./services/viral-predictor
       dockerfile: Dockerfile
-    container_name: zttato-viral-predictor
+    container_name: zlttbots-viral-predictor
     restart: always
     env_file: .env
     environment:
-      DB_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      DB_URL: postgresql://${DB_USER:-zlttbots}:${DB_PASSWORD:-zlttbots}@postgres:${DB_PORT:-5432}/${DB_NAME:-zlttbots}
     depends_on:
       postgres:
         condition: service_healthy
@@ -55,13 +55,13 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   market-crawler:
     build:
       context: ./services/market-crawler
       dockerfile: Dockerfile
-    container_name: zttato-market-crawler
+    container_name: zlttbots-market-crawler
     restart: always
     env_file: .env
     environment:
@@ -69,7 +69,7 @@ services:
       FFMPEG_HWACCEL: ${FFMPEG_HWACCEL:-none}
       FFMPEG_CPU_PRESET: ${FFMPEG_CPU_PRESET:-veryfast}
       FFMPEG_CPU_CRF: ${FFMPEG_CPU_CRF:-23}
-      DB_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      DB_URL: postgresql://${DB_USER:-zlttbots}:${DB_PASSWORD:-zlttbots}@postgres:${DB_PORT:-5432}/${DB_NAME:-zlttbots}
     depends_on:
       postgres:
         condition: service_healthy
@@ -82,17 +82,17 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   arbitrage-engine:
     build:
       context: ./services/arbitrage-engine
       dockerfile: Dockerfile
-    container_name: zttato-arbitrage-engine
+    container_name: zlttbots-arbitrage-engine
     restart: always
     env_file: .env
     environment:
-      DB_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      DB_URL: postgresql://${DB_USER:-zlttbots}:${DB_PASSWORD:-zlttbots}@postgres:${DB_PORT:-5432}/${DB_NAME:-zlttbots}
     depends_on:
       postgres:
         condition: service_healthy
@@ -103,13 +103,13 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   gpu-renderer:
     build:
       context: ./services/gpu-renderer
       dockerfile: Dockerfile
-    container_name: zttato-gpu-renderer
+    container_name: zlttbots-gpu-renderer
     restart: always
     env_file: .env
     environment:
@@ -127,39 +127,39 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   crawler-worker:
     build:
       context: ./services/market-crawler
       dockerfile: Dockerfile
-    container_name: zttato-crawler-worker
+    container_name: zlttbots-crawler-worker
     restart: always
     env_file: .env
     command: ["python", "src/workers/worker.py"]
     environment:
       PYTHONPATH: /app/src
       REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
-      DB_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      DB_URL: postgresql://${DB_USER:-zlttbots}:${DB_PASSWORD:-zlttbots}@postgres:${DB_PORT:-5432}/${DB_NAME:-zlttbots}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     networks:
-      - zttato-net
+      - zlttbots-net
 
   arbitrage-worker:
     build:
       context: ./services/arbitrage-engine
       dockerfile: Dockerfile
-    container_name: zttato-arbitrage-worker
+    container_name: zlttbots-arbitrage-worker
     restart: always
     env_file: .env
     command: ["python", "src/workers/worker.py"]
     environment:
       PYTHONPATH: /app/src
-      DB_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      DB_URL: postgresql://${DB_USER:-zlttbots}:${DB_PASSWORD:-zlttbots}@postgres:${DB_PORT:-5432}/${DB_NAME:-zlttbots}
       REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
     depends_on:
       postgres:
@@ -167,13 +167,13 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - zttato-net
+      - zlttbots-net
 
   renderer-worker:
     build:
       context: ./services/gpu-renderer
       dockerfile: Dockerfile
-    container_name: zttato-renderer-worker
+    container_name: zlttbots-renderer-worker
     restart: always
     env_file: .env
     command: ["python", "src/worker/worker.py"]
@@ -187,13 +187,13 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - zttato-net
+      - zlttbots-net
 
   execution-engine:
     build:
       context: ./services/execution-engine
       dockerfile: Dockerfile
-    container_name: zttato-execution-engine
+    container_name: zlttbots-execution-engine
     restart: always
     env_file: .env
     environment:
@@ -213,18 +213,18 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   affiliate-webhook:
     build:
       context: ./services/affiliate-webhook
       dockerfile: Dockerfile
-    container_name: zttato-affiliate-webhook
+    container_name: zlttbots-affiliate-webhook
     restart: always
     env_file: .env
     environment:
       AFFILIATE_WEBHOOK_SECRET: ${AFFILIATE_WEBHOOK_SECRET:-change-me}
-      DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      DATABASE_URL: postgresql://${DB_USER:-zlttbots}:${DB_PASSWORD:-zlttbots}@postgres:${DB_PORT:-5432}/${DB_NAME:-zlttbots}
       RL_POLICY_MODEL_PATH: /models/policy.pt
     depends_on:
       postgres:
@@ -238,17 +238,17 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   tenant-service:
     build:
       context: ./services/tenant-service
       dockerfile: Dockerfile
-    container_name: zttato-tenant-service
+    container_name: zlttbots-tenant-service
     restart: always
     env_file: .env
     environment:
-      DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      DATABASE_URL: postgresql://${DB_USER:-zlttbots}:${DB_PASSWORD:-zlttbots}@postgres:${DB_PORT:-5432}/${DB_NAME:-zlttbots}
       RL_POLICY_MODEL_PATH: /models/policy.pt
     depends_on:
       postgres:
@@ -260,13 +260,13 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   product-generator:
     build:
       context: ./services/product-generator
       dockerfile: Dockerfile
-    container_name: zttato-product-generator
+    container_name: zlttbots-product-generator
     restart: always
     env_file: .env
     healthcheck:
@@ -276,13 +276,13 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   market-orchestrator:
     build:
       context: ./services/market-orchestrator
       dockerfile: Dockerfile
-    container_name: zttato-market-orchestrator
+    container_name: zlttbots-market-orchestrator
     restart: always
     env_file: .env
     depends_on:
@@ -295,13 +295,13 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   billing-service:
     build:
       context: ./services/billing-service
       dockerfile: Dockerfile
-    container_name: zttato-billing-service
+    container_name: zlttbots-billing-service
     restart: always
     env_file: .env
     healthcheck:
@@ -311,13 +311,13 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   landing-service:
     build:
       context: ./services/landing-service
       dockerfile: Dockerfile
-    container_name: zttato-landing-service
+    container_name: zlttbots-landing-service
     restart: always
     env_file: .env
     healthcheck:
@@ -327,13 +327,13 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   reward-collector:
     build:
       context: ./services/reward-collector
       dockerfile: Dockerfile
-    container_name: zttato-reward-collector
+    container_name: zlttbots-reward-collector
     restart: always
     env_file: .env
     environment:
@@ -352,11 +352,11 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   redpanda:
     image: docker.redpanda.com/redpandadata/redpanda:v24.2.10
-    container_name: zttato-redpanda
+    container_name: zlttbots-redpanda
     restart: always
     command:
       - redpanda
@@ -386,38 +386,38 @@ services:
       retries: 10
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   ray-head:
     image: rayproject/ray:2.34.0
-    container_name: zttato-ray-head
+    container_name: zlttbots-ray-head
     restart: always
     command: ["ray", "start", "--head", "--port=6379", "--dashboard-host=0.0.0.0", "--block"]
     ports:
       - "8265:8265"
     networks:
-      - zttato-net
+      - zlttbots-net
 
   ray-worker:
     image: rayproject/ray:2.34.0
-    container_name: zttato-ray-worker
+    container_name: zlttbots-ray-worker
     restart: always
     command: ["ray", "start", "--address=ray-head:6379", "--block"]
     depends_on:
       - ray-head
     networks:
-      - zttato-net
+      - zlttbots-net
 
   stream-consumer:
     build:
       context: ./services/stream-consumer
       dockerfile: Dockerfile
-    container_name: zttato-stream-consumer
+    container_name: zlttbots-stream-consumer
     restart: always
     env_file: .env
     environment:
       KAFKA_BROKER: redpanda:9092
-      DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      DATABASE_URL: postgresql://${DB_USER:-zlttbots}:${DB_PASSWORD:-zlttbots}@postgres:${DB_PORT:-5432}/${DB_NAME:-zlttbots}
       RL_POLICY_MODEL_PATH: /models/policy.pt
       REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
     depends_on:
@@ -428,13 +428,13 @@ services:
       redpanda:
         condition: service_healthy
     networks:
-      - zttato-net
+      - zlttbots-net
 
   feature-store:
     build:
       context: ./services/feature-store
       dockerfile: Dockerfile
-    container_name: zttato-feature-store
+    container_name: zlttbots-feature-store
     restart: always
     env_file: .env
     environment:
@@ -449,13 +449,13 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   model-service:
     build:
       context: ./services/model-service
       dockerfile: Dockerfile
-    container_name: zttato-model-service
+    container_name: zlttbots-model-service
     restart: always
     env_file: .env
     environment:
@@ -483,18 +483,18 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   rl-engine:
     build:
       context: ./services/rl-engine
       dockerfile: Dockerfile
-    container_name: zttato-rl-engine
+    container_name: zlttbots-rl-engine
     restart: always
     env_file: .env
     environment:
       REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
-      DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      DATABASE_URL: postgresql://${DB_USER:-zlttbots}:${DB_PASSWORD:-zlttbots}@postgres:${DB_PORT:-5432}/${DB_NAME:-zlttbots}
       RL_POLICY_MODEL_PATH: /models/policy.pt
     depends_on:
       postgres:
@@ -510,18 +510,18 @@ services:
     volumes:
       - model_runtime_data:/models
     networks:
-      - zttato-net
+      - zlttbots-net
 
   rl-agent-1:
     build:
       context: ./services/rl-engine
       dockerfile: Dockerfile
-    container_name: zttato-rl-agent-1
+    container_name: zlttbots-rl-agent-1
     restart: always
     env_file: .env
     environment:
       REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
-      DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      DATABASE_URL: postgresql://${DB_USER:-zlttbots}:${DB_PASSWORD:-zlttbots}@postgres:${DB_PORT:-5432}/${DB_NAME:-zlttbots}
       RL_POLICY_MODEL_PATH: /models/policy.pt
       RL_STATE_KEY: rl:linucb:agent1
       RL_ALPHA: ${RL_AGENT_1_ALPHA:-1.0}
@@ -539,18 +539,18 @@ services:
     volumes:
       - model_runtime_data:/models
     networks:
-      - zttato-net
+      - zlttbots-net
 
   rl-agent-2:
     build:
       context: ./services/rl-engine
       dockerfile: Dockerfile
-    container_name: zttato-rl-agent-2
+    container_name: zlttbots-rl-agent-2
     restart: always
     env_file: .env
     environment:
       REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
-      DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      DATABASE_URL: postgresql://${DB_USER:-zlttbots}:${DB_PASSWORD:-zlttbots}@postgres:${DB_PORT:-5432}/${DB_NAME:-zlttbots}
       RL_POLICY_MODEL_PATH: /models/policy.pt
       RL_STATE_KEY: rl:linucb:agent2
       RL_ALPHA: ${RL_AGENT_2_ALPHA:-1.25}
@@ -568,13 +568,13 @@ services:
     volumes:
       - model_runtime_data:/models
     networks:
-      - zttato-net
+      - zlttbots-net
 
   rl-trainer:
     build:
       context: ./services/rl-trainer
       dockerfile: Dockerfile
-    container_name: zttato-rl-trainer
+    container_name: zlttbots-rl-trainer
     restart: always
     env_file: .env
     depends_on:
@@ -583,13 +583,13 @@ services:
     volumes:
       - model_runtime_data:/models
     networks:
-      - zttato-net
+      - zlttbots-net
 
   rl-coordinator:
     build:
       context: ./services/rl-coordinator
       dockerfile: Dockerfile
-    container_name: zttato-rl-coordinator
+    container_name: zlttbots-rl-coordinator
     restart: always
     env_file: .env
     environment:
@@ -606,13 +606,13 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   budget-allocator:
     build:
       context: ./services/budget-allocator
       dockerfile: Dockerfile
-    container_name: zttato-budget-allocator
+    container_name: zlttbots-budget-allocator
     restart: always
     env_file: .env
     healthcheck:
@@ -622,13 +622,13 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   rtb-engine:
     build:
       context: ./services/rtb-engine
       dockerfile: Dockerfile
-    container_name: zttato-rtb-engine
+    container_name: zlttbots-rtb-engine
     restart: always
     env_file: .env
     healthcheck:
@@ -638,13 +638,13 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   scaling-engine:
     build:
       context: ./services/scaling-engine
       dockerfile: Dockerfile
-    container_name: zttato-scaling-engine
+    container_name: zlttbots-scaling-engine
     restart: always
     env_file: .env
     healthcheck:
@@ -654,13 +654,13 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   master-orchestrator:
     build:
       context: ./services/master-orchestrator
       dockerfile: Dockerfile
-    container_name: zttato-master-orchestrator
+    container_name: zlttbots-master-orchestrator
     restart: always
     env_file: .env
     environment:
@@ -703,17 +703,17 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   federation:
     build:
       context: ./services/federation
       dockerfile: Dockerfile
-    container_name: zttato-federation
+    container_name: zlttbots-federation
     restart: always
     env_file: .env
     environment:
-      DATABASE_URL: postgresql://${DB_USER:-zttato}:${DB_PASSWORD:-zttato}@postgres:${DB_PORT:-5432}/${DB_NAME:-zttato}
+      DATABASE_URL: postgresql://${DB_USER:-zlttbots}:${DB_PASSWORD:-zlttbots}@postgres:${DB_PORT:-5432}/${DB_NAME:-zlttbots}
       RL_POLICY_MODEL_PATH: /models/policy.pt
       FEDERATION_SECRET: ${FEDERATION_SECRET:-change-me}
       FEDERATION_TOKEN_TTL: ${FEDERATION_TOKEN_TTL:-3600}
@@ -727,13 +727,13 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   scheduler:
     build:
       context: ./services/scheduler
       dockerfile: Dockerfile
-    container_name: zttato-scheduler
+    container_name: zlttbots-scheduler
     restart: always
     env_file: .env
     environment:
@@ -750,13 +750,13 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   capital-allocator:
     build:
       context: ./services/capital-allocator
       dockerfile: Dockerfile
-    container_name: zttato-capital-allocator
+    container_name: zlttbots-capital-allocator
     restart: always
     env_file: .env
     healthcheck:
@@ -766,13 +766,13 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   model-registry:
     build:
       context: ./services/model-registry
       dockerfile: Dockerfile
-    container_name: zttato-model-registry
+    container_name: zlttbots-model-registry
     restart: always
     env_file: .env
     environment:
@@ -788,13 +788,13 @@ services:
       - model_registry_data:/models
       - shared_model_data:/shared-models
     networks:
-      - zttato-net
+      - zlttbots-net
 
   payment-gateway:
     build:
       context: ./services/payment
       dockerfile: Dockerfile
-    container_name: zttato-payment-gateway
+    container_name: zlttbots-payment-gateway
     restart: always
     env_file: .env
     healthcheck:
@@ -804,13 +804,13 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      - zttato-net
+      - zlttbots-net
 
   model-sync:
     build:
       context: ./services/model-sync
       dockerfile: Dockerfile
-    container_name: zttato-model-sync
+    container_name: zlttbots-model-sync
     restart: always
     env_file: .env
     environment:
@@ -818,7 +818,7 @@ services:
       MODEL_SYNC_LOCAL_PATH: /models
       MODEL_SYNC_SHARED_PATH: /shared-models
       MODEL_NAME: policy
-      MODEL_BUCKET: ${MODEL_BUCKET:-zttato-models}
+      MODEL_BUCKET: ${MODEL_BUCKET:-zlttbots-models}
       MODEL_SYNC_OBJECT_KEY: ${MODEL_SYNC_OBJECT_KEY:-policy.onnx}
       S3_ENDPOINT: ${S3_ENDPOINT:-}
     depends_on:
@@ -828,23 +828,23 @@ services:
       - shared_model_data:/shared-models
       - model_runtime_data:/models
     networks:
-      - zttato-net
+      - zlttbots-net
 
   drift-detector:
     build:
       context: ./services/drift-detector
       dockerfile: Dockerfile
-    container_name: zttato-drift-detector
+    container_name: zlttbots-drift-detector
     restart: always
     env_file: .env
     networks:
-      - zttato-net
+      - zlttbots-net
 
   rl-policy:
     build:
       context: ./services/rl-policy
       dockerfile: Dockerfile
-    container_name: zttato-rl-policy
+    container_name: zlttbots-rl-policy
     restart: always
     env_file: .env
     healthcheck:
@@ -856,13 +856,13 @@ services:
     volumes:
       - shared_model_data:/shared-models
     networks:
-      - zttato-net
+      - zlttbots-net
 
   retraining-loop:
     build:
       context: ./services/retraining-loop
       dockerfile: Dockerfile
-    container_name: zttato-retraining-loop
+    container_name: zlttbots-retraining-loop
     restart: always
     env_file: .env
     environment:
@@ -878,24 +878,24 @@ services:
     volumes:
       - shared_model_data:/shared-models
     networks:
-      - zttato-net
+      - zlttbots-net
 
   p2p-node:
     build:
       context: ./services/p2p-node
       dockerfile: Dockerfile
-    container_name: zttato-p2p-node
+    container_name: zlttbots-p2p-node
     restart: always
     env_file: .env
     environment:
       PEER_ALLOWLIST: ${PEER_ALLOWLIST:-}
       NODE_ENV: production
     networks:
-      - zttato-net
+      - zlttbots-net
 
   nginx:
     image: nginx:1.27-alpine
-    container_name: zttato-nginx
+    container_name: zlttbots-nginx
     restart: always
     ports:
       - "80:80"
@@ -915,10 +915,10 @@ services:
       retries: 5
       start_period: 10s
     networks:
-      - zttato-net
+      - zlttbots-net
 
 networks:
-  zttato-net:
+  zlttbots-net:
     driver: bridge
 
 volumes:

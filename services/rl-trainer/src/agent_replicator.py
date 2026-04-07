@@ -32,7 +32,7 @@ class Replicator:
         enabled: bool | None = None,
     ) -> None:
         self.targets = list(targets) if targets is not None else parse_targets(os.getenv("TARGET_NODES", ""))
-        self.image = image or os.getenv("REPLICATOR_IMAGE", "zttato:latest")
+        self.image = image or os.getenv("REPLICATOR_IMAGE", "zlttbots:latest")
         self.enabled = enabled if enabled is not None else os.getenv("REPLICATOR_ENABLED", "false").lower() == "true"
 
     def deploy(self, target: DeploymentTarget) -> int:
@@ -81,8 +81,8 @@ def build_remote_command(runtime: str, image: str) -> str:
     quoted_image = shlex.quote(image)
     if runtime == "k8s":
         return (
-            "kubectl set image deployment/zttato zttato="
-            f"{quoted_image} --record && kubectl rollout status deployment/zttato"
+            "kubectl set image deployment/zlttbots zlttbots="
+            f"{quoted_image} --record && kubectl rollout status deployment/zlttbots"
         )
     return f"docker pull {quoted_image} && docker compose up -d"
 

@@ -16,12 +16,12 @@ spec:
         runAsNonRoot: true
       containers:
         - name: model-service
-          image: zttato/model-service:v1.0.0
+          image: zlttbots/model-service:v1.0.0
           ports:
             - containerPort: 8000
           envFrom:
             - secretRef:
-                name: zttato-secrets
+                name: zlttbots-secrets
           resources:
             requests:
               cpu: 500m

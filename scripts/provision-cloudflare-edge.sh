@@ -1,7 +1,7 @@
 # path: scripts/provision-cloudflare-edge.sh
 #!/usr/bin/env bash
 #
-# Cloudflare Edge Provisioner for zTTato Platform
+# Cloudflare Edge Provisioner for zlttbots
 #
 # Responsibilities
 # - validate env
@@ -20,7 +20,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="$ROOT/cloudflare-devops/env"
 
 echo "======================================"
-echo "zTTato Cloudflare Edge Provisioner"
+echo "zlttbots Cloudflare Edge Provisioner"
 echo "Root: $ROOT"
 echo "======================================"
 

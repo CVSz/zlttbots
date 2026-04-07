@@ -36,7 +36,7 @@ The repo has a strong baseline in several places (JWT validation in the gateway,
 **Impact:** Credential leakage, accidental environment reuse, and insecure defaults being propagated into non-dev environments.
 
 **Evidence:**
-- `.env` contains `DB_PASSWORD=zttato` and other environment values.
+- `.env` contains `DB_PASSWORD=zlttbots` and other environment values.
 - `.gitignore` excludes `.env`, but the file is already tracked, so ignore rules do not protect existing tracked secrets.
 
 **Recommendation:**

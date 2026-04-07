@@ -1,6 +1,6 @@
 # Installation
 
-This guide is the full-detail installer reference for zTTato Platform. It covers baseline setup, extended service expectations, optional Node-app setup, and common installation recovery paths.
+This guide is the full-detail installer reference for zlttbots. It covers baseline setup, extended service expectations, optional Node-app setup, and common installation recovery paths.
 
 ## 1) Choose your installation path
 
@@ -20,18 +20,18 @@ Use this if you want:
 
 - baseline Compose services
 - local dependency install across Python and Node service folders
-- host-side bootstrap behavior from `start-zttato.sh`
+- host-side bootstrap behavior from `start-zlttbots.sh`
 
 ### Path C — Node application fleet
 Use this when you specifically need the admin panel or the separate Node services.
 
 ### Path D — dedicated single-file SaaS installer (new)
-Use this when you need the ZEAZ-style one-shot provisioning flow adapted for zTTato on a fresh Ubuntu 24.04 VM. It provisions `/opt/zlttbots`, generates secrets, creates TLS certs, writes Docker/K8s artifacts, configures UFW, and installs cron/systemd jobs.
+Use this when you need the ZEAZ-style one-shot provisioning flow adapted for zlttbots on a fresh Ubuntu 24.04 VM. It provisions `/opt/zlttbots`, generates secrets, creates TLS certs, writes Docker/K8s artifacts, configures UFW, and installs cron/systemd jobs.
 
 Run:
 
 ```bash
-sudo bash installer/zttato-ai-full-stack-installer.sh --domain your-domain
+sudo bash installer/zlttbots-ai-full-stack-installer.sh --domain your-domain
 ```
 
 Optional flags:
@@ -80,9 +80,9 @@ The main Compose file references `.env`, and several services rely on environmen
 ### Recommended starter `.env`
 
 ```env
-DB_NAME=zttato
-DB_USER=zttato
-DB_PASSWORD=zttato
+DB_NAME=zlttbots
+DB_USER=zlttbots
+DB_PASSWORD=zlttbots
 DB_PORT=5432
 REDIS_HOST=redis
 REDIS_PORT=6379
@@ -157,9 +157,9 @@ This helper will create `.env` if needed, validate Compose config, and start the
 ### Managed installer / upgrade / deploy flow
 
 ```bash
-bash scripts/zttato-manager.sh install
-bash scripts/zttato-manager.sh upgrade
-bash scripts/zttato-manager.sh deploy
+bash scripts/zlttbots-manager.sh install
+bash scripts/zlttbots-manager.sh upgrade
+bash scripts/zlttbots-manager.sh deploy
 ```
 
 Use these commands when you want a clearer lifecycle split between preparing the workstation, refreshing images, and doing a full local deployment.
@@ -167,7 +167,7 @@ Use these commands when you want a clearer lifecycle split between preparing the
 ### Full bootstrap script
 
 ```bash
-bash start-zttato.sh
+bash start-zlttbots.sh
 ```
 
 Use this only when you intentionally want the script to install Node dependencies, create Python virtual environments in service folders, bring up infrastructure, and attempt a broader host-assisted startup flow.
@@ -230,9 +230,9 @@ bash infrastructure/scripts/validate-repo.sh
 If you need the admin panel and other Node applications:
 
 ```bash
-bash scripts/zttato-node.sh install
-bash scripts/zttato-node.sh start
-bash scripts/zttato-node.sh status
+bash scripts/zlttbots-node.sh install
+bash scripts/zlttbots-node.sh start
+bash scripts/zlttbots-node.sh status
 ```
 
 ### Important note
@@ -288,4 +288,4 @@ Do this only when you intentionally want to reset PostgreSQL/Redis local state.
 - check per-service `package.json` scripts
 
 ### Full bootstrap script is too heavy
-Use `bash start.sh` or direct `docker compose up -d` instead of `start-zttato.sh` for simpler local onboarding.
+Use `bash start.sh` or direct `docker compose up -d` instead of `start-zlttbots.sh` for simpler local onboarding.

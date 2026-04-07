@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: zttato-config
+  name: zlttbots-config
 data:
   DB_HOST: postgres
-  DB_NAME: zttato
+  DB_NAME: zlttbots

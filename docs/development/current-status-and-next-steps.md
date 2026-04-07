@@ -19,7 +19,7 @@ This document is a practical review of the current `zlttbots` repository and a c
 - Admin panel service exists with Next.js stack and component structure.
 
 ### Engineering and operations assets
-- CI workflow exists under `.github/workflows/zttato-ci.yml`.
+- CI workflow exists under `.github/workflows/zlttbots-ci.yml`.
 - Operational docs exist for backup, monitoring, logging, and disaster recovery.
 - Integration smoke-test script exists (`scripts/test-integration.sh`).
 - Repository validation script exists (`infrastructure/scripts/validate-repo.sh`).

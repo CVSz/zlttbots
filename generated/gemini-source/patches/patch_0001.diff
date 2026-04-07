@@ -1,4 +1,4 @@
-# ZTTATO PLATFORM v3 ENTERPRISE: META DEEP SCAN & REPAIR PATCH
+# ZLTTBOTS PLATFORM v3 ENTERPRISE: META DEEP SCAN & REPAIR PATCH
 # Scan Date: 2026-03-29
 # Focus: Distributed Logic, Race Conditions, Security (OWASP), and Compute Efficiency.
 
@@ -22,7 +22,7 @@
 #    - Bug: Incorrect fallback logic in `_should_use_cuda`. It returns True if env is set, 
 #      even if binary `nvidia-smi` is missing, causing process crash.
 
-cat << 'EOF' > zttato-enterprise-fix.patch
+cat << 'EOF' > zlttbots-enterprise-fix.patch
 diff --git a/services/arbitrage-engine/src/engine/arbitrage.py b/services/arbitrage-engine/src/engine/arbitrage.py
 --- a/services/arbitrage-engine/src/engine/arbitrage.py
 +++ b/services/arbitrage-engine/src/engine/arbitrage.py
@@ -143,7 +143,7 @@ diff --git a/services/master-orchestrator/src/main.py b/services/master-orchestr
 EOF
 
 # Apply the patch
-patch -p1 < zttato-enterprise-fix.patch
+patch -p1 < zlttbots-enterprise-fix.patch
 
 # Verify integrity
 ./infrastructure/scripts/full-source-scan.sh

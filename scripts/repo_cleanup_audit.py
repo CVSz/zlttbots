@@ -244,7 +244,7 @@ def quarantine_files(unreachable_files: set[Path], quarantine_dir: Path) -> Path
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Repository cleanup analyzer for zTTato Platform")
+    parser = argparse.ArgumentParser(description="Repository cleanup analyzer for zlttbots")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG, help="Path to JSON config file")
     parser.add_argument("--report-dir", type=Path, default=DEFAULT_REPORT_DIR, help="Report output directory")
     parser.add_argument(

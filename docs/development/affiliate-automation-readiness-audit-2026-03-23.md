@@ -29,7 +29,7 @@ Validation command run:
 
 - Shopee and Lazada product crawling paths exist in `market-crawler` and produce normalized product records with source tagging. (`crawl_shopee`, `crawl_lazada`, worker ingestion loop). 
 - TikTok product mining exists separately in `tiktok-shop-miner`.
-- Shopee crawler service generates a simple affiliate link format (`aff_id=ZTTATO`) when storing products.
+- Shopee crawler service generates a simple affiliate link format (`aff_id=ZLTTBOTS`) when storing products.
 - Execution publishing is platform-agnostic (`PLATFORM_API_BASE/content/publish`) and does not implement concrete official TikTok/Shopee/Lazada partner API contracts in this repo.
 
 ### Gaps blocking “full efficiency” claim

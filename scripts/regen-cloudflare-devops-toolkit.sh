@@ -24,7 +24,7 @@ CF_ACCOUNT_ID=
 CF_ZONE_ID=
 
 DOMAIN=zeaz.dev
-SUBDOMAIN=zttato
+SUBDOMAIN=zlttbots
 
 # generated automatically
 CF_TUNNEL_TOKEN=
@@ -83,7 +83,7 @@ services:
 
   cloudflared:
     image: cloudflare/cloudflared:latest
-    container_name: zttato-cloudflared
+    container_name: zlttbots-cloudflared
     restart: unless-stopped
     command: tunnel run --token ${CF_TUNNEL_TOKEN}
 EOF

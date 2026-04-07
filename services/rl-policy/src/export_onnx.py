@@ -36,7 +36,7 @@ def export_policy_to_onnx(model_path: Path = MODEL_PATH, output_path: Path = OUT
     ]
 
     graph = helper.make_graph(nodes, "policy", [input_tensor], [output_tensor], initializer=initializers)
-    model = helper.make_model(graph, producer_name="zttato-rl-policy")
+    model = helper.make_model(graph, producer_name="zlttbots-rl-policy")
     model.ir_version = 10
     model.opset_import[0].version = 17
 

@@ -110,7 +110,7 @@
 │   │   └── service_discovery.py
 │   └── v3_upgrade.py
 ├── env.edge
-├── generate-zttato.sh
+├── generate-zlttbots.sh
 ├── infrastructure
 │   ├── ci
 │   │   ├── build-all.sh
@@ -176,7 +176,7 @@
 │   │   ├── rollback.sh
 │   │   ├── start-dev-cluster.sh
 │   │   ├── validate-repo.sh
-│   │   └── zttato-resource-optimizer.sh
+│   │   └── zlttbots-resource-optimizer.sh
 │   └── start
 │       ├── env.sh
 │       ├── workers.auto.conf
@@ -231,14 +231,14 @@
 ├── scripts
 │   ├── create-subdomain-dns.sh
 │   ├── deploy-cloudflare-edge.sh
-│   ├── deploy-zttato-production.sh
-│   ├── diagnose-zttato-edge.sh
+│   ├── deploy-zlttbots-production.sh
+│   ├── diagnose-zlttbots-edge.sh
 │   ├── dockerfile-fix-generator.sh
-│   ├── fix-zttato-stack.sh
+│   ├── fix-zlttbots-stack.sh
 │   ├── generate-cloudflare-devops-toolkit.sh
 │   ├── generate-cloudflare-devops-toolkit-v2.sh
 │   ├── install-zeaz-edge-stack.sh
-│   ├── install-zttato-cloudflare.sh
+│   ├── install-zlttbots-cloudflare.sh
 │   ├── migrate-edge-domain.sh
 │   ├── node-install.sh
 │   ├── provision-cloudflare-edge.sh
@@ -247,20 +247,20 @@
 │   ├── repair-platform.sh
 │   ├── start-enterprise.sh
 │   ├── start-node-services.sh
-│   ├── start-zttato.sh
+│   ├── start-zlttbots.sh
 │   ├── stop-enterprise.sh
 │   ├── stop-node-services.sh
-│   ├── stop-zttato.sh
+│   ├── stop-zlttbots.sh
 │   ├── test-integration.sh
-│   ├── zttato
-│   ├── zttato-docker-recovery.sh
-│   ├── zttato-doctor.sh
-│   ├── zttato-edge-doctor.sh
-│   ├── zttato-monitor.sh
-│   ├── zttato-node-supervisor.sh
-│   ├── zttato-restart-service.sh
-│   ├── zttato-supervisor.sh
-│   └── zttato-tunnel-heal.sh
+│   ├── zlttbots
+│   ├── zlttbots-docker-recovery.sh
+│   ├── zlttbots-doctor.sh
+│   ├── zlttbots-edge-doctor.sh
+│   ├── zlttbots-monitor.sh
+│   ├── zlttbots-node-supervisor.sh
+│   ├── zlttbots-restart-service.sh
+│   ├── zlttbots-supervisor.sh
+│   └── zlttbots-tunnel-heal.sh
 ├── SECURITY.md
 ├── services
 │   ├── account-farm
@@ -20970,7 +20970,7 @@
 │           └── training
 │               └── train.py
 ├── start.sh
-├── start-zttato.sh
+├── start-zlttbots.sh
 ├── stop.sh
 ├── tests
 │   ├── conftest.py
@@ -20985,6 +20985,6 @@
 │   ├── kafka_event_worker.py
 │   ├── renderer-worker
 │   └── requirements.txt
-└── zttato
+└── zlttbots
 
 2280 directories, 18708 files

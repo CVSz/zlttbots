@@ -122,7 +122,7 @@ cat > /tmp/tunnel-config.json <<EOF
   "config": {
     "ingress": [
       {
-        "hostname": "zttato.zeaz.dev",
+        "hostname": "zlttbots.zeaz.dev",
         "service": "http://market-crawler:9400"
       },
       {
@@ -190,7 +190,7 @@ create_dns() {
     fi
 }
 
-create_dns "zttato.zeaz.dev"
+create_dns "zlttbots.zeaz.dev"
 create_dns "api.zeaz.dev"
 create_dns "gpu.zeaz.dev"
 create_dns "predict.zeaz.dev"
@@ -218,20 +218,20 @@ sleep 5
 echo
 echo "Starting cloudflared"
 
-docker rm -f zttato-cloudflared >/dev/null 2>&1 || true
+docker rm -f zlttbots-cloudflared >/dev/null 2>&1 || true
 
-NETWORK="zlttbots_zttato-net"
+NETWORK="zlttbots_zlttbots-net"
 if ! docker network inspect "$NETWORK" >/dev/null 2>&1; then
     NETWORK="zlttbots_default"
 fi
 
 if ! docker network inspect "$NETWORK" >/dev/null 2>&1; then
-    echo "ERROR: Could not find docker network for stack (checked zlttbots_zttato-net and zlttbots_default)"
+    echo "ERROR: Could not find docker network for stack (checked zlttbots_zlttbots-net and zlttbots_default)"
     exit 1
 fi
 
 docker run -d \
---name zttato-cloudflared \
+--name zlttbots-cloudflared \
 --network "$NETWORK" \
 --restart unless-stopped \
 cloudflare/cloudflared:latest \
@@ -247,7 +247,7 @@ echo
 echo "Warming TLS edge"
 
 for d in \
-zttato.zeaz.dev \
+zlttbots.zeaz.dev \
 api.zeaz.dev \
 gpu.zeaz.dev \
 predict.zeaz.dev
@@ -263,7 +263,7 @@ echo
 echo "Verifying endpoints"
 
 for d in \
-zttato.zeaz.dev \
+zlttbots.zeaz.dev \
 api.zeaz.dev \
 gpu.zeaz.dev \
 predict.zeaz.dev
@@ -283,7 +283,7 @@ echo "======================================"
 
 echo
 echo "Endpoints:"
-echo "https://zttato.zeaz.dev"
+echo "https://zlttbots.zeaz.dev"
 echo "https://api.zeaz.dev"
 echo "https://gpu.zeaz.dev"
 echo "https://predict.zeaz.dev"
@@ -296,8 +296,8 @@ echo "https://predict.zeaz.dev/docs"
 
 echo
 echo "Tunnel logs:"
-echo "docker logs -f zttato-cloudflared"
+echo "docker logs -f zlttbots-cloudflared"
 
 echo
 echo "Diagnostics:"
-echo "bash scripts/zttato-edge-doctor.sh"
+echo "bash scripts/zlttbots-edge-doctor.sh"

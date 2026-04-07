@@ -2,7 +2,7 @@
 
 set -e
 
-echo "Starting zTTato Enterprise Platform"
+echo "Starting zlttbots Enterprise Platform"
 
 docker compose -f docker-compose.enterprise.yml up -d
 

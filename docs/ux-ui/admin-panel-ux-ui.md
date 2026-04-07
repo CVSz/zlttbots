@@ -1,6 +1,6 @@
 # Admin Panel UX/UI Guide
 
-This document is the full-detail UX/UI reference for the `admin-panel` area of zTTato Platform.
+This document is the full-detail UX/UI reference for the `admin-panel` area of zlttbots.
 
 ## 1) Scope
 

@@ -21,7 +21,7 @@ def _ensure_writable_directory(path: Path, env_override_name: str) -> Path:
         path.mkdir(parents=True, exist_ok=True)
         return path
     except PermissionError:
-        fallback = Path("/tmp/zttato-model-registry") / path.name
+        fallback = Path("/tmp/zlttbots-model-registry") / path.name
         fallback.mkdir(parents=True, exist_ok=True)
         os.environ.setdefault(env_override_name, str(fallback))
         return fallback

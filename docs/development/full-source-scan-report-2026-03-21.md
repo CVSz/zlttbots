@@ -37,7 +37,7 @@ with open('docker compose.yml') as f:
 print('\\n'.join(data['services'].keys()))
 PY
 sed -n '1,260p' docker compose.yml
-sed -n '1,240p' scripts/zttato-node.sh
+sed -n '1,240p' scripts/zlttbots-node.sh
 sed -n '1,260p' configs/nginx.conf
 pytest
 ```

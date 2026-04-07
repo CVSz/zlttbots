@@ -3,7 +3,7 @@ from pathlib import Path
 
 def test_frontend_does_not_ship_seeded_credentials():
     app_source = Path("apps/frontend/src/App.tsx").read_text(encoding="utf-8")
-    assert 'useState("founder@zttato.dev")' not in app_source
+    assert 'useState("founder@zlttbots.dev")' not in app_source
     assert 'useState("ChangeMe123456")' not in app_source
 
 

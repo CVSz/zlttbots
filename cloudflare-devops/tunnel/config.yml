@@ -1,4 +1,4 @@
-tunnel: zttato-global
+tunnel: zlttbots-global
 credentials-file: /root/.cloudflared/creds.json
 
 ingress:

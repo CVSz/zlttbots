@@ -24,7 +24,7 @@ CF_ACCOUNT_ID=
 CF_ZONE_ID=
 
 DOMAIN=zeaz.dev
-SUBDOMAIN=zttato
+SUBDOMAIN=zlttbots
 EOF
 
 ########################################
@@ -86,19 +86,19 @@ tunnel: $TUNNEL_ID
 
 ingress:
 
-  - hostname: admin.zttato.zeaz.dev
+  - hostname: admin.zlttbots.zeaz.dev
     service: http://admin-panel:3000
 
-  - hostname: api.zttato.zeaz.dev
+  - hostname: api.zlttbots.zeaz.dev
     service: http://analytics:9100
 
-  - hostname: video.zttato.zeaz.dev
+  - hostname: video.zlttbots.zeaz.dev
     service: http://ai-video-generator:9400
 
-  - hostname: arb.zttato.zeaz.dev
+  - hostname: arb.zlttbots.zeaz.dev
     service: http://arbitrage-engine:9500
 
-  - hostname: crawler.zttato.zeaz.dev
+  - hostname: crawler.zlttbots.zeaz.dev
     service: http://market-crawler:9200
 
   - service: http_status:404
@@ -114,7 +114,7 @@ services:
 
   cloudflared:
     image: cloudflare/cloudflared:latest
-    container_name: zttato-cloudflared
+    container_name: zlttbots-cloudflared
     restart: unless-stopped
     command: tunnel run --token ${CF_TUNNEL_TOKEN}
 EOF
@@ -201,8 +201,8 @@ echo "Edge tunnel deployed"
 echo "================================"
 
 echo "Domains:"
-echo "https://admin.zttato.$DOMAIN"
-echo "https://api.zttato.$DOMAIN"
+echo "https://admin.zlttbots.$DOMAIN"
+echo "https://api.zlttbots.$DOMAIN"
 EOF
 
 chmod +x "$TOOLKIT"/api/*.sh

@@ -19,11 +19,11 @@ spec:
           image: postgres:15
           env:
             - name: POSTGRES_DB
-              value: zttato
+              value: zlttbots
             - name: POSTGRES_USER
-              value: zttato
+              value: zlttbots
             - name: POSTGRES_PASSWORD
-              value: zttato
+              value: zlttbots
           ports:
             - containerPort: 5432
           resources:

@@ -23,7 +23,7 @@ def test_generate_daily_plan_phases_and_validation():
 
 
 def test_generate_post_is_deterministic_by_slot():
-    content = ContentInput(product_link="https://zttato.dev", social_proof_count=125)
+    content = ContentInput(product_link="https://zlttbots.dev", social_proof_count=125)
 
     first = generate_post(content, slot=0)
     second = generate_post(content, slot=1)

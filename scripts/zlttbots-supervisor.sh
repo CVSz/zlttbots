@@ -29,7 +29,7 @@ if ! ps -p "$PID" >/dev/null 2>&1; then
 
 echo "[supervisor] restarting $NAME"
 
-bash "$ROOT/scripts/start-zttato.sh" >/dev/null 2>&1
+bash "$ROOT/scripts/start-zlttbots.sh" >/dev/null 2>&1
 
 fi
 

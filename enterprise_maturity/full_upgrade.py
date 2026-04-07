@@ -99,6 +99,6 @@ FULL_UPGRADE_BLUEPRINT = UpgradeBlueprint(
     ai_video_pipeline=AIVideoPipeline(stages=("ingest", "storyboard", "voiceover", "render", "qa", "publish")),
     admin_dashboard_modules=("tenants", "campaigns", "billing", "observability", "rbac", "approvals"),
     frontend_apps=("storefront", "admin-console", "ops-console"),
-    kubernetes_namespaces=("zttato-core", "zttato-data", "zttato-ai", "zttato-edge"),
+    kubernetes_namespaces=("zlttbots-core", "zlttbots-data", "zlttbots-ai", "zlttbots-edge"),
     cicd_stages=("lint", "test", "build", "security-scan", "package", "deploy", "post-deploy-smoke"),
 )

@@ -16,6 +16,6 @@ admin-panel
 for s in "${services[@]}"
 do
 
-docker build -t zttato/$s services/$s
+docker build -t zlttbots/$s services/$s
 
 done

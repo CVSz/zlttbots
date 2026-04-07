@@ -9,7 +9,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 app = FastAPI(title="Tenant Service")
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://zttato:zttato@postgres:5432/zttato")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://zlttbots:zlttbots@postgres:5432/zlttbots")
 DEFAULT_DAILY_SPEND_LIMIT = float(os.getenv("DEFAULT_DAILY_SPEND_LIMIT", "100.0"))
 SERVICE_HOST = os.getenv("SERVICE_HOST", "127.0.0.1")
 SERVICE_PORT = int(os.getenv("SERVICE_PORT", "8000"))

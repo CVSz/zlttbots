@@ -3,12 +3,12 @@
 set -Eeuo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ZTTATO_ROOT="$ROOT"
+ZLTTBOTS_ROOT="$ROOT"
 # shellcheck disable=SC1091
 source "$ROOT/scripts/node-services-lib.sh"
 
 usage() {
-  echo 'Usage: scripts/zttato-node.sh {install|start|stop|restart|status|logs [service]}'
+  echo 'Usage: scripts/zlttbots-node.sh {install|start|stop|restart|status|logs [service]}'
 }
 
 case "${1:-}" in
@@ -41,8 +41,8 @@ case "${1:-}" in
     if [[ -n "${2:-}" ]]; then
       pm2 logs "node-$2"
     else
-      echo "Managed log files: $ZTTATO_NODE_LOG_DIR"
-      find "$ZTTATO_NODE_LOG_DIR" -maxdepth 1 -type f | sort
+      echo "Managed log files: $ZLTTBOTS_NODE_LOG_DIR"
+      find "$ZLTTBOTS_NODE_LOG_DIR" -maxdepth 1 -type f | sort
     fi
     ;;
   *)

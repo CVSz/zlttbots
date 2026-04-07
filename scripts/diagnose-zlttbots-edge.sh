@@ -1,7 +1,7 @@
-# path: scripts/diagnose-zttato-edge.sh
+# path: scripts/diagnose-zlttbots-edge.sh
 #!/usr/bin/env bash
 #
-# zTTato Edge Diagnostic Tool
+# zlttbots Edge Diagnostic Tool
 #
 # Checks:
 # - environment configuration
@@ -12,7 +12,7 @@
 # - internal service connectivity
 #
 # Usage:
-#   bash scripts/diagnose-zttato-edge.sh
+#   bash scripts/diagnose-zlttbots-edge.sh
 
 set -Eeuo pipefail
 
@@ -22,7 +22,7 @@ cd "$ROOT"
 ENV_FILE="cloudflare-devops/env"
 
 echo "======================================"
-echo "zTTato Edge Diagnostic"
+echo "zlttbots Edge Diagnostic"
 echo "Root: $ROOT"
 echo "======================================"
 
@@ -68,7 +68,7 @@ echo ""
 echo "Cloudflare Tunnel"
 echo "--------------------------------------"
 
-docker logs zttato-cloudflared --tail 20 || echo "cloudflared not running"
+docker logs zlttbots-cloudflared --tail 20 || echo "cloudflared not running"
 
 ########################################
 # DNS checks

@@ -37,7 +37,7 @@ def get_did(secret_key: Ed25519PrivateKey) -> str:
         encoding=serialization.Encoding.Raw,
         format=serialization.PublicFormat.Raw,
     )
-    return "did:zttato:" + _b64(hashlib.sha256(public_key).digest()[:20])
+    return "did:zlttbots:" + _b64(hashlib.sha256(public_key).digest()[:20])
 
 
 def export_public_key(secret_key: Ed25519PrivateKey) -> str:

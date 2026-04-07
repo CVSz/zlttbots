@@ -4,7 +4,7 @@ from kafka import KafkaProducer
 
 
 class KafkaEventProducer:
-    def __init__(self, broker: str = 'zttato-kafka:9092') -> None:
+    def __init__(self, broker: str = 'zlttbots-kafka:9092') -> None:
         self.producer = KafkaProducer(
             bootstrap_servers=broker,
             value_serializer=lambda value: json.dumps(value).encode('utf-8'),

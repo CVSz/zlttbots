@@ -1,6 +1,6 @@
-# zTTato Platform
+# zlttbots
 
-zTTato Platform is an enterprise-focused AI + DevOps platform for social commerce, affiliate operations, and automation workloads. This repository combines runnable services, shared TypeScript packages, infrastructure assets, operational scripts, and deep technical documentation.
+zlttbots is an enterprise-focused AI + DevOps platform for social commerce, affiliate operations, and automation workloads. This repository combines runnable services, shared TypeScript packages, infrastructure assets, operational scripts, and deep technical documentation.
 
 ## Platform at a glance
 
@@ -38,9 +38,9 @@ zTTato Platform is an enterprise-focused AI + DevOps platform for social commerc
 Create a `.env` file in the repository root:
 
 ```env
-DB_NAME=zttato
-DB_USER=zttato
-DB_PASSWORD=zttato
+DB_NAME=zlttbots
+DB_USER=zlttbots
+DB_PASSWORD=zlttbots
 DB_PORT=5432
 REDIS_HOST=redis
 REDIS_PORT=6379
@@ -64,8 +64,8 @@ Alternative managed startup commands:
 ```bash
 bash start.sh
 bash scripts/start-zlttbots.sh --core
-bash scripts/zttato-manager.sh install
-bash scripts/zttato-manager.sh status
+bash scripts/zlttbots-manager.sh install
+bash scripts/zlttbots-manager.sh status
 ```
 
 ### 4. Verify platform health

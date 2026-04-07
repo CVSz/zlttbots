@@ -36,7 +36,7 @@ export function auth(req: Request, res: Response, next: NextFunction) {
 
   try {
     const decoded = jwt.verify(token, jwtSecret, {
-      issuer: "zttato-auth-service",
+      issuer: "zlttbots-auth-service",
       audience: "zlttbots",
     });
 

@@ -5,9 +5,9 @@ from kafka import KafkaConsumer
 
 consumer = KafkaConsumer(
     'crawler_events',
-    bootstrap_servers='zttato-kafka:9092',
+    bootstrap_servers='zlttbots-kafka:9092',
     auto_offset_reset='earliest',
-    group_id='zttato-workers',
+    group_id='zlttbots-workers',
     value_deserializer=lambda message: json.loads(message.decode('utf-8')),
 )
 

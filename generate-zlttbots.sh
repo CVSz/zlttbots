@@ -25,7 +25,7 @@ echo "Generating package.json"
 
 cat > services/tiktok-uploader/package.json << 'EOF'
 {
-"name": "zttato-tiktok-uploader",
+"name": "zlttbots-tiktok-uploader",
 "version": "1.0.0",
 "type": "module",
 "scripts": {
@@ -284,7 +284,7 @@ mkdir -p services/ai-video-generator/docker
 
 cat > services/ai-video-generator/package.json << 'EOF'
 {
-"name": "zttato-ai-video-generator",
+"name": "zlttbots-ai-video-generator",
 "version": "1.0.0",
 "type": "module",
 "scripts": {
@@ -513,7 +513,7 @@ mkdir -p services/shopee-crawler/docker
 
 cat > services/shopee-crawler/package.json << 'EOF'
 {
-"name": "zttato-shopee-crawler",
+"name": "zlttbots-shopee-crawler",
 "version": "1.0.0",
 "type": "module",
 "scripts": {
@@ -583,7 +583,7 @@ EOF
 cat > services/shopee-crawler/src/core/affiliate.js << 'EOF'
 export function generateAffiliateLink(productId){
 
-return `https://shopee.co.th/product/${productId}?aff_id=ZTTATO`
+return `https://shopee.co.th/product/${productId}?aff_id=ZLTTBOTS`
 
 }
 EOF
@@ -712,7 +712,7 @@ mkdir -p services/tiktok-shop-miner/docker
 
 cat > services/tiktok-shop-miner/package.json << 'EOF'
 {
-"name": "zttato-tiktok-shop-miner",
+"name": "zlttbots-tiktok-shop-miner",
 "version": "1.0.0",
 "type": "module",
 "scripts": {
@@ -901,7 +901,7 @@ mkdir -p services/click-tracker/docker
 
 cat > services/click-tracker/package.json << 'EOF'
 {
-"name": "zttato-click-tracker",
+"name": "zlttbots-click-tracker",
 "version": "1.0.0",
 "type": "module",
 "scripts": {
@@ -1053,7 +1053,7 @@ mkdir -p services/analytics/docker
 
 cat > services/analytics/package.json << 'EOF'
 {
-"name": "zttato-analytics",
+"name": "zlttbots-analytics",
 "version": "1.0.0",
 "type": "module",
 "scripts": {
@@ -1244,7 +1244,7 @@ mkdir -p services/account-farm/docker
 
 cat > services/account-farm/package.json << 'EOF'
 {
-"name": "zttato-account-farm",
+"name": "zlttbots-account-farm",
 "version": "1.0.0",
 "type": "module",
 "scripts": {
@@ -1671,11 +1671,11 @@ image: postgres:15
 
 environment:
 
-POSTGRES_DB: zttato
+POSTGRES_DB: zlttbots
 
-POSTGRES_USER: zttato
+POSTGRES_USER: zlttbots
 
-POSTGRES_PASSWORD: zttato
+POSTGRES_PASSWORD: zlttbots
 
 ports:
 
@@ -1707,7 +1707,7 @@ mkdir -p services/admin-panel/docker
 
 cat > services/admin-panel/package.json << 'EOF'
 {
-"name": "zttato-admin-panel",
+"name": "zlttbots-admin-panel",
 "version": "1.0.0",
 "private": true,
 "type": "module",
@@ -1735,7 +1735,7 @@ cat > services/admin-panel/index.html << 'EOF'
 <!DOCTYPE html>
 <html>
 <head>
-<title>zTTato Admin</title>
+<title>zlttbots Admin</title>
 </head>
 <body>
 
@@ -1775,7 +1775,7 @@ return(
 
 <div>
 
-<h1>zTTato Control Panel</h1>
+<h1>zlttbots Control Panel</h1>
 
 <Dashboard/>
 
@@ -1913,10 +1913,10 @@ cat > infrastructure/k8s/config/configmap.yaml << 'EOF'
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: zttato-config
+  name: zlttbots-config
 data:
   DB_HOST: postgres
-  DB_NAME: zttato
+  DB_NAME: zlttbots
 EOF
 
 cat > infrastructure/k8s/deployments/postgres.yaml << 'EOF'
@@ -1939,11 +1939,11 @@ spec:
         image: postgres:15
         env:
         - name: POSTGRES_DB
-          value: zttato
+          value: zlttbots
         - name: POSTGRES_USER
-          value: zttato
+          value: zlttbots
         - name: POSTGRES_PASSWORD
-          value: zttato
+          value: zlttbots
         ports:
         - containerPort: 5432
 EOF
@@ -1965,7 +1965,7 @@ spec:
     spec:
       containers:
       - name: analytics
-        image: zttato/analytics:latest
+        image: zlttbots/analytics:latest
         ports:
         - containerPort: 9000
 EOF
@@ -1987,7 +1987,7 @@ spec:
     spec:
       containers:
       - name: tracker
-        image: zttato/click-tracker:latest
+        image: zlttbots/click-tracker:latest
         ports:
         - containerPort: 8080
 EOF
@@ -2009,7 +2009,7 @@ spec:
     spec:
       containers:
       - name: admin
-        image: zttato/admin-panel:latest
+        image: zlttbots/admin-panel:latest
         ports:
         - containerPort: 3000
 EOF
@@ -2065,10 +2065,10 @@ cat > infrastructure/k8s/ingress/ingress.yaml << 'EOF'
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: zttato-ingress
+  name: zlttbots-ingress
 spec:
   rules:
-  - host: zttato.local
+  - host: zlttbots.local
     http:
       paths:
       - path: /
@@ -2096,8 +2096,8 @@ mkdir -p .github/workflows
 mkdir -p infrastructure/ci
 mkdir -p infrastructure/scripts
 
-cat > .github/workflows/zttato-ci.yml << 'EOF'
-name: zTTato CI/CD
+cat > .github/workflows/zlttbots-ci.yml << 'EOF'
+name: zlttbots CI/CD
 
 on:
   push:
@@ -2106,7 +2106,7 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_PREFIX: zttato
+  IMAGE_PREFIX: zlttbots
 
 jobs:
 
@@ -2201,7 +2201,7 @@ admin-panel
 for s in "${services[@]}"
 do
 
-docker build -t zttato/$s services/$s
+docker build -t zlttbots/$s services/$s
 
 done
 EOF
@@ -2416,7 +2416,7 @@ EOF
 echo "STEP 12 COMPLETE"
 echo "Generating AI Viral Video Predictor created"
 
-echo "STEP 13 — zTTato **Auto TikTok Posting Farm (1000 Accounts Orchestration)**"
+echo "STEP 13 — zlttbots **Auto TikTok Posting Farm (1000 Accounts Orchestration)**"
 echo "Generating TikTok Posting Farm..."
 
 mkdir -p services/tiktok-farm
@@ -2431,7 +2431,7 @@ mkdir -p services/tiktok-farm/docker
 # package.json
 cat > services/tiktok-farm/package.json << 'EOF'
 {
-"name": "zttato-tiktok-farm",
+"name": "zlttbots-tiktok-farm",
 "version": "1.0.0",
 "type": "module",
 "scripts": {
@@ -2779,7 +2779,7 @@ EOF
 echo "STEP 14 COMPLETE"
 echo "Generating Distributed GPU Video Renderer created"
 
-echo "STEP 15 — zTTato **Multi-Marketplace Product Crawler (Shopee + Lazada + Amazon)**"
+echo "STEP 15 — zlttbots **Multi-Marketplace Product Crawler (Shopee + Lazada + Amazon)**"
 echo "Generating Multi Marketplace Crawler..."
 
 mkdir -p services/market-crawler/src/api
@@ -3049,7 +3049,7 @@ EOF
 echo "STEP 15 COMPLETE"
 echo "Generating Multi-Marketplace Product Crawler (Shopee + Lazada + Amazon) created"
 
-echo "STEP 16 — zTTato **Real-Time Affiliate Arbitrage Engine**"
+echo "STEP 16 — zlttbots **Real-Time Affiliate Arbitrage Engine**"
 echo "Generating Affiliate Arbitrage Engine..."
 
 mkdir -p services/arbitrage-engine/src/api
@@ -3279,7 +3279,7 @@ EOF
 echo "STEP 16 COMPLETE"
 echo "Generating Affiliate Arbitrage Engine created"
 
-echo "STEP 17 — zTTato Full Project Startup Script"
+echo "STEP 17 — zlttbots Full Project Startup Script"
 echo "Generating full project start scripts..."
 
 mkdir -p infrastructure/start
@@ -3288,7 +3288,7 @@ mkdir -p infrastructure/start
 cat > infrastructure/start/env.sh << 'EOF'
 #!/usr/bin/env bash
 
-export DB_URL=postgresql://zttato:zttato@localhost:5432/zttato
+export DB_URL=postgresql://zlttbots:zlttbots@localhost:5432/zlttbots
 export REDIS_URL=redis://localhost:6379
 export GPU_RENDER=true
 EOF
@@ -3302,9 +3302,9 @@ services:
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_DB: zttato
-      POSTGRES_USER: zttato
-      POSTGRES_PASSWORD: zttato
+      POSTGRES_DB: zlttbots
+      POSTGRES_USER: zlttbots
+      POSTGRES_PASSWORD: zlttbots
     ports:
       - "5432:5432"
 
@@ -3359,11 +3359,11 @@ python services/gpu-renderer/src/worker/worker.py &
 EOF
 
 # Main Startup Script
-cat > start-zttato.sh << 'EOF'
-# path: start-zttato.sh
+cat > start-zlttbots.sh << 'EOF'
+# path: start-zlttbots.sh
 #!/usr/bin/env bash
 #
-# Unified launcher for zTTato Platform
+# Unified launcher for zlttbots
 # Combines:
 # - permission fix
 # - env loader
@@ -3380,7 +3380,7 @@ set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 
 echo "================================="
-echo "zTTato Platform Bootstrap"
+echo "zlttbots Bootstrap"
 echo "Root: $ROOT"
 echo "================================="
 
@@ -3506,7 +3506,7 @@ curl -fs http://localhost:9500/arbitrage || true
 
 echo ""
 echo "================================="
-echo "zTTato Platform Started"
+echo "zlttbots Started"
 echo "================================="
 
 echo ""
@@ -3516,15 +3516,15 @@ EOF
 
 
 echo "================================="
-echo "zTTato Platform Installer Completed"
+echo "zlttbots Installer Completed"
 echo "================================="
 echo " # Make Executable"
-echo " chmod +x start-zttato.sh"
+echo " chmod +x start-zlttbots.sh"
 echo " chmod +x infrastructure/start/env.sh"
 echo " chmod +x infrastructure/start/workers.sh"
 echo " "
 echo " # Run Generator"
-echo " ./generate-zttato.sh"
+echo " ./generate-zlttbots.sh"
 echo " "
 echo " # Start Platform"
-echo " ./start-zttato.sh"
+echo " ./start-zlttbots.sh"

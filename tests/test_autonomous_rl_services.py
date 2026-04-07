@@ -153,7 +153,7 @@ def test_identity_signatures_round_trip(tmp_path):
         encoding=module.serialization.Encoding.Raw,
         format=module.serialization.PublicFormat.Raw,
     )
-    assert did.startswith('did:zttato:')
+    assert did.startswith('did:zlttbots:')
     assert module.verify(public_key, message_b64, signature_b64) is True
 
 
@@ -198,6 +198,6 @@ def test_rl_trainer_autonomous_snapshot_includes_new_subsystems(tmp_path):
 
     snapshot = module.build_autonomous_snapshot(np.array([0.3, 0.4]), 1.2)
 
-    assert snapshot['identity']['did'].startswith('did:zttato:')
+    assert snapshot['identity']['did'].startswith('did:zlttbots:')
     assert snapshot['compute_economy']['staked'] >= 100.0
     assert 'avg_capital' in snapshot['civilization']

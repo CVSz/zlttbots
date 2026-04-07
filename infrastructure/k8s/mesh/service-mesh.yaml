@@ -17,7 +17,7 @@ spec:
     matchLabels:
       istio: ingressgateway
   jwtRules:
-    - issuer: "https://api.zttato.internal/auth"
+    - issuer: "https://api.zlttbots.internal/auth"
       jwksUri: "http://jwt-auth.platform.svc.cluster.local/.well-known/jwks.json"
       audiences:
         - zlttbots
@@ -51,7 +51,7 @@ spec:
         name: http
         protocol: HTTP
       hosts:
-        - "api.zttato.internal"
+        - "api.zlttbots.internal"
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
@@ -60,7 +60,7 @@ metadata:
   namespace: platform
 spec:
   hosts:
-    - "api.zttato.internal"
+    - "api.zlttbots.internal"
   gateways:
     - platform-gateway
   http:

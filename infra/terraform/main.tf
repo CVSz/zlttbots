@@ -26,7 +26,7 @@ variable "region" {
 }
 
 resource "google_compute_instance" "vm" {
-  name         = "zttato-free"
+  name         = "zlttbots-free"
   machine_type = "e2-micro"
   zone         = "${var.region}-a"
 

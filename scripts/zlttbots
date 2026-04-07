@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+COMMAND="${1:-}"
+
+case "$COMMAND" in
+  up)
+    exec bash "$ROOT/scripts/zlttbots-manager.sh" start
+    ;;
+  down)
+    exec bash "$ROOT/scripts/zlttbots-manager.sh" stop
+    ;;
+  restart)
+    exec bash "$ROOT/scripts/zlttbots-manager.sh" restart
+    ;;
+  status)
+    exec bash "$ROOT/scripts/zlttbots-manager.sh" status
+    ;;
+  logs)
+    exec bash "$ROOT/scripts/zlttbots-manager.sh" logs "${2:-}"
+    ;;
+  deploy)
+    exec bash "$ROOT/scripts/zlttbots-manager.sh" deploy
+    ;;
+  upgrade)
+    exec bash "$ROOT/scripts/zlttbots-manager.sh" upgrade
+    ;;
+  install)
+    exec bash "$ROOT/scripts/zlttbots-manager.sh" install
+    ;;
+  node-install|node-start|node-stop|node-restart|node-status)
+    SUBCOMMAND="${COMMAND#node-}"
+    exec bash "$ROOT/scripts/zlttbots-node.sh" "$SUBCOMMAND"
+    ;;
+  node-logs)
+    exec bash "$ROOT/scripts/zlttbots-node.sh" logs "${2:-}"
+    ;;
+  edge)
+    exec bash "$ROOT/scripts/zlttbots-edge-doctor.sh"
+    ;;
+  *)
+    cat <<'USAGE'
+Usage:
+  zlttbots up
+  zlttbots down
+  zlttbots restart
+  zlttbots status
+  zlttbots logs [service]
+  zlttbots install
+  zlttbots upgrade
+  zlttbots deploy
+  zlttbots edge
+  zlttbots node-install
+  zlttbots node-start
+  zlttbots node-stop
+  zlttbots node-status
+  zlttbots node-restart
+  zlttbots node-logs [service]
+USAGE
+    ;;
+esac

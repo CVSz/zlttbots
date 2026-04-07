@@ -1,5 +1,5 @@
-tunnel: zttato
-credentials-file: /etc/cloudflared/zttato.json
+tunnel: zlttbots
+credentials-file: /etc/cloudflared/zlttbots.json
 
 ingress:
   - hostname: api.zeaz.dev

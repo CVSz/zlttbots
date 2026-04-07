@@ -141,7 +141,7 @@ Admin guidance:
 
 ### User reports admin-panel issues
 1. confirm the Node-service path is actually enabled
-2. run `bash scripts/zttato-node.sh status`
+2. run `bash scripts/zlttbots-node.sh status`
 3. inspect PM2 logs or generated log files
 4. verify the correct credentials/environment URL are being used
 
@@ -150,26 +150,26 @@ Admin guidance:
 ### Install Node dependencies
 
 ```bash
-bash scripts/zttato-node.sh install
+bash scripts/zlttbots-node.sh install
 ```
 
 ### Start Node services
 
 ```bash
-bash scripts/zttato-node.sh start
+bash scripts/zlttbots-node.sh start
 ```
 
 ### Check PM2 state
 
 ```bash
-bash scripts/zttato-node.sh status
+bash scripts/zlttbots-node.sh status
 ```
 
 ### View logs
 
 ```bash
-bash scripts/zttato-node.sh logs
-bash scripts/zttato-node.sh logs admin-panel
+bash scripts/zlttbots-node.sh logs
+bash scripts/zlttbots-node.sh logs admin-panel
 ```
 
 ## 8) Backup and restore basics
@@ -177,13 +177,13 @@ bash scripts/zttato-node.sh logs admin-panel
 ### Backup
 
 ```bash
-pg_dump -U zttato zttato > backup-$(date +%Y%m%d%H%M%S).sql
+pg_dump -U zlttbots zlttbots > backup-$(date +%Y%m%d%H%M%S).sql
 ```
 
 ### Restore
 
 ```bash
-psql -U zttato zttato < backup.sql
+psql -U zlttbots zlttbots < backup.sql
 ```
 
 Before restore:

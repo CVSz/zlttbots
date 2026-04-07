@@ -22,7 +22,7 @@ zlttbots/
 ├── docker compose.yml              # Main local + extended platform compose definition
 ├── docker compose.enterprise.yml   # Additional enterprise deployment variant
 ├── start.sh                        # Fast bootstrap helper for Compose baseline
-├── start-zttato.sh                 # Full bootstrap helper with node/python install flow
+├── start-zlttbots.sh                 # Full bootstrap helper with node/python install flow
 └── stop.sh                         # Stop helper
 ```
 
@@ -98,7 +98,7 @@ This directory holds deployment and environment assets beyond the main root Comp
 
 Root-level `scripts/` is the operator toolbox. Main categories include:
 
-- install and lifecycle helpers (`start-zttato`, node-service wrappers)
+- install and lifecycle helpers (`start-zlttbots`, node-service wrappers)
 - cloud/edge provisioning and healing
 - integration and doctor scripts
 - repair, restart, and recovery scripts
@@ -106,13 +106,13 @@ Root-level `scripts/` is the operator toolbox. Main categories include:
 
 Frequently referenced scripts:
 
-- `scripts/zttato-node.sh`
+- `scripts/zlttbots-node.sh`
 - `scripts/test-integration.sh`
-- `scripts/start-zttato.sh`
-- `scripts/stop-zttato.sh`
-- `scripts/zttato-doctor.sh`
+- `scripts/start-zlttbots.sh`
+- `scripts/stop-zlttbots.sh`
+- `scripts/zlttbots-doctor.sh`
 - `scripts/repair-platform.sh`
-- `scripts/deploy-zttato-production.sh`
+- `scripts/deploy-zlttbots-production.sh`
 
 ## 4) `docs/`
 

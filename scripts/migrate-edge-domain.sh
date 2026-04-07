@@ -1,14 +1,14 @@
 # path: scripts/migrate-edge-domain.sh
 #!/usr/bin/env bash
 #
-# zTTato Edge Domain Migration + Full Fix
+# zlttbots Edge Domain Migration + Full Fix
 #
 # Migrates Cloudflare Tunnel routes to:
 #   zeaz.dev
 #   api.zeaz.dev
 #   gpu.zeaz.dev
 #   predict.zeaz.dev
-#   zttato.zeaz.dev
+#   zlttbots.zeaz.dev
 #
 # Performs:
 # - DNS record reconciliation
@@ -28,7 +28,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="$ROOT/cloudflare-devops/env"
 
 echo "======================================"
-echo "zTTato Edge Domain Migration"
+echo "zlttbots Edge Domain Migration"
 echo "Root: $ROOT"
 echo "======================================"
 
@@ -111,7 +111,7 @@ ensure_dns() {
 # Ensure DNS
 ########################################
 
-ensure_dns "zttato.$DOMAIN"
+ensure_dns "zlttbots.$DOMAIN"
 ensure_dns "api.$DOMAIN"
 ensure_dns "gpu.$DOMAIN"
 ensure_dns "predict.$DOMAIN"
@@ -128,7 +128,7 @@ cf_api -X PUT \
   \"config\": {
     \"ingress\": [
       {
-        \"hostname\":\"zttato.$DOMAIN\",
+        \"hostname\":\"zlttbots.$DOMAIN\",
         \"service\":\"http://market-crawler:9400\"
       },
       {
@@ -167,10 +167,10 @@ fi
 
 echo "Ensuring cloudflared attached to network"
 
-if ! docker inspect zttato-cloudflared \
+if ! docker inspect zlttbots-cloudflared \
 | jq -e ".[0].NetworkSettings.Networks.\"$NETWORK\"" >/dev/null 2>&1; then
 
-  docker network connect "$NETWORK" zttato-cloudflared || true
+  docker network connect "$NETWORK" zlttbots-cloudflared || true
 fi
 
 ########################################
@@ -179,7 +179,7 @@ fi
 
 echo "Restarting cloudflared"
 
-docker restart zttato-cloudflared >/dev/null
+docker restart zlttbots-cloudflared >/dev/null
 
 ########################################
 # TLS warmup
@@ -188,7 +188,7 @@ docker restart zttato-cloudflared >/dev/null
 echo "Warming TLS edge"
 
 HOSTS=(
-"zttato.$DOMAIN"
+"zlttbots.$DOMAIN"
 "api.$DOMAIN"
 "gpu.$DOMAIN"
 "predict.$DOMAIN"
@@ -250,7 +250,7 @@ echo "Edge Migration Complete"
 echo "======================================"
 
 echo "Endpoints:"
-echo "https://zttato.$DOMAIN"
+echo "https://zlttbots.$DOMAIN"
 echo "https://api.$DOMAIN"
 echo "https://gpu.$DOMAIN"
 echo "https://predict.$DOMAIN"

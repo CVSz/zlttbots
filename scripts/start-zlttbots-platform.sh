@@ -75,14 +75,14 @@ Modes:
   --full  Start the full platform stack (default).
 
 Environment override:
-  ZTTATO_STACK_MODE=core|full
+  ZLTTBOTS_STACK_MODE=core|full
 USAGE
 }
 
 STACK_MODE=""
 
 resolve_mode(){
-  STACK_MODE="${ZTTATO_STACK_MODE:-full}"
+  STACK_MODE="${ZLTTBOTS_STACK_MODE:-full}"
 
   while (($#)); do
     case "$1" in
@@ -101,7 +101,7 @@ resolve_mode(){
 
   case "$STACK_MODE" in
     core|full) ;;
-    *) fail "invalid ZTTATO_STACK_MODE '$STACK_MODE' (allowed: core|full)" ;;
+    *) fail "invalid ZLTTBOTS_STACK_MODE '$STACK_MODE' (allowed: core|full)" ;;
   esac
 }
 
@@ -136,4 +136,4 @@ smoke_check "http://localhost:9400/docs" "market-crawler"
 smoke_check "http://localhost:9500/docs" "arbitrage-engine"
 smoke_check "http://localhost:9300/docs" "gpu-renderer"
 
-log "zTTato platform start completed"
+log "zlttbots platform start completed"

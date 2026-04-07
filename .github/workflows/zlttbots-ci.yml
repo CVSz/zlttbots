@@ -1,4 +1,4 @@
-name: zTTato CI/CD
+name: zlttbots CI/CD
 
 on:
   pull_request:
@@ -12,7 +12,7 @@ permissions:
 
 env:
   REGISTRY: docker.io
-  IMAGE_PREFIX: zttato
+  IMAGE_PREFIX: zlttbots
 
 jobs:
   lint-and-validate:

@@ -4,7 +4,7 @@ set -e
 ROOT=$(pwd)
 
 echo "===================================="
-echo "zTTato Enterprise v8 Generator"
+echo "zlttbots Enterprise v8 Generator"
 echo "===================================="
 
 mkdir -p services/ai-orchestrator/src
@@ -109,9 +109,9 @@ app = FastAPI()
 def db():
     return psycopg2.connect(
         host=os.getenv("POSTGRES_HOST","postgres"),
-        user="zttato",
-        password="zttato",
-        dbname="zttato"
+        user="zlttbots",
+        password="zlttbots",
+        dbname="zlttbots"
     )
 
 @app.post("/optimize")
@@ -149,25 +149,25 @@ cat >> docker-compose.enterprise.yml << 'EOF'
 
   ai-orchestrator:
     build: ./services/ai-orchestrator
-    container_name: zttato-ai-orchestrator
+    container_name: zlttbots-ai-orchestrator
     depends_on:
       - market-crawler
       - viral-predictor
       - redis
     networks:
-      - zttato-net
+      - zlttbots-net
 
   product-discovery:
     build: ./services/product-discovery
-    container_name: zttato-product-discovery
+    container_name: zlttbots-product-discovery
     networks:
-      - zttato-net
+      - zlttbots-net
 
   campaign-optimizer:
     build: ./services/campaign-optimizer
-    container_name: zttato-campaign-optimizer
+    container_name: zlttbots-campaign-optimizer
     networks:
-      - zttato-net
+      - zlttbots-net
 EOF
 
 fi
@@ -178,7 +178,7 @@ fi
 ############################################
 
 git add .
-git commit -m "upgrade: zTTato Enterprise v8 autonomous AI growth engine"
+git commit -m "upgrade: zlttbots Enterprise v8 autonomous AI growth engine"
 
 git push git@github.com:ZeaZDev/zlttbots.git
 

@@ -13,7 +13,7 @@ mkdir -p "$LOG_DIR" "$PID_DIR"
 GREEN="\033[32m"
 NC="\033[0m"
 
-log(){ echo -e "${GREEN}[zTTato]${NC} $*"; }
+log(){ echo -e "${GREEN}[zlttbots]${NC} $*"; }
 
 ############################################
 # Locate docker compose
@@ -59,7 +59,7 @@ log "Waiting Postgres"
 
 for i in {1..30}; do
 
-if docker exec zlttbots-postgres-1 pg_isready -U zttato >/dev/null 2>&1; then
+if docker exec zlttbots-postgres-1 pg_isready -U zlttbots >/dev/null 2>&1; then
 log "Postgres ready"
 break
 fi
@@ -163,7 +163,7 @@ if [ -n "${CF_TUNNEL_TOKEN:-}" ]; then
 if ! docker ps | grep -q cloudflared; then
 
 docker run -d \
---name zttato-cloudflared \
+--name zlttbots-cloudflared \
 --restart unless-stopped \
 --network zlttbots_default \
 cloudflare/cloudflared \

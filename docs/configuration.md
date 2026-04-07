@@ -1,6 +1,6 @@
 # Configuration
 
-This document is the full configuration reference for the current zTTato repository. It focuses on the active local stack, the most relevant extended Compose variables, the Node-service layer, and practical configuration guidance.
+This document is the full configuration reference for the current zlttbots repository. It focuses on the active local stack, the most relevant extended Compose variables, the Node-service layer, and practical configuration guidance.
 
 ## 1) Main configuration sources
 
@@ -24,9 +24,9 @@ This document is the full configuration reference for the current zTTato reposit
 ## 2) Core baseline environment variables
 
 ### Database
-- `DB_NAME` — default `zttato`
-- `DB_USER` — default `zttato`
-- `DB_PASSWORD` — default `zttato`
+- `DB_NAME` — default `zlttbots`
+- `DB_USER` — default `zlttbots`
+- `DB_PASSWORD` — default `zlttbots`
 - `DB_PORT` — default `5432`
 
 Compose derives PostgreSQL URLs such as:
@@ -79,9 +79,9 @@ redis://${REDIS_HOST}:${REDIS_PORT}
 ## 4) Recommended local `.env`
 
 ```env
-DB_NAME=zttato
-DB_USER=zttato
-DB_PASSWORD=zttato
+DB_NAME=zlttbots
+DB_USER=zlttbots
+DB_PASSWORD=zlttbots
 DB_PORT=5432
 REDIS_HOST=redis
 REDIS_PORT=6379
@@ -149,7 +149,7 @@ Examples:
 - validates Compose config
 - runs `docker compose up -d --build --remove-orphans`
 
-### `start-zttato.sh`
+### `start-zlttbots.sh`
 - makes shell scripts executable
 - sources `infrastructure/start/env.sh`
 - installs Node dependencies across services
@@ -158,14 +158,14 @@ Examples:
 - builds and starts Compose services
 - optionally runs host-side local worker helpers
 
-This makes `start-zttato.sh` more powerful but also heavier and more invasive than `start.sh`.
+This makes `start-zlttbots.sh` more powerful but also heavier and more invasive than `start.sh`.
 
 ## 8) Node-service configuration path
 
 Node services use their own package/runtime configs. Operational wrapper entrypoint:
 
 ```bash
-bash scripts/zttato-node.sh {install|start|stop|restart|status|logs}
+bash scripts/zlttbots-node.sh {install|start|stop|restart|status|logs}
 ```
 
 If you enable that path, document:

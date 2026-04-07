@@ -315,7 +315,7 @@ def _render_section(title: str, rows: Iterable[str]) -> str:
 
 def format_markdown(report: ImpactReport, manifest: SurfaceManifest) -> str:
     summary = (
-        f"# zTTato Feature Impact Dive\n\n"
+        f"# zlttbots Feature Impact Dive\n\n"
         f"- Generated from repository sources on 2026-04-06 (UTC).\n"
         f"- Canonical admin-panel path: **{manifest.canonical_admin_panel}**\n"
         f"- Compose services discovered: **{len(report.compose_services)}**\n"

@@ -74,7 +74,7 @@ Some docs use `./script.sh`, others use `bash script.sh`. Both are valid, but mi
 **Priority:** Medium.
 
 **Observed pattern**
-Multiple startup flows exist (`start.sh`, `start-zttato.sh`, `scripts/zttato-manager.sh`). Docs mention them, but there is no single comparison table showing behavior differences.
+Multiple startup flows exist (`start.sh`, `start-zlttbots.sh`, `scripts/zlttbots-manager.sh`). Docs mention them, but there is no single comparison table showing behavior differences.
 
 **Proposed task**
 Add a matrix documenting:
@@ -109,7 +109,7 @@ Deprecations are caught proactively instead of accumulating.
 
 **Task**
 Add non-destructive integration tests for:
-- `scripts/zttato-manager.sh` key subcommands,
+- `scripts/zlttbots-manager.sh` key subcommands,
 - `start.sh` sanity behavior,
 - selected infrastructure validators.
 

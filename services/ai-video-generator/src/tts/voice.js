@@ -3,7 +3,7 @@ import axios from "axios"
 import path from "path"
 import { constants as fsConstants } from "fs"
 
-const OUTPUT_BASE_DIR = process.env.TTS_OUTPUT_DIR ?? "/tmp/zttato-tts"
+const OUTPUT_BASE_DIR = process.env.TTS_OUTPUT_DIR ?? "/tmp/zlttbots-tts"
 const MAX_AUDIO_BYTES = Number.parseInt(process.env.TTS_MAX_AUDIO_BYTES ?? "5242880", 10)
 const SAFE_FILENAME_PATTERN = /^[A-Za-z0-9._-]+$/
 

@@ -19,7 +19,7 @@ spec:
   targets:
     - target: admission.k8s.gatekeeper.sh
       rego: |
-        package zttato.requiredsecuritycontrols
+        package zlttbots.requiredsecuritycontrols
 
         violation[{"msg": msg}] {
           input.review.kind.kind == "Deployment"
