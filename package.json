@@ -6,12 +6,13 @@
     "packages/*"
   ],
   "scripts": {
+    "build": "npm run build -ws",
     "dev": "concurrently \"npm:dev:*\"",
-    "dev:platform-core": "npm --workspace apps/platform-core run dev",
-    "dev:worker-ai": "npm --workspace apps/worker-ai run dev",
+    "dev:affiliate-marketing": "npm --workspace apps/affiliate-marketing run dev",
     "dev:api-gateway": "npm --workspace apps/api-gateway run dev",
     "dev:frontend": "npm --workspace apps/frontend run dev",
-    "build": "npm run build -ws"
+    "dev:platform-core": "npm --workspace apps/platform-core run dev",
+    "dev:worker-ai": "npm --workspace apps/worker-ai run dev"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
