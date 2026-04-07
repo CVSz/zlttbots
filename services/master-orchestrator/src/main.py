@@ -42,6 +42,7 @@ ALLOWED_UPSTREAM_HOSTS = {
     "execution-engine",
     "scheduler",
 }
+ALLOWED_UPSTREAM_PORTS = {8000, 8080, 9600}
 
 
 class PaymentConfig(BaseModel):
@@ -81,9 +82,31 @@ class ProfitModeResponse(BaseModel):
     audit: dict[str, Any]
 
 
+def _validate_base_url(url: str) -> str:
+    parsed = urlparse(url)
+    if parsed.scheme != "http" or parsed.username or parsed.password:
+        raise RuntimeError(f"Invalid configured upstream URL: {url}")
+    if parsed.hostname not in ALLOWED_UPSTREAM_HOSTS or parsed.port not in ALLOWED_UPSTREAM_PORTS:
+        raise RuntimeError(f"Invalid configured upstream URL host/port: {url}")
+    if parsed.path not in {"", "/"} or parsed.query or parsed.fragment:
+        raise RuntimeError(f"Invalid configured upstream URL path/query: {url}")
+    return f"{parsed.scheme}://{parsed.hostname}:{parsed.port}"
+
+
+CLICK_TRACKER_URL = _validate_base_url(CLICK_TRACKER_URL)
+PAYMENT_GATEWAY_URL = _validate_base_url(PAYMENT_GATEWAY_URL)
+FEATURE_STORE_URL = _validate_base_url(FEATURE_STORE_URL)
+MODEL_SERVICE_URL = _validate_base_url(MODEL_SERVICE_URL)
+EXECUTION_ENGINE_URL = _validate_base_url(EXECUTION_ENGINE_URL)
+
+
 def safe_call(method_func, url: str, **kwargs: Any) -> dict[str, Any]:
     parsed = urlparse(url)
-    if parsed.scheme not in {"http", "https"} or parsed.hostname not in ALLOWED_UPSTREAM_HOSTS:
+    if parsed.scheme != "http" or parsed.username or parsed.password:
+        raise HTTPException(status_code=400, detail="upstream url is not allowed")
+    if parsed.hostname not in ALLOWED_UPSTREAM_HOSTS or parsed.port not in ALLOWED_UPSTREAM_PORTS:
+        raise HTTPException(status_code=400, detail="upstream url is not allowed")
+    if parsed.path in {"", "/"}:
         raise HTTPException(status_code=400, detail="upstream url is not allowed")
 
     kwargs.setdefault("timeout", TIMEOUT)
@@ -105,7 +128,7 @@ def safe_call(method_func, url: str, **kwargs: Any) -> dict[str, Any]:
     if method_name not in {"get", "post", "put", "patch", "delete", "head", "options"}:
         raise HTTPException(status_code=500, detail=f"Unsupported HTTP method callable: {method_func}")
     try:
-        response = getattr(session, method_name)(url, **kwargs)
+        response = getattr(session, method_name)(url, allow_redirects=False, **kwargs)
         response.raise_for_status()
         return response.json()
     except requests.RequestException as exc:
