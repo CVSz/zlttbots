@@ -63,7 +63,7 @@ compose_up_with_recovery(){
 }
 
 ensure_env(){
-  [[ -f .env ]] || bash "$ROOT_DIR/scripts/install-zlttbots.sh"
+  [[ -f .env ]] || bash "$ROOT_DIR/scripts/install-zlttbots-platform.sh"
 }
 
 print_usage(){
