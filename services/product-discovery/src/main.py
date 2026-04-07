@@ -1,11 +1,14 @@
 import json
+import ipaddress
 import logging
 import os
 import random
+import socket
 import sys
 import time
 from contextvars import ContextVar
 from typing import Any
+from urllib.parse import urlparse
 from uuid import uuid4
 
 import requests
@@ -17,6 +20,11 @@ MARKET_CRAWLER_URL = os.getenv("MARKET_CRAWLER_URL", "http://market-crawler:8000
 HTTP_TIMEOUT = float(os.getenv("HTTP_TIMEOUT", "5"))
 HTTP_RETRIES = int(os.getenv("HTTP_RETRIES", "3"))
 HTTP_BACKOFF = float(os.getenv("HTTP_BACKOFF", "0.5"))
+ALLOWED_MARKET_CRAWLER_HOSTS = {
+    host.strip().lower()
+    for host in os.getenv("MARKET_CRAWLER_ALLOWED_HOSTS", "market-crawler").split(",")
+    if host.strip()
+}
 REQUEST_ID_CTX: ContextVar[str] = ContextVar("request_id", default="-")
 
 
@@ -48,11 +56,50 @@ log = logging.getLogger(SERVICE_NAME)
 app = FastAPI(title="Product Discovery")
 
 
+def _is_blocked_ip(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    return (
+        address.is_private
+        or address.is_loopback
+        or address.is_link_local
+        or address.is_multicast
+        or address.is_reserved
+        or address.is_unspecified
+    )
+
+
+def _validate_market_crawler_url(url: str) -> str:
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"}:
+        raise RuntimeError("MARKET_CRAWLER_URL must use http/https")
+    if not parsed.hostname:
+        raise RuntimeError("MARKET_CRAWLER_URL must include a hostname")
+
+    hostname = parsed.hostname.lower()
+    if hostname not in ALLOWED_MARKET_CRAWLER_HOSTS:
+        raise RuntimeError(f"MARKET_CRAWLER_URL host '{hostname}' is not allowlisted")
+
+    try:
+        resolved_records = socket.getaddrinfo(hostname, parsed.port, proto=socket.IPPROTO_TCP)
+    except socket.gaierror as exc:
+        raise RuntimeError(f"MARKET_CRAWLER_URL host '{hostname}' could not be resolved") from exc
+
+    if not resolved_records:
+        raise RuntimeError(f"MARKET_CRAWLER_URL host '{hostname}' did not resolve")
+
+    for _, _, _, _, sockaddr in resolved_records:
+        if _is_blocked_ip(ipaddress.ip_address(sockaddr[0])) and hostname not in {"localhost", "market-crawler"}:
+            raise RuntimeError(
+                f"MARKET_CRAWLER_URL host '{hostname}' resolved to a blocked address ({sockaddr[0]})"
+            )
+
+    return url
+
+
 def fetch_products() -> list[dict[str, Any]]:
     last_error: str | None = None
     for attempt in range(1, HTTP_RETRIES + 1):
         try:
-            response = requests.get(MARKET_CRAWLER_URL, timeout=HTTP_TIMEOUT)
+            response = requests.get(MARKET_CRAWLER_URL, timeout=HTTP_TIMEOUT, allow_redirects=False)
             response.raise_for_status()
             payload = response.json()
             if not isinstance(payload, list):
@@ -149,3 +196,6 @@ def discover() -> dict[str, Any]:
         extra={"event": {"input_count": len(products), "selected_count": len(top_products)}},
     )
     return {"ok": True, "count": len(top_products), "items": top_products}
+
+
+MARKET_CRAWLER_URL = _validate_market_crawler_url(MARKET_CRAWLER_URL)

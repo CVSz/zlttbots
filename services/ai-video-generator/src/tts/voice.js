@@ -5,8 +5,22 @@ import { constants as fsConstants } from "fs"
 
 const OUTPUT_BASE_DIR = process.env.TTS_OUTPUT_DIR ?? "/tmp/zttato-tts"
 const MAX_AUDIO_BYTES = Number.parseInt(process.env.TTS_MAX_AUDIO_BYTES ?? "5242880", 10)
+const SAFE_FILENAME_PATTERN = /^[A-Za-z0-9._-]+$/
+
+function validateFilename(output) {
+  if (typeof output !== "string" || output.length === 0) {
+    throw new Error("Audio output filename is required")
+  }
+  if (!SAFE_FILENAME_PATTERN.test(output)) {
+    throw new Error("Audio output filename contains disallowed characters")
+  }
+  if (path.basename(output) !== output) {
+    throw new Error("Audio output filename must not include path segments")
+  }
+}
 
 function resolveOutputPath(output) {
+  validateFilename(output)
   const normalized = path.resolve(OUTPUT_BASE_DIR, output)
   const baseDir = path.resolve(OUTPUT_BASE_DIR)
   if (!normalized.startsWith(`${baseDir}${path.sep}`) && normalized !== baseDir) {
