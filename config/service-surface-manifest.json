@@ -141,6 +141,17 @@
       "compose": false,
       "docs": false,
       "docs_path": null,
+      "endpoints": [],
+      "name": "ai-fix",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
       "endpoints": [
         "GET /health",
         "POST /run-growth-cycle"
@@ -913,6 +924,17 @@
       "compose": false,
       "docs": false,
       "docs_path": null,
+      "endpoints": [],
+      "name": "pr-bot",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
       "endpoints": [
         "GET /discover",
         "GET /healthz"
@@ -1215,10 +1237,43 @@
       "compose": false,
       "docs": false,
       "docs_path": null,
+      "endpoints": [
+        "GET /healthz",
+        "GET /scan/{scan_id}",
+        "POST /scan"
+      ],
+      "name": "security-api",
+      "runtime": true,
+      "runtime_language": "python",
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /scan",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
+    },
+    {
+      "app": false,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
       "endpoints": [],
       "name": "shopee-crawler",
       "runtime": true,
       "runtime_language": "node",
+      "write_policies": []
+    },
+    {
+      "app": false,
+      "compose": false,
+      "docs": false,
+      "docs_path": null,
+      "endpoints": [],
+      "name": "singularity",
+      "runtime": true,
+      "runtime_language": "python",
       "write_policies": []
     },
     {
