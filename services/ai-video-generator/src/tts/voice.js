@@ -26,6 +26,17 @@ function hasKnownAudioHeader(buffer) {
   return isWav || isMp3 || isOgg
 }
 
+function toSafeAudioBuffer(payload) {
+  const audioBuffer = Buffer.isBuffer(payload) ? payload : Buffer.from(payload)
+  if (audioBuffer.length === 0 || audioBuffer.length > MAX_AUDIO_BYTES) {
+    throw new Error("TTS audio response exceeds configured size limit")
+  }
+  if (!hasKnownAudioHeader(audioBuffer)) {
+    throw new Error("Unexpected audio binary payload returned by TTS provider")
+  }
+  return audioBuffer
+}
+
 export async function generateVoice(text, output){
 
 const url = "https://api.elevenlabs.io/v1/text-to-speech"
@@ -40,15 +51,10 @@ const contentType = String(response.headers["content-type"] ?? "")
 if (!contentType.startsWith("audio/")) {
   throw new Error("Unexpected content type returned by TTS provider")
 }
-if (!response.data || response.data.byteLength > MAX_AUDIO_BYTES) {
-  throw new Error("TTS audio response exceeds configured size limit")
-}
-if (!hasKnownAudioHeader(response.data)) {
-  throw new Error("Unexpected audio binary payload returned by TTS provider")
-}
+const safeAudioBuffer = toSafeAudioBuffer(response.data)
 
 const safeOutputPath = resolveOutputPath(output)
 await fs.mkdir(path.dirname(safeOutputPath), { recursive: true })
-await fs.writeFile(safeOutputPath,response.data,{ mode: 0o600, flag: fsConstants.O_CREAT | fsConstants.O_EXCL | fsConstants.O_WRONLY })
+await fs.writeFile(safeOutputPath,safeAudioBuffer,{ mode: 0o600, flag: fsConstants.O_CREAT | fsConstants.O_EXCL | fsConstants.O_WRONLY })
 
 }
