@@ -138,6 +138,7 @@ pytest
 - API documentation: `docs/api/`
 - Operations runbooks: `docs/operations/runbooks/`
 - Developer standards: `docs/development/coding-standards.md`
+- Full source metadata snapshot: `docs/development/full-source-code-metadata-2026-04-08.md`
 
 ## Security and release information
 
