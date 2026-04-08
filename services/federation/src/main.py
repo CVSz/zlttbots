@@ -2,22 +2,49 @@ import base64
 import hashlib
 import hmac
 import json
+import logging
 import os
 import time
 from pathlib import Path
 from typing import Any
-
-TOKEN_TTL_SECONDS = int(os.getenv("FEDERATION_TOKEN_TTL", "3600"))
 
 import psycopg2
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 app = FastAPI(title="Federation Control Plane")
+logger = logging.getLogger("federation")
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 SECRET = os.getenv("FEDERATION_SECRET", "change-me")
 DB_URL = os.getenv("DATABASE_URL", "postgresql://zlttbots:zlttbots@postgres:5432/zlttbots")
 AUDIT_LOG_PATH = Path(os.getenv("FEDERATION_AUDIT_LOG", "/tmp/federation-audit.log"))
 DEFAULT_TENANT = os.getenv("FEDERATION_DEFAULT_TENANT", "default")
+STARTUP_DB_MAX_ATTEMPTS = max(1, int(os.getenv("FEDERATION_DB_STARTUP_MAX_ATTEMPTS", "15")))
+STARTUP_DB_RETRY_SECONDS = max(1.0, float(os.getenv("FEDERATION_DB_STARTUP_RETRY_SECONDS", "2")))
+
+
+def _safe_int_env(env_key: str, default_value: int) -> int:
+    raw_value = os.getenv(env_key)
+    if raw_value is None:
+        return default_value
+    try:
+        parsed = int(raw_value)
+    except ValueError:
+        logger.warning(
+            json.dumps(
+                {
+                    "event": "federation.invalid_env_int",
+                    "env_key": env_key,
+                    "raw_value": raw_value,
+                    "default_used": default_value,
+                }
+            )
+        )
+        return default_value
+    return parsed
+
+
+TOKEN_TTL_SECONDS = max(60, _safe_int_env("FEDERATION_TOKEN_TTL", 3600))
 
 
 class NodeRegister(BaseModel):
@@ -68,7 +95,36 @@ def ensure_schema() -> None:
 
 @app.on_event("startup")
 def startup() -> None:
-    ensure_schema()
+    last_error: psycopg2.Error | None = None
+    for attempt in range(1, STARTUP_DB_MAX_ATTEMPTS + 1):
+        try:
+            ensure_schema()
+            logger.info(
+                json.dumps(
+                    {
+                        "event": "federation.startup.db_ready",
+                        "attempt": attempt,
+                        "max_attempts": STARTUP_DB_MAX_ATTEMPTS,
+                    }
+                )
+            )
+            return
+        except psycopg2.Error as exc:
+            last_error = exc
+            logger.warning(
+                json.dumps(
+                    {
+                        "event": "federation.startup.db_retry",
+                        "attempt": attempt,
+                        "max_attempts": STARTUP_DB_MAX_ATTEMPTS,
+                        "retry_seconds": STARTUP_DB_RETRY_SECONDS,
+                        "error": str(exc),
+                    }
+                )
+            )
+            if attempt < STARTUP_DB_MAX_ATTEMPTS:
+                time.sleep(STARTUP_DB_RETRY_SECONDS)
+    raise RuntimeError("database unavailable during startup") from last_error
 
 
 @app.get("/healthz")
