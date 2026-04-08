@@ -19,10 +19,6 @@ SECRET = os.getenv("FEDERATION_SECRET", "change-me")
 DB_URL = os.getenv("DATABASE_URL", "postgresql://zlttbots:zlttbots@postgres:5432/zlttbots")
 AUDIT_LOG_PATH = Path(os.getenv("FEDERATION_AUDIT_LOG", "/tmp/federation-audit.log"))
 DEFAULT_TENANT = os.getenv("FEDERATION_DEFAULT_TENANT", "default")
-STARTUP_DB_MAX_ATTEMPTS = max(1, int(os.getenv("FEDERATION_DB_STARTUP_MAX_ATTEMPTS", "15")))
-STARTUP_DB_RETRY_SECONDS = max(1.0, float(os.getenv("FEDERATION_DB_STARTUP_RETRY_SECONDS", "2")))
-
-
 def _safe_int_env(env_key: str, default_value: int) -> int:
     raw_value = os.getenv(env_key)
     if raw_value is None:
@@ -44,7 +40,33 @@ def _safe_int_env(env_key: str, default_value: int) -> int:
     return parsed
 
 
+def _safe_float_env(env_key: str, default_value: float) -> float:
+    raw_value = os.getenv(env_key)
+    if raw_value is None:
+        return default_value
+    value = raw_value.strip()
+    if not value:
+        return default_value
+    try:
+        parsed = float(value)
+    except ValueError:
+        logger.warning(
+            json.dumps(
+                {
+                    "event": "federation.invalid_env_float",
+                    "env_key": env_key,
+                    "raw_value": raw_value,
+                    "default_used": default_value,
+                }
+            )
+        )
+        return default_value
+    return parsed
+
+
 TOKEN_TTL_SECONDS = max(60, _safe_int_env("FEDERATION_TOKEN_TTL", 3600))
+STARTUP_DB_MAX_ATTEMPTS = max(1, _safe_int_env("FEDERATION_DB_STARTUP_MAX_ATTEMPTS", 15))
+STARTUP_DB_RETRY_SECONDS = max(1.0, _safe_float_env("FEDERATION_DB_STARTUP_RETRY_SECONDS", 2.0))
 
 
 class NodeRegister(BaseModel):
