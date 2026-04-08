@@ -57,6 +57,11 @@ export default function App() {
   };
 
   const deploy = async () => {
+    if (!project.trim()) {
+      setStatus("Project ID is required.");
+      return;
+    }
+
     setIsDeploying(true);
     try {
       const res = await fetch("/core/deploy", {
@@ -72,6 +77,11 @@ export default function App() {
   };
 
   const deployRepo = async () => {
+    if (!repo.trim()) {
+      setStatus("Repository URL is required.");
+      return;
+    }
+
     const res = await fetch("/core/deploy/github", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders },

@@ -14,6 +14,14 @@ if (!jwtSecretEnv || jwtSecretEnv.length < 32) {
 const jwtSecret: string = jwtSecretEnv;
 const publicRoutes = new Set(["/healthz", "/auth/login", "/auth/register"]);
 
+function normalizePath(path: string): string {
+  if (path === "/") {
+    return path;
+  }
+
+  return path.endsWith("/") ? path.slice(0, -1) : path;
+}
+
 function isJwtClaims(value: string | JwtPayload): value is JwtClaims {
   if (typeof value === "string") {
     return false;
@@ -23,7 +31,7 @@ function isJwtClaims(value: string | JwtPayload): value is JwtClaims {
 }
 
 export function auth(req: Request, res: Response, next: NextFunction) {
-  if (publicRoutes.has(req.path)) {
+  if (publicRoutes.has(normalizePath(req.path))) {
     return next();
   }
 
