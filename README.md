@@ -62,6 +62,7 @@ docker compose up -d
 Alternative managed startup commands:
 
 ```bash
+bash setup
 bash start.sh
 bash scripts/start-zlttbots.sh --core
 bash scripts/zlttbots-manager.sh install
