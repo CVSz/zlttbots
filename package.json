@@ -6,7 +6,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build -ws",
+    "build": "npm run build --workspaces",
     "dev": "concurrently \"npm:dev:*\"",
     "dev:affiliate-marketing": "npm --workspace apps/affiliate-marketing run dev",
     "dev:api-gateway": "npm --workspace apps/api-gateway run dev",

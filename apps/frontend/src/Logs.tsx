@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
 
-const wsUrl = import.meta.env.VITE_LOG_WS_URL ?? "ws://localhost:6000";
+function getDefaultWsUrl(): string {
+  if (typeof window === "undefined") {
+    return "ws://localhost:6000";
+  }
+
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${protocol}//${window.location.hostname}:6000`;
+}
+
+const wsUrl = import.meta.env.VITE_LOG_WS_URL ?? getDefaultWsUrl();
 
 export default function Logs() {
   const [logs, setLogs] = useState<string[]>([]);
