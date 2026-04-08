@@ -6,8 +6,8 @@ from typing import Any
 
 import requests
 
-from .audit import log
-from .circuit import allow, fail, success
+from audit import log
+from circuit import allow, fail, success
 
 TIMEOUT = float(os.getenv("PAYMENT_TIMEOUT", "3"))
 DEFAULT_HEADERS = {"Content-Type": "application/json"}
