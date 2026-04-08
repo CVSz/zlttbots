@@ -47,11 +47,19 @@ def _safe_model_component(value: str, field_name: str) -> str:
 
 
 def _resolve_source_file(model_path: str) -> Path:
-    source_name = _safe_model_component(Path(model_path).name, "path")
+    candidate_input = Path(model_path).expanduser()
+    source_name = _safe_model_component(candidate_input.name, "path")
     allowed_roots = _allowed_source_roots()
+    candidate_paths: list[Path] = []
+    if candidate_input.is_absolute():
+        candidate_paths.append(candidate_input.resolve(strict=False))
     for allowed_root in allowed_roots:
-        candidate = (allowed_root / source_name).resolve(strict=False)
+        candidate_paths.append((allowed_root / source_name).resolve(strict=False))
+
+    for candidate in candidate_paths:
         if not candidate.exists() or not candidate.is_file():
+            continue
+        if not _is_within_roots(candidate, allowed_roots):
             continue
         if candidate.is_symlink():
             raise HTTPException(status_code=400, detail="symlink source files are not allowed")

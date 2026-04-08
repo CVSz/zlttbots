@@ -29,7 +29,7 @@ def safe_call(method: str, url: str, **kwargs: Any) -> dict[str, Any]:
     if method_name not in {"get", "post"}:
         raise HTTPException(status_code=500, detail="unsupported HTTP method")
     try:
-        response = getattr(requests, method_name)(url, allow_redirects=False, **kwargs)
+        response = getattr(requests, method_name)(url, **kwargs)
         response.raise_for_status()
         return response.json()
     except requests.RequestException as exc:
