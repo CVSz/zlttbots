@@ -1,0 +1,117 @@
+name: AI PR Review System
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MAX_DIFF_BYTES: "300000"
+      REVIEW_REPORT_DIR: reports
+      REVIEW_PATCH_FILE: reports/limited.patch
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Install Codex and OPA
+        run: |
+          npm install -g @openai/codex
+          curl -sSfL https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static -o opa
+          chmod +x opa
+          sudo mv opa /usr/local/bin/opa
+
+      - name: Extract and sanitize diff
+        id: extract
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          mkdir -p "${REVIEW_REPORT_DIR}"
+
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          git diff --unified=3 "origin/${{ github.base_ref }}...HEAD" -- . \
+            ":(exclude)**/.env" \
+            ":(exclude)**/*.pem" \
+            ":(exclude)**/*secret*" > "${REVIEW_REPORT_DIR}/raw.patch"
+
+          grep -viE '(token|password|secret|private[ _-]?key|api[ _-]?key)' \
+            "${REVIEW_REPORT_DIR}/raw.patch" > "${REVIEW_REPORT_DIR}/safe.patch" || true
+
+          head -c "${MAX_DIFF_BYTES}" "${REVIEW_REPORT_DIR}/safe.patch" > "${REVIEW_PATCH_FILE}"
+
+          if [[ ! -s "${REVIEW_PATCH_FILE}" ]]; then
+            echo '[]' > "${REVIEW_REPORT_DIR}/all.json"
+            echo "no_changes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "no_changes=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run multi-agent Codex review
+        if: steps.extract.outputs.no_changes != 'true'
+        id: codex
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          codex -- "Review this patch only for OWASP issues, auth flaws, injection risk, secrets leakage. Return strict JSON array of {\"file\":string,\"line\":number,\"severity\":\"low|medium|high|critical\",\"comment\":string,\"agent\":\"security\"}." < "${REVIEW_PATCH_FILE}" > "${REVIEW_REPORT_DIR}/security.raw.json" &
+          pid_security=$!
+
+          codex -- "Review this patch for performance regressions (hot paths, blocking IO, DB N+1, algorithmic complexity). Return strict JSON array of {\"file\":string,\"line\":number,\"severity\":\"low|medium|high|critical\",\"comment\":string,\"agent\":\"performance\"}." < "${REVIEW_PATCH_FILE}" > "${REVIEW_REPORT_DIR}/performance.raw.json" &
+          pid_performance=$!
+
+          codex -- "Review this patch for code quality (SOLID, DRY, readability, maintainability, testability). Return strict JSON array of {\"file\":string,\"line\":number,\"severity\":\"low|medium|high|critical\",\"comment\":string,\"agent\":\"quality\"}." < "${REVIEW_PATCH_FILE}" > "${REVIEW_REPORT_DIR}/quality.raw.json" &
+          pid_quality=$!
+
+          wait "$pid_security" "$pid_performance" "$pid_quality"
+
+      - name: Normalize findings
+        if: steps.extract.outputs.no_changes != 'true'
+        run: |
+          node .github/scripts/normalize-findings.mjs "${REVIEW_REPORT_DIR}/security.raw.json" security > "${REVIEW_REPORT_DIR}/security.json"
+          node .github/scripts/normalize-findings.mjs "${REVIEW_REPORT_DIR}/performance.raw.json" performance > "${REVIEW_REPORT_DIR}/performance.json"
+          node .github/scripts/normalize-findings.mjs "${REVIEW_REPORT_DIR}/quality.raw.json" quality > "${REVIEW_REPORT_DIR}/quality.json"
+          jq -s 'add' "${REVIEW_REPORT_DIR}"/security.json "${REVIEW_REPORT_DIR}"/performance.json "${REVIEW_REPORT_DIR}"/quality.json > "${REVIEW_REPORT_DIR}/all.json"
+
+      - name: Post inline review comments
+        if: steps.extract.outputs.no_changes != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node .github/scripts/review.mjs
+
+      - name: Post summary comment
+        if: always() && steps.extract.outputs.no_changes != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node .github/scripts/summary.mjs
+
+      - name: OPA policy gate
+        if: steps.extract.outputs.no_changes != 'true'
+        run: |
+          opa eval --format=json \
+            --data policy/review.rego \
+            --input "${REVIEW_REPORT_DIR}/all.json" \
+            'data.review.deny' > "${REVIEW_REPORT_DIR}/opa-result.json"
+
+          jq . "${REVIEW_REPORT_DIR}/opa-result.json"
+
+          if jq -e '.result[0].expressions[0].value | length > 0' "${REVIEW_REPORT_DIR}/opa-result.json" >/dev/null; then
+            echo "Policy denied merge"
+            exit 1
+          fi
