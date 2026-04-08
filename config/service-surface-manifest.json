@@ -217,6 +217,8 @@
       "docs_path": "docs/services/arbitrage-engine.md",
       "endpoints": [
         "GET /arbitrage",
+        "GET /health/live",
+        "GET /health/ready",
         "GET /healthz",
         "GET /metrics",
         "GET /publishing/counters/{tenant_id}",
@@ -924,11 +926,21 @@
       "compose": false,
       "docs": false,
       "docs_path": null,
-      "endpoints": [],
+      "endpoints": [
+        "GET /healthz",
+        "POST /webhook"
+      ],
       "name": "pr-bot",
       "runtime": true,
       "runtime_language": "python",
-      "write_policies": []
+      "write_policies": [
+        {
+          "auth": "required",
+          "endpoint": "POST /webhook",
+          "schema": "required",
+          "tenant": "required"
+        }
+      ]
     },
     {
       "app": false,

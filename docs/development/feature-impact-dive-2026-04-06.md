@@ -73,7 +73,7 @@
 - ai-orchestrator [python] (2 endpoints): GET /health, POST /run-growth-cycle
 - ai-video-generator [node] (0 endpoints): no HTTP routes found
 - analytics [node] (6 endpoints): GET /analytics/campaigns, GET /analytics/conversion, GET /analytics/products, GET /analytics/revenue, GET /analytics/summary, GET /healthz
-- arbitrage-engine [python] (12 endpoints): GET /arbitrage, GET /healthz, GET /metrics, GET /publishing/counters/{tenant_id}, GET /reporting/posted-products/{tenant_id}, POST /affiliate/payouts/ingest, POST /affiliate/sync, POST /arbitrage/scan, POST /performance, POST /publishing/jobs, POST /publishing/run-daily, POST /videos
+- arbitrage-engine [python] (14 endpoints): GET /arbitrage, GET /health/live, GET /health/ready, GET /healthz, GET /metrics, GET /publishing/counters/{tenant_id}, GET /reporting/posted-products/{tenant_id}, POST /affiliate/payouts/ingest, POST /affiliate/sync, POST /arbitrage/scan, POST /performance, POST /publishing/jobs, POST /publishing/run-daily, POST /videos
 - billing-service [python] (2 endpoints): GET /healthz, POST /charge
 - budget-allocator [python] (2 endpoints): GET /healthz, POST /allocate
 - campaign-optimizer [python] (1 endpoints): POST /optimize
@@ -96,7 +96,7 @@
 - model-sync [python] (0 endpoints): no HTTP routes found
 - network-egress [python] (0 endpoints): no HTTP routes found
 - p2p-node [node] (0 endpoints): no HTTP routes found
-- pr-bot [python] (0 endpoints): no HTTP routes found
+- pr-bot [python] (2 endpoints): GET /healthz, POST /webhook
 - product-discovery [python] (2 endpoints): GET /discover, GET /healthz
 - product-generator [python] (2 endpoints): GET /healthz, POST /generate
 - retraining-loop [python] (0 endpoints): no HTTP routes found
@@ -157,6 +157,7 @@
 - model-registry: 1 write endpoint policies
 - model-service: 2 write endpoint policies
 - platform-core: 4 write endpoint policies
+- pr-bot: 1 write endpoint policies
 - product-generator: 1 write endpoint policies
 - reward-collector: 1 write endpoint policies
 - rl-coordinator: 2 write endpoint policies

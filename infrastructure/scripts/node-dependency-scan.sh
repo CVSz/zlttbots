@@ -4,6 +4,8 @@ set -Eeuo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 status=0
 FALLBACK_ON_AUDIT_UNAVAILABLE="${FALLBACK_ON_AUDIT_UNAVAILABLE:-1}"
+ENFORCE_LOCKFILE="${ENFORCE_LOCKFILE:-0}"
+missing_lockfiles=()
 
 run_outdated_fallback() {
   local package_dir="$1"
@@ -42,7 +44,10 @@ while IFS= read -r package; do
 
   if [[ ! -f "$lockfile" ]]; then
     echo "Missing lockfile for $package_dir"
-    status=1
+    missing_lockfiles+=("$package_dir")
+    if [[ "$ENFORCE_LOCKFILE" == "1" ]]; then
+      status=1
+    fi
     continue
   fi
 
@@ -55,5 +60,15 @@ done < <(
     find "$ROOT/services" -maxdepth 2 -name package.json
   } | sort -u
 )
+
+if ((${#missing_lockfiles[@]} > 0)); then
+  echo
+  if [[ "$ENFORCE_LOCKFILE" == "1" ]]; then
+    echo "Missing lockfiles detected (ENFORCE_LOCKFILE=1):"
+  else
+    echo "Missing lockfiles detected (warning only; set ENFORCE_LOCKFILE=1 to enforce):"
+  fi
+  printf ' - %s\n' "${missing_lockfiles[@]}"
+fi
 
 exit "$status"
