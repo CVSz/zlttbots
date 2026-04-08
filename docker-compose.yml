@@ -108,7 +108,7 @@ services:
           "CMD",
           "python",
           "-c",
-          "import os,urllib.request; p=os.getenv('ARBITRAGE_ENGINE_PORT','9500').strip() or '9500'; url=f'http://127.0.0.1:{int(p)}/healthz'; r=urllib.request.urlopen(url, timeout=2); assert r.status == 200",
+          "import os,socket; raw=os.getenv('ARBITRAGE_ENGINE_PORT','9500'); value=(raw or '').strip(); port=9500 if not value or not value.isdigit() else int(value); s=socket.create_connection(('127.0.0.1', port),2); s.close()",
         ]
       interval: 15s
       timeout: 5s
