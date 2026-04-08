@@ -1,0 +1,37 @@
+groups:
+  - name: arbitrage-self-healing
+    interval: 30s
+    rules:
+      - alert: ArbitrageEngineHighErrorRate
+        expr: |
+          sum(rate(http_requests_total{service="arbitrage-engine",status=~"5.."}[5m]))
+          /
+          clamp_min(sum(rate(http_requests_total{service="arbitrage-engine"}[5m])), 0.001)
+          > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          service: arbitrage-engine
+        annotations:
+          summary: "arbitrage-engine 5xx ratio exceeds 5%"
+          description: "High 5xx rate detected for 5 minutes; trigger restart playbook and inspect dependency readiness."
+
+      - alert: ArbitrageEngineReadinessFlapping
+        expr: changes(kube_pod_container_status_ready{namespace="zlttbots",container="arbitrage-engine"}[10m]) > 4
+        for: 3m
+        labels:
+          severity: warning
+          service: arbitrage-engine
+        annotations:
+          summary: "arbitrage-engine readiness is flapping"
+          description: "Readiness changed more than four times in 10 minutes. Consider increasing startup tolerance or checking downstream dependencies."
+
+      - alert: ArbitrageEngineLatencyP99High
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{service="arbitrage-engine"}[5m])) by (le)) > 1.5
+        for: 10m
+        labels:
+          severity: warning
+          service: arbitrage-engine
+        annotations:
+          summary: "arbitrage-engine p99 latency > 1.5s"
+          description: "Persistent latency spike detected; RL infra tuner should evaluate timeout/retry/autoscaling policy."

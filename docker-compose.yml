@@ -108,12 +108,12 @@ services:
           "CMD",
           "python",
           "-c",
-          "import os,socket; raw=os.getenv('ARBITRAGE_ENGINE_PORT','9500'); value=(raw or '').strip(); port=9500 if not value or not value.isdigit() else int(value); s=socket.create_connection(('127.0.0.1', port),2); s.close()",
+          "import json,os,urllib.request; raw=os.getenv('ARBITRAGE_ENGINE_PORT','9500'); value=(raw or '').strip(); port=9500 if not value or not value.isdigit() else int(value); req=urllib.request.Request(f'http://127.0.0.1:{port}/health/ready'); resp=urllib.request.urlopen(req, timeout=3); data=json.loads(resp.read().decode('utf-8')); assert data.get('status') == 'ready'",
         ]
-      interval: 15s
+      interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 20s
+      retries: 10
+      start_period: 60s
     networks:
       - zlttbots-net
 

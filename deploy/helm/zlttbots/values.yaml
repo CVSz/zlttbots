@@ -1,0 +1,41 @@
+namespace: zlttbots
+image:
+  repository: ghcr.io/cvsz/zlttbots-arbitrage-engine
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+replicaCount: 3
+service:
+  type: ClusterIP
+  port: 9500
+resources:
+  requests:
+    cpu: "250m"
+    memory: "512Mi"
+  limits:
+    cpu: "1500m"
+    memory: "2Gi"
+health:
+  livenessPath: /health/live
+  readinessPath: /health/ready
+  startupPath: /healthz
+  port: 9500
+  startupFailureThreshold: 30
+  startupPeriodSeconds: 5
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 12
+  targetCPUUtilizationPercentage: 65
+  targetMemoryUtilizationPercentage: 75
+podDisruptionBudget:
+  minAvailable: 2
+env:
+  DB_URL: postgresql://zlttbots:change-me@postgres:5432/zlttbots
+  LOG_LEVEL: INFO
+networkPolicy:
+  enabled: true
+  allowedNamespaces:
+    - monitoring
+serviceMonitor:
+  enabled: true
+  interval: 15s

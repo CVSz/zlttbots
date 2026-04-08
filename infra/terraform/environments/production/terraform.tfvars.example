@@ -1,0 +1,4 @@
+kubeconfig_path = "~/.kube/config"
+namespace       = "zlttbots"
+image_tag       = "2026.04.08"
+db_url          = "postgresql://zlttbots:replace-me@postgres.zlttbots.svc.cluster.local:5432/zlttbots"

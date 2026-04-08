@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import time
 from datetime import date
+from threading import Lock
 
 import psycopg2
 from fastapi import FastAPI, HTTPException, Response
@@ -32,6 +33,8 @@ from publishing.controller import DailyPublishingController
 app = FastAPI()
 client = UnifiedAffiliateClient()
 controller = DailyPublishingController()
+_readiness_lock = Lock()
+_is_ready = False
 
 
 class PayoutIngestRequest(BaseModel):
@@ -89,18 +92,48 @@ def get_db():
     return psycopg2.connect(os.environ["DB_URL"])
 
 
-@app.get('/healthz')
-def healthz():
-    db_ok = False
-
+def _probe_database() -> bool:
     try:
         with get_db() as db:
             with db.cursor() as cur:
                 cur.execute('select 1')
                 cur.fetchone()
-        db_ok = True
+        return True
     except Exception:
-        db_ok = False
+        return False
+
+
+@app.on_event("startup")
+def startup_probe() -> None:
+    global _is_ready
+    # Retry dependency checks to avoid failing health checks during cold start.
+    for _ in range(30):
+        if _probe_database():
+            with _readiness_lock:
+                _is_ready = True
+            return
+        time.sleep(2)
+
+
+@app.get('/health/live')
+def health_live():
+    return {"status": "alive", "service": "arbitrage-engine"}
+
+
+@app.get('/health/ready')
+def health_ready():
+    with _readiness_lock:
+        ready = _is_ready
+    if not ready:
+        raise HTTPException(status_code=503, detail="service is starting")
+    return {"status": "ready", "service": "arbitrage-engine"}
+
+
+@app.get('/healthz')
+def healthz():
+    db_ok = False
+
+    db_ok = _probe_database()
 
     return {
         'status': 'ok' if db_ok else 'degraded',
