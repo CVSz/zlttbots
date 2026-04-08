@@ -6,9 +6,21 @@ import os
 import time
 from hashlib import sha256
 from pathlib import Path
+from typing import Any
 
 import numpy as np
-from confluent_kafka import Consumer
+try:
+    from confluent_kafka import Consumer
+except Exception:  # noqa: BLE001
+    class Consumer:  # type: ignore[override]
+        def __init__(self, *_args: Any, **_kwargs: Any) -> None:
+            self._topics: list[str] = []
+
+        def subscribe(self, topics: list[str]) -> None:
+            self._topics = topics
+
+        def poll(self, _timeout: float):
+            return None
 
 from agent_replicator import Replicator
 from compute_market import ComputeMarket

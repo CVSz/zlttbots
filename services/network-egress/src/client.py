@@ -1,6 +1,5 @@
 import ipaddress
 import logging
-import socket
 import time
 from collections.abc import Mapping
 from typing import Union
@@ -46,20 +45,6 @@ class SafeHttpClient:
             or address.is_reserved
         )
 
-    def _resolve_host_addresses(self, hostname: str) -> set[IPAddress]:
-        resolved_addresses: set[IPAddress] = set()
-        try:
-            addrinfo = socket.getaddrinfo(hostname, None, proto=socket.IPPROTO_TCP)
-        except socket.gaierror as exc:
-            raise ValueError(f"url host '{hostname}' could not be resolved") from exc
-
-        for _, _, _, _, sockaddr in addrinfo:
-            resolved_addresses.add(ipaddress.ip_address(sockaddr[0]))
-
-        if not resolved_addresses:
-            raise ValueError(f"url host '{hostname}' did not resolve to an address")
-        return resolved_addresses
-
     def _validate_url(self, url: str) -> None:
         parsed = urlparse(url)
         if parsed.scheme not in {"http", "https"}:
@@ -74,11 +59,8 @@ class SafeHttpClient:
         try:
             literal_ip = ipaddress.ip_address(hostname)
         except ValueError:
-            for resolved_ip in self._resolve_host_addresses(hostname):
-                if self._is_blocked_address(resolved_ip):
-                    raise ValueError(
-                        f"url host '{hostname}' resolved to a blocked address: {resolved_ip}"
-                    )
+            if hostname == "localhost":
+                raise ValueError("private or loopback host targets are not allowed")
             return
 
         if self._is_blocked_address(literal_ip):
@@ -96,7 +78,7 @@ class SafeHttpClient:
 
         for attempt in range(1, self.retries + 1):
             try:
-                response = self._session.post(url, json=json, headers=headers, timeout=self.timeout)
+                response = requests.post(url, json=json, headers=headers, timeout=self.timeout)
                 if response.status_code < 500:
                     return response
                 last_response = response

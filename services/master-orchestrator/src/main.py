@@ -7,8 +7,6 @@ from urllib.parse import urlparse
 import requests
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, HttpUrl
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
 from deployment_controller import (
     DeploymentCreateRequest,
@@ -22,8 +20,6 @@ from kafka_producer import emit_decision
 
 app = FastAPI(title="Master Orchestrator")
 TIMEOUT = float(os.getenv("HTTP_TIMEOUT_SECONDS", "10"))
-HTTP_RETRY_TOTAL = int(os.getenv("HTTP_RETRY_TOTAL", "3"))
-HTTP_RETRY_BACKOFF = float(os.getenv("HTTP_RETRY_BACKOFF", "0.5"))
 logging.basicConfig(level=logging.INFO)
 
 
@@ -110,25 +106,11 @@ def safe_call(method_func, url: str, **kwargs: Any) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail="upstream url is not allowed")
 
     kwargs.setdefault("timeout", TIMEOUT)
-    session = requests.Session()
-    retries = Retry(
-        total=HTTP_RETRY_TOTAL,
-        connect=HTTP_RETRY_TOTAL,
-        read=HTTP_RETRY_TOTAL,
-        status=HTTP_RETRY_TOTAL,
-        backoff_factor=HTTP_RETRY_BACKOFF,
-        status_forcelist=[502, 503, 504],
-        allowed_methods={"DELETE", "GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH"},
-    )
-    adapter = HTTPAdapter(max_retries=retries)
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-
     method_name = getattr(method_func, "__name__", "").lower()
     if method_name not in {"get", "post", "put", "patch", "delete", "head", "options"}:
         raise HTTPException(status_code=500, detail=f"Unsupported HTTP method callable: {method_func}")
     try:
-        response = getattr(session, method_name)(url, allow_redirects=False, **kwargs)
+        response = method_func(url, allow_redirects=False, **kwargs)
         response.raise_for_status()
         return response.json()
     except requests.RequestException as exc:
