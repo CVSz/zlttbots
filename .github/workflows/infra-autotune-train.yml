@@ -1,0 +1,47 @@
+name: infra-autotune-train
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */6 * * *"
+
+jobs:
+  train-infra-policy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy==2.3.2 scikit-learn==1.7.1
+
+      - name: Generate deterministic sample metrics
+        run: |
+          mkdir -p artifacts
+          cat > artifacts/infra-metrics.jsonl <<'JSONL'
+          {"latency_ms": 320, "error_rate": 0.01, "cpu_utilization": 0.45, "memory_utilization": 0.48, "restart_count": 0}
+          {"latency_ms": 970, "error_rate": 0.02, "cpu_utilization": 0.72, "memory_utilization": 0.75, "restart_count": 0}
+          {"latency_ms": 1430, "error_rate": 0.08, "cpu_utilization": 0.88, "memory_utilization": 0.93, "restart_count": 1}
+          {"latency_ms": 680, "error_rate": 0.03, "cpu_utilization": 0.63, "memory_utilization": 0.68, "restart_count": 0}
+          JSONL
+
+      - name: Train policy
+        run: |
+          python services/rl-trainer/src/autonomy/infra_tuner_pipeline.py \
+            --input artifacts/infra-metrics.jsonl \
+            --output artifacts/infra-policy.json
+
+      - name: Upload policy artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: infra-policy
+          path: artifacts/infra-policy.json
