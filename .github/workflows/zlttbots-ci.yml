@@ -194,3 +194,38 @@ jobs:
 
       - name: Deploy to production
         run: kubectl apply -f infrastructure/k8s
+
+  explain-skips:
+    if: always()
+    needs:
+      - lint-and-validate
+      - security-scans
+      - build-images
+      - dast-scan
+      - promote-dev
+      - promote-staging
+      - promote-production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Explain skipped jobs
+        shell: bash
+        run: |
+          echo "Event: ${{ github.event_name }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Needs status:"
+          echo "  lint-and-validate=${{ needs.lint-and-validate.result }}"
+          echo "  security-scans=${{ needs.security-scans.result }}"
+          echo "  build-images=${{ needs.build-images.result }}"
+          echo "  dast-scan=${{ needs.dast-scan.result }}"
+          echo "  promote-dev=${{ needs.promote-dev.result }}"
+          echo "  promote-staging=${{ needs.promote-staging.result }}"
+          echo "  promote-production=${{ needs.promote-production.result }}"
+
+          {
+            echo "## Skip diagnostics"
+            echo ""
+            echo "- \`build-images\` requires both \`lint-and-validate\` and \`security-scans\` to succeed."
+            echo "- \`dast-scan\` requires \`build-images\` to succeed."
+            echo "- Promotion jobs run only on \`refs/heads/main\`."
+            echo "- Pull requests use refs like \`refs/pull/<id>/merge\`, so promotion jobs are expected to be skipped."
+          } >> "$GITHUB_STEP_SUMMARY"
