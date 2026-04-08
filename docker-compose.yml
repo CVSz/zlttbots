@@ -919,7 +919,6 @@ services:
 
 networks:
   zlttbots-net:
-    name: zlttbots-net
     driver: bridge
 
 volumes:
