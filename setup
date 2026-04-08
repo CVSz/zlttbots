@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+INSTALLER_SCRIPT="$ROOT_DIR/installer/full-stack-installer.sh"
+ENV_FILE="$ROOT_DIR/.env"
+ENV_TEMPLATE="$ROOT_DIR/configs/env/full-stack.env.example"
+
+LOG_PREFIX="[setup]"
+
+log() {
+  printf '%s %s\n' "$LOG_PREFIX" "$*"
+}
+
+fail() {
+  printf '%s ERROR: %s\n' "$LOG_PREFIX" "$*" >&2
+  exit 1
+}
+
+usage() {
+  cat <<'USAGE'
+Usage:
+  bash setup [--skip-verify]
+
+Options:
+  --skip-verify   Skip post-deploy health verification.
+  -h, --help      Show this help message.
+
+Description:
+  One-click installer for the full zlttbots project.
+  It performs prerequisite checks, initializes .env securely,
+  deploys the full Docker stack, and verifies core health endpoints.
+USAGE
+}
+
+require_cmd() {
+  local cmd="$1"
+  command -v "$cmd" >/dev/null 2>&1 || fail "Missing required command: $cmd"
+}
+
+ensure_installer_present() {
+  [[ -x "$INSTALLER_SCRIPT" ]] || fail "Installer script is missing or not executable: $INSTALLER_SCRIPT"
+  [[ -f "$ENV_TEMPLATE" ]] || fail "Environment template missing: $ENV_TEMPLATE"
+}
+
+generate_secret() {
+  if command -v openssl >/dev/null 2>&1; then
+    openssl rand -hex 24
+  else
+    python3 - <<'PY'
+import secrets
+print(secrets.token_hex(24))
+PY
+  fi
+}
+
+ensure_secure_env() {
+  if [[ ! -f "$ENV_FILE" ]]; then
+    cp "$ENV_TEMPLATE" "$ENV_FILE"
+    log "Created .env from template."
+  fi
+
+  local current_secret
+  current_secret="$(awk -F= '/^AFFILIATE_WEBHOOK_SECRET=/{print $2; exit}' "$ENV_FILE" || true)"
+
+  if [[ -z "$current_secret" || "$current_secret" == "change-me" ]]; then
+    local new_secret
+    new_secret="$(generate_secret)"
+
+    python3 - "$ENV_FILE" "$new_secret" <<'PY'
+import pathlib
+import sys
+
+env_path = pathlib.Path(sys.argv[1])
+new_secret = sys.argv[2]
+lines = env_path.read_text().splitlines()
+updated = False
+
+for idx, line in enumerate(lines):
+    if line.startswith("AFFILIATE_WEBHOOK_SECRET="):
+        lines[idx] = f"AFFILIATE_WEBHOOK_SECRET={new_secret}"
+        updated = True
+        break
+
+if not updated:
+    lines.append(f"AFFILIATE_WEBHOOK_SECRET={new_secret}")
+
+env_path.write_text("\n".join(lines) + "\n")
+PY
+    chmod 600 "$ENV_FILE"
+    log "Updated AFFILIATE_WEBHOOK_SECRET in .env with a generated secret."
+  else
+    log "AFFILIATE_WEBHOOK_SECRET already set to a non-default value."
+  fi
+}
+
+main() {
+  local skip_verify="false"
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --skip-verify)
+        skip_verify="true"
+        shift
+        ;;
+      -h|--help)
+        usage
+        exit 0
+        ;;
+      *)
+        usage
+        fail "Unknown argument: $1"
+        ;;
+    esac
+  done
+
+  require_cmd bash
+  require_cmd docker
+  require_cmd curl
+  require_cmd python3
+  require_cmd git
+
+  ensure_installer_present
+
+  log "Running prerequisite checks."
+  bash "$INSTALLER_SCRIPT" prereq
+
+  log "Ensuring secure environment configuration."
+  ensure_secure_env
+
+  log "Deploying full stack."
+  bash "$INSTALLER_SCRIPT" starter
+
+  if [[ "$skip_verify" == "false" ]]; then
+    log "Running health verification."
+    bash "$INSTALLER_SCRIPT" verify
+  else
+    log "Skipping health verification as requested."
+  fi
+
+  log "One-click setup completed successfully."
+}
+
+main "$@"
