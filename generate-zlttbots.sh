@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 PROJECT="zlttbots"
 
 echo "Creating project structure..."
 
-mkdir -p $PROJECT
+mkdir -p "$PROJECT"
 
-cd $PROJECT
+cd "$PROJECT"
 
 mkdir -p \
 services/tiktok-uploader \
@@ -49,7 +49,7 @@ import dotenv from "dotenv"
 
 dotenv.config()
 
-7export const config = {
+export const config = {
 db: process.env.DB_URL,
 videoDir: process.env.VIDEO_DIR || "./videos",
 }
@@ -2175,7 +2175,7 @@ EOF
 cat > infrastructure/scripts/rollback.sh << 'EOF'
 #!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 DEPLOYMENT=$1
 
@@ -2185,7 +2185,7 @@ EOF
 cat > infrastructure/ci/build-all.sh << 'EOF'
 #!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 services=(
 analytics
@@ -2209,7 +2209,7 @@ EOF
 cat > infrastructure/ci/deploy.sh << 'EOF'
 #!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 kubectl apply -f infrastructure/k8s
 EOF
