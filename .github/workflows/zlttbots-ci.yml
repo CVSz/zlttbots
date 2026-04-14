@@ -50,7 +50,11 @@ jobs:
       - name: Feature/drift manifest validation
         run: |
           python scripts/feature_impact_dive.py --write-manifest
-          git diff --exit-code config/service-surface-manifest.json
+          if ! git diff --quiet -- config/service-surface-manifest.json; then
+            echo "❌ Manifest out of date. Run: python scripts/feature_impact_dive.py --write-manifest"
+            git --no-pager diff -- config/service-surface-manifest.json
+            exit 1
+          fi
           python scripts/feature_impact_dive.py --validate-manifest
 
       - name: Documentation snippet and command-style validation
